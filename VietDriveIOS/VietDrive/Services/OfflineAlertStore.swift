@@ -10,6 +10,7 @@ final class OfflineAlertStore {
         let inlineRoadName: String
         let direction1Name: String
         let direction2Name: String
+        let province: String
         let direction1Speed: Int
         let direction2Speed: Int
         let coordinates: [CLLocationCoordinate2D]
@@ -725,12 +726,15 @@ final class OfflineAlertStore {
                    COALESCE(l.inline_road_name, ''),
                    COALESCE(n1.label, ''),
                    COALESCE(n2.label, ''),
+                   COALESCE(c1.label, c2.label, ''),
                    l.direction_1_speed_kmh, l.direction_2_speed_kmh,
                    l.geometry_json
             FROM map_data_road_links_rtree r
             JOIN map_data_road_links l ON l.id = r.link_id
             LEFT JOIN map_data_name_lookup n1 ON n1.id = l.direction_1_name_id
             LEFT JOIN map_data_name_lookup n2 ON n2.id = l.direction_2_name_id
+            LEFT JOIN map_data_city_lookup c1 ON c1.id = n1.city_id
+            LEFT JOIN map_data_city_lookup c2 ON c2.id = n2.city_id
             WHERE r.min_lat <= ? AND r.max_lat >= ?
               AND r.min_lon <= ? AND r.max_lon >= ?;
             """
@@ -743,7 +747,7 @@ final class OfflineAlertStore {
         Self.bind(bounds, to: statement)
 
         while sqlite3_step(statement) == SQLITE_ROW {
-            guard let geometryText = Self.text(statement, 7),
+            guard let geometryText = Self.text(statement, 8),
                   let geometryData = geometryText.data(using: .utf8),
                   let pairs = try? JSONSerialization.jsonObject(with: geometryData) as? [[Double]]
             else { continue }
@@ -759,8 +763,9 @@ final class OfflineAlertStore {
                 inlineRoadName: Self.text(statement, 2) ?? "",
                 direction1Name: Self.text(statement, 3) ?? "",
                 direction2Name: Self.text(statement, 4) ?? "",
-                direction1Speed: Int(sqlite3_column_int(statement, 5)),
-                direction2Speed: Int(sqlite3_column_int(statement, 6)),
+                province: Self.text(statement, 5) ?? "",
+                direction1Speed: Int(sqlite3_column_int(statement, 6)),
+                direction2Speed: Int(sqlite3_column_int(statement, 7)),
                 coordinates: coordinates
             ))
         }
@@ -1004,7 +1009,9 @@ final class OfflineAlertStore {
             roadName: selection.roadName,
             source: "map-data/roadsenz.bin #\(road.roadSerialNumber)",
             distanceMeters: candidate.distance,
-            alignmentDegrees: selection.alignment
+            alignmentDegrees: selection.alignment,
+            canTriggerDrivingAlerts: true,
+            province: road.province
         )
     }
 

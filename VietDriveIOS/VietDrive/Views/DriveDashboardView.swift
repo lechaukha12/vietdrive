@@ -465,9 +465,9 @@ private struct IdleDriveBar: View {
                 Text(snapshot.roadName)
                     .font(.subheadline.weight(.bold))
                     .lineLimit(1)
-                Text(snapshot.isDemo ? "Đang phát lại hành trình GPS" : "Vị trí và cảnh báo gần bạn")
-                    .font(.caption2)
-                    .foregroundStyle(DriveTheme.textMuted)
+                Text(snapshot.isDemo ? "Đang phát lại hành trình GPS" : (snapshot.province.isEmpty ? "Đang xác định khu vực" : snapshot.province))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(DriveTheme.ink.opacity(0.68))
                     .lineLimit(1)
             }
             Spacer(minLength: 0)

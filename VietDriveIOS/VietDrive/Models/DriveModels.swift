@@ -108,6 +108,7 @@ struct SpeedLimitMatch: Equatable {
     let distanceMeters: Double
     let alignmentDegrees: Double?
     var canTriggerDrivingAlerts = true
+    var province: String = ""
 
     var diagnosticText: String {
         let road = roadName.isEmpty ? "đoạn đường chưa có tên" : roadName

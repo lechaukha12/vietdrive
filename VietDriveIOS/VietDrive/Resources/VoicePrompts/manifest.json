@@ -55,6 +55,27 @@
     "maneuver.now.roundabout.6": "roundabout_6_exit.mp3",
     "maneuver.now.roundabout.7": "roundabout_7_exit.mp3",
     "maneuver.now.roundabout.8": "roundabout_8_exit.mp3",
-    "maneuver.now.roundabout.9": "roundabout_9_exit.mp3"
+    "maneuver.now.roundabout.9": "roundabout_9_exit.mp3",
+    "alert.camera.speed": "camera_speed.mp3",
+    "alert.camera.traffic": "camera_traffic.mp3",
+    "alert.camera.section": "camera_ai.mp3",
+    "alert.camera.dual": "camera_ai.mp3",
+    "alert.town.in": "vao_kdc.mp3",
+    "alert.town.out": "ra_kdc.mp3",
+    "alert.overtaking.in": "vao_cam_vuot.mp3",
+    "alert.overtaking.out": "ra_cam_vuot.mp3",
+    "alert.tunnel": "vao_duong_ham.mp3",
+    "alert.railway": "giao_duong_sat.mp3",
+    "alert.rest_area": "tram_dung.mp3",
+    "alert.checkpoint": "kiem_tra_toc_do.mp3",
+    "speed.current.30": "current_speed_30.mp3",
+    "speed.current.40": "current_speed_40.mp3",
+    "speed.current.50": "current_speed_50.mp3",
+    "speed.current.60": "current_speed_60.mp3",
+    "speed.current.70": "current_speed_70.mp3",
+    "speed.current.80": "current_speed_80.mp3",
+    "speed.current.90": "current_speed_90.mp3",
+    "speed.current.100": "current_speed_100.mp3",
+    "speed.current.120": "current_speed_120.mp3"
   }
 }

@@ -991,6 +991,9 @@ final class DriveViewModel: ObservableObject {
             if !match.roadName.isEmpty && (routePhase != .navigating || snapshot.roadName == "Đang xác định tuyến đường") {
                 snapshot.roadName = match.roadName
             }
+            if !match.province.isEmpty {
+                snapshot.province = match.province
+            }
             speedLimitDiagnosticText = "\(match.limit) km/h · \(match.diagnosticText)"
             Self.speedLogger.info(
                 "display limit=\(match.limit, privacy: .public) source=\(match.source, privacy: .public) road=\(match.roadName, privacy: .public)"

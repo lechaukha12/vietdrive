@@ -156,29 +156,54 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         let distance = naturalDistance(alert.distanceMeters)
         let message: String
         let recordedKey: String?
-        switch alert.kind {
-        case .camera:
-            recordedKey = alert.speedLimit > 0
-                ? speedPromptKey(limit: alert.speedLimit)
-                : "alert.camera"
-            message = alert.speedLimit > 0
-                ? "Phía trước \(distance) có camera tốc độ \(alert.speedLimit) ki lô mét một giờ."
-                : "Phía trước \(distance) có camera giám sát."
-        case .speedLimit:
-            recordedKey = speedPromptKey(limit: alert.speedLimit)
-            message = "Phía trước \(distance), giới hạn tốc độ \(alert.speedLimit) ki lô mét một giờ."
-        case .roadSign:
-            recordedKey = alert.speedLimit > 0 ? speedPromptKey(limit: alert.speedLimit) : nil
-            message = "Phía trước \(distance), \(alert.message.lowercased())."
-        case .toll:
+        let signCode = alert.signCode ?? ""
+        let assetName = alert.assetName ?? ""
+
+        if signCode == "IGO:2" || assetName.contains("CameraTraffic") {
+            recordedKey = "alert.camera.traffic"
+            message = "Phía trước \(distance) có camera phạt nguội đèn đỏ."
+        } else if signCode == "IGO:4" || assetName.contains("CameraSection") {
+            recordedKey = "alert.camera.section"
+            message = "Phía trước \(distance) có camera đo tốc độ theo đoạn."
+        } else if signCode == "IGO:11" || assetName.contains("CameraDual") {
+            recordedKey = "alert.camera.dual"
+            message = "Phía trước \(distance) có camera phạt nguội đèn đỏ và tốc độ."
+        } else if signCode == "IGO:10" || signCode == "R420" || assetName.contains("R420") {
+            recordedKey = "alert.town.in"
+            message = "Phía trước \(distance) bắt đầu khu đông dân cư."
+        } else if signCode == "R421" || assetName.contains("R421") {
+            recordedKey = "alert.town.out"
+            message = "Phía trước \(distance) hết khu đông dân cư."
+        } else if signCode == "P125" || assetName.contains("P125") {
+            recordedKey = "alert.overtaking.in"
+            message = "Phía trước \(distance) đoạn đường cấm vượt."
+        } else if signCode == "DP133" || assetName.contains("DP133") {
+            recordedKey = "alert.overtaking.out"
+            message = "Phía trước \(distance) hết cấm vượt."
+        } else if alert.kind == .toll || signCode == "IGO:5" || signCode == "TOLL" || assetName.contains("Toll") {
             recordedKey = "alert.toll"
-            message = "Phía trước \(distance), \(alert.message.lowercased())."
-        case .parkingRestriction:
-            recordedKey = nil
-            message = "Phía trước \(distance), \(alert.message.lowercased())."
-        case .turnRestriction:
-            return
-        default:
+            message = "Phía trước \(distance) có trạm thu phí."
+        } else if signCode == "W240" || assetName.contains("Tunnel") {
+            recordedKey = "alert.tunnel"
+            message = "Phía trước \(distance) có đường hầm."
+        } else if signCode == "W210" || assetName.contains("Railway") {
+            recordedKey = "alert.railway"
+            message = "Phía trước \(distance) giao nhau với đường sắt."
+        } else if signCode == "I433" || assetName.contains("RestArea") {
+            recordedKey = "alert.rest_area"
+            message = "Phía trước \(distance) có trạm dừng nghỉ."
+        } else if assetName.contains("Checkpoint") {
+            recordedKey = "alert.checkpoint"
+            message = "Phía trước \(distance) có trạm kiểm tra tốc độ."
+        } else if alert.speedLimit > 0 {
+            recordedKey = speedPromptKey(limit: alert.speedLimit)
+            message = alert.kind == .camera
+                ? "Phía trước \(distance) có camera tốc độ \(alert.speedLimit) ki lô mét một giờ."
+                : "Phía trước \(distance), giới hạn tốc độ \(alert.speedLimit) ki lô mét một giờ."
+        } else if alert.kind == .camera {
+            recordedKey = "alert.camera"
+            message = "Phía trước \(distance) có camera giám sát."
+        } else {
             recordedKey = nil
             message = "Phía trước \(distance), \(alert.message.lowercased())."
         }
