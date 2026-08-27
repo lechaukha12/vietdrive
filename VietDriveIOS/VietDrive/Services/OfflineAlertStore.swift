@@ -7,10 +7,19 @@ final class OfflineAlertStore {
     private struct FirmwareRoadCandidate {
         let id: Int
         let roadSerialNumber: Int
-        let roadName: String
+        let inlineRoadName: String
+        let direction1Name: String
+        let direction2Name: String
         let direction1Speed: Int
         let direction2Speed: Int
         let coordinates: [CLLocationCoordinate2D]
+
+        func roadName(forDirection1: Bool) -> String {
+            if !inlineRoadName.isEmpty { return inlineRoadName }
+            let name = forDirection1 ? direction1Name : direction2Name
+            if !name.isEmpty { return name }
+            return forDirection1 ? direction2Name : direction1Name
+        }
     }
 
     private static let databaseContract = "vn.vietdrive.map-data"
@@ -713,7 +722,9 @@ final class OfflineAlertStore {
         let bounds = Self.bounds(around: location.coordinate, radiusMeters: radiusMeters)
         let query = """
             SELECT l.id, l.road_serial_number,
-                   COALESCE(NULLIF(l.inline_road_name, ''), n1.label, n2.label, ''),
+                   COALESCE(l.inline_road_name, ''),
+                   COALESCE(n1.label, ''),
+                   COALESCE(n2.label, ''),
                    l.direction_1_speed_kmh, l.direction_2_speed_kmh,
                    l.geometry_json
             FROM map_data_road_links_rtree r
@@ -732,7 +743,7 @@ final class OfflineAlertStore {
         Self.bind(bounds, to: statement)
 
         while sqlite3_step(statement) == SQLITE_ROW {
-            guard let geometryText = Self.text(statement, 5),
+            guard let geometryText = Self.text(statement, 7),
                   let geometryData = geometryText.data(using: .utf8),
                   let pairs = try? JSONSerialization.jsonObject(with: geometryData) as? [[Double]]
             else { continue }
@@ -745,9 +756,11 @@ final class OfflineAlertStore {
             roads.append(FirmwareRoadCandidate(
                 id: Int(sqlite3_column_int(statement, 0)),
                 roadSerialNumber: Int(sqlite3_column_int(statement, 1)),
-                roadName: Self.text(statement, 2) ?? "",
-                direction1Speed: Int(sqlite3_column_int(statement, 3)),
-                direction2Speed: Int(sqlite3_column_int(statement, 4)),
+                inlineRoadName: Self.text(statement, 2) ?? "",
+                direction1Name: Self.text(statement, 3) ?? "",
+                direction2Name: Self.text(statement, 4) ?? "",
+                direction1Speed: Int(sqlite3_column_int(statement, 5)),
+                direction2Speed: Int(sqlite3_column_int(statement, 6)),
                 coordinates: coordinates
             ))
         }
@@ -926,33 +939,37 @@ final class OfflineAlertStore {
         let segBearing = candidate.segmentBearing
         let d1 = road.direction1Speed
         let d2 = road.direction2Speed
-        let selection: (speed: Int, alignment: Double?)?
+        let selection: (speed: Int, alignment: Double?, roadName: String)?
 
         if speedKmh < 7 || (movementBearing == nil && heading == nil) {
             // FIRMWARE STATIONARY LOGIC (When stopped or starting a trip):
             if d1 == d2, Self.supportedSpeedLimits.contains(d1) {
                 // Symmetrical road (e.g. 50 km/h both directions) - Display immediately!
-                selection = (d1, nil)
+                selection = (d1, nil, road.roadName(forDirection1: true))
             } else if Self.supportedSpeedLimits.contains(d1), !Self.supportedSpeedLimits.contains(d2) {
                 // One-way or single-direction speed limit
-                selection = (d1, nil)
+                selection = (d1, nil, road.roadName(forDirection1: true))
             } else if Self.supportedSpeedLimits.contains(d2), !Self.supportedSpeedLimits.contains(d1) {
-                selection = (d2, nil)
+                selection = (d2, nil, road.roadName(forDirection1: false))
             } else if let heading {
                 // If heading (compass) is available while stopped, align with local subsegment
                 let forward = Self.angleDifference(heading, segBearing)
                 let reverse = Self.angleDifference(heading, (segBearing + 180).truncatingRemainder(dividingBy: 360))
                 if forward <= 55, Self.supportedSpeedLimits.contains(d1) {
-                    selection = (d1, forward)
+                    selection = (d1, forward, road.roadName(forDirection1: true))
                 } else if reverse <= 55, Self.supportedSpeedLimits.contains(d2) {
-                    selection = (d2, reverse)
+                    selection = (d2, reverse, road.roadName(forDirection1: false))
                 } else {
                     let literal = max(d1, d2)
-                    selection = Self.supportedSpeedLimits.contains(literal) ? (literal, nil) : nil
+                    let isD1 = d1 >= d2
+                    selection = Self.supportedSpeedLimits.contains(literal)
+                        ? (literal, nil, road.roadName(forDirection1: isD1)) : nil
                 }
             } else {
                 let literal = max(d1, d2)
-                selection = Self.supportedSpeedLimits.contains(literal) ? (literal, nil) : nil
+                let isD1 = d1 >= d2
+                selection = Self.supportedSpeedLimits.contains(literal)
+                    ? (literal, nil, road.roadName(forDirection1: isD1)) : nil
             }
         } else {
             // FIRMWARE MOVING LOGIC: Use movement bearing (or compass heading fallback)
@@ -962,17 +979,21 @@ final class OfflineAlertStore {
                 effectiveBearing,
                 (segBearing + 180).truncatingRemainder(dividingBy: 360)
             )
-            let direction1: (speed: Int, alignment: Double)? =
+            let direction1: (speed: Int, alignment: Double, roadName: String)? =
                 Self.supportedSpeedLimits.contains(d1) && forward <= 60
-                ? (d1, forward) : nil
-            let direction2: (speed: Int, alignment: Double)? =
+                ? (d1, forward, road.roadName(forDirection1: true)) : nil
+            let direction2: (speed: Int, alignment: Double, roadName: String)? =
                 Self.supportedSpeedLimits.contains(d2) && reverse <= 60
-                ? (d2, reverse) : nil
+                ? (d2, reverse, road.roadName(forDirection1: false)) : nil
 
             if let direction1, let direction2 {
                 selection = direction1.alignment <= direction2.alignment ? direction1 : direction2
+            } else if let direction1 {
+                selection = (direction1.speed, direction1.alignment, direction1.roadName)
+            } else if let direction2 {
+                selection = (direction2.speed, direction2.alignment, direction2.roadName)
             } else {
-                selection = direction1 ?? direction2
+                selection = nil
             }
         }
 
@@ -980,7 +1001,7 @@ final class OfflineAlertStore {
         retainedRoadID = road.id
         return SpeedLimitMatch(
             limit: selection.speed,
-            roadName: road.roadName,
+            roadName: selection.roadName,
             source: "map-data/roadsenz.bin #\(road.roadSerialNumber)",
             distanceMeters: candidate.distance,
             alignmentDegrees: selection.alignment
