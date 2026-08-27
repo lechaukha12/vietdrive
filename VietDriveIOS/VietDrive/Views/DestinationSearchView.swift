@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct DestinationSearchView: View {
     private enum Field {
@@ -34,6 +35,23 @@ struct DestinationSearchView: View {
                         title: destination?.name ?? "Chọn điểm đến",
                         subtitle: destination?.subtitle ?? "Tìm địa chỉ hoặc địa danh"
                     )
+                    if origin == nil, !model.canUseCurrentLocationForRouting {
+                        HStack(spacing: 8) {
+                            Image(systemName: model.locationAuthorizationDenied
+                                ? "location.slash.fill" : "location.magnifyingglass")
+                            Text(model.locationAuthorizationDenied
+                                ? "Chưa có quyền vị trí. Chọn điểm bắt đầu hoặc mở Cài đặt."
+                                : "Đang chờ GPS chính xác. Bạn vẫn có thể chọn điểm bắt đầu.")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if model.locationAuthorizationDenied {
+                                Button("Cài đặt") { openAppSettings() }
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(DriveTheme.amber)
+                        .padding(.horizontal, 4)
+                    }
                 }
                 .padding(14)
                 .background(DriveTheme.skySoft.opacity(0.55))
@@ -47,6 +65,9 @@ struct DestinationSearchView: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: "Tìm \(activeField.title.lowercased())"
             )
+            .scrollDismissesKeyboard(.interactively)
+            .submitLabel(.done)
+            .onSubmit { hideKeyboard() }
             .textInputAutocapitalization(.words)
             .autocorrectionDisabled(false)
             .toolbar {
@@ -56,11 +77,16 @@ struct DestinationSearchView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Tìm đường") {
                         guard let destination else { return }
+                        hideKeyboard()
                         model.planRoute(from: origin, to: destination)
                         dismiss()
                     }
                     .fontWeight(.bold)
-                    .disabled(destination == nil)
+                    .disabled(destination == nil || (origin == nil && !model.canUseCurrentLocationForRouting))
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Ẩn bàn phím") { hideKeyboard() }
                 }
             }
             .onAppear {
@@ -204,6 +230,7 @@ struct DestinationSearchView: View {
         query = ""
         results = []
         errorMessage = nil
+        hideKeyboard()
     }
 
     private func search() async {
@@ -231,5 +258,19 @@ struct DestinationSearchView: View {
             isLoading = false
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }

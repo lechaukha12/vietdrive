@@ -38,7 +38,7 @@ struct MapLibreMapView: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.compassView.compassVisibility = .visible
         mapView.showsScale = false
-        mapView.showsUserLocation = !snapshot.isDemo && !isDebugDemoLaunch
+        mapView.showsUserLocation = !snapshot.isDemo
         mapView.tintColor = UIColor(DriveTheme.cyan)
         mapView.contentInset = UIEdgeInsets(top: 112, left: 0, bottom: 132, right: 0)
         mapView.setCenter(snapshot.coordinate, zoomLevel: 15.2, animated: false)
@@ -58,7 +58,7 @@ struct MapLibreMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MLNMapView, context: Context) {
-        mapView.showsUserLocation = !snapshot.isDemo && !isDebugDemoLaunch
+        mapView.showsUserLocation = !snapshot.isDemo
         context.coordinator.update(
             snapshot: snapshot,
             alerts: alerts,
@@ -71,14 +71,6 @@ struct MapLibreMapView: UIViewRepresentable {
             in: mapView,
             follow: followUser
         )
-    }
-
-    private var isDebugDemoLaunch: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("--demo")
-#else
-        false
-#endif
     }
 
     private static func styleURL(isNightMode: Bool) -> URL? {
@@ -131,22 +123,24 @@ struct MapLibreMapView: UIViewRepresentable {
                 mapView.styleURL = MapLibreMapView.styleURL(isNightMode: isNightMode)
                 lastNightMode = isNightMode
             }
-            let signature = alerts.map { "\($0.id):\(Int($0.distanceMeters))" }.joined(separator: ",")
+            let unclutteredAlerts = (spatiallySeparated(
+                alerts.filter { $0.kind == .camera },
+                minimumDistance: 100,
+                limit: 28
+            ) + spatiallySeparated(
+                alerts.filter { $0.kind == .speedLimit },
+                minimumDistance: 65,
+                limit: 24
+            ) + spatiallySeparated(
+                alerts.filter { $0.kind != .camera && $0.kind != .speedLimit },
+                minimumDistance: 65,
+                limit: 18
+            )).sorted { $0.id < $1.id }
+            let signature = unclutteredAlerts.map {
+                "\($0.id):\($0.kind.rawValue):\($0.speedLimit):\($0.coordinate.latitude):\($0.coordinate.longitude):\($0.assetName ?? ""):\($0.message)"
+            }.joined(separator: ",")
             if signature != lastAlertSignature {
                 if !alertAnnotations.isEmpty { mapView.removeAnnotations(alertAnnotations) }
-                let unclutteredAlerts = spatiallySeparated(
-                    alerts.filter { $0.kind == .camera },
-                    minimumDistance: 100,
-                    limit: 28
-                ) + spatiallySeparated(
-                    alerts.filter { $0.kind == .speedLimit },
-                    minimumDistance: 65,
-                    limit: 24
-                ) + spatiallySeparated(
-                    alerts.filter { $0.kind != .camera && $0.kind != .speedLimit },
-                    minimumDistance: 65,
-                    limit: 18
-                )
                 alertAnnotations = unclutteredAlerts.map {
                     let annotation = AlertMapAnnotation()
                     annotation.coordinate = $0.coordinate
@@ -160,6 +154,11 @@ struct MapLibreMapView: UIViewRepresentable {
                 }
                 mapView.addAnnotations(alertAnnotations)
                 lastAlertSignature = signature
+            } else {
+                for (annotation, alert) in zip(alertAnnotations, unclutteredAlerts) {
+                    annotation.alert = alert
+                    annotation.subtitle = alert.message
+                }
             }
 
             let roadSignature = roads.map { road in
@@ -503,7 +502,18 @@ struct MapLibreMapView: UIViewRepresentable {
                 UIColor.white.withAlphaComponent(0.96).setFill()
                 background.fill()
                 if let sign = UIImage(named: assetName) {
-                    sign.draw(in: CGRect(x: 5, y: 5, width: 26, height: 26))
+                    let targetArea = CGRect(x: 5, y: 5, width: 26, height: 26)
+                    let signSize = sign.size
+                    if signSize.width > 0, signSize.height > 0 {
+                        let scale = min(targetArea.width / signSize.width, targetArea.height / signSize.height)
+                        let renderWidth = signSize.width * scale
+                        let renderHeight = signSize.height * scale
+                        let renderX = targetArea.midX - (renderWidth / 2)
+                        let renderY = targetArea.midY - (renderHeight / 2)
+                        sign.draw(in: CGRect(x: renderX, y: renderY, width: renderWidth, height: renderHeight))
+                    } else {
+                        sign.draw(in: targetArea)
+                    }
                 }
             }
         }

@@ -138,11 +138,7 @@ struct DriveDashboardView: View {
                 snapshot: model.snapshot,
                 isRerouting: model.isRerouting
             ) {
-                if model.isDemoActive {
-                    model.toggleDemo()
-                } else {
-                    model.cancelRoute()
-                }
+                model.cancelRoute()
             }
         } else {
         HStack(spacing: 9) {
@@ -469,7 +465,7 @@ private struct IdleDriveBar: View {
                 Text(snapshot.roadName)
                     .font(.subheadline.weight(.bold))
                     .lineLimit(1)
-                Text(snapshot.isDemo ? "Đang mô phỏng tuyến A → B" : "Vị trí và cảnh báo gần bạn")
+                Text(snapshot.isDemo ? "Đang phát lại hành trình GPS" : "Vị trí và cảnh báo gần bạn")
                     .font(.caption2)
                     .foregroundStyle(DriveTheme.textMuted)
                     .lineLimit(1)
@@ -645,15 +641,6 @@ private struct RoutePreviewCard: View {
             HStack(spacing: 10) {
                 Button("Hủy", role: .cancel) { model.cancelRoute() }
                     .buttonStyle(.bordered)
-                    .tint(.white.opacity(0.18))
-                Button { model.toggleDemo() } label: {
-                    Label("Mô phỏng", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(DriveTheme.pink)
-            }
-            HStack(spacing: 10) {
                 Button { model.startNavigation() } label: {
                     Label("Bắt đầu dẫn đường", systemImage: "location.fill")
                         .frame(maxWidth: .infinity)
@@ -730,7 +717,6 @@ private struct ArrivalCard: View {
             Spacer(minLength: 4)
             Button {
                 model.cancelRoute()
-                if model.isDemoActive { model.toggleDemo() }
             } label: {
                 Image(systemName: "checkmark")
                     .font(.headline.bold())
@@ -873,49 +859,6 @@ private struct MapLayerSheet: View {
                 }
                 .padding(12)
                 .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
-                Button {
-                    model.toggleDemo()
-                    dismiss()
-                } label: {
-                    Label(
-                        model.isDemoActive ? "Dừng mô phỏng" : "Mô phỏng tuyến A → B đã chọn",
-                        systemImage: model.isDemoActive ? "stop.fill" : "play.fill"
-                    )
-                    .font(.subheadline.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(model.isDemoActive ? DriveTheme.danger : DriveTheme.cyan)
-                .disabled(!model.isDemoActive && !model.canStartSimulation)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("ASSET ĐANG DÙNG")
-                        .font(.caption2.weight(.black))
-                        .tracking(1)
-                        .foregroundStyle(.secondary)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            SignAssetPreview(asset: "TrafficSigns/TrafficSign_P102", code: "P.102")
-                            SignAssetPreview(asset: "TrafficSigns/TrafficSign_P130", code: "P.130")
-                            SignAssetPreview(asset: "TrafficSigns/TrafficSign_P122", code: "P.122")
-                            SignAssetPreview(asset: "TrafficSigns/TrafficSign_P103c", code: "P.103c")
-                            SignAssetPreview(asset: "TrafficSigns/TrafficSign_W208", code: "W.208")
-                        }
-                    }
-                    NavigationLink {
-                        SignCatalogView()
-                    } label: {
-                        Label("Xem toàn bộ 25 asset biển báo", systemImage: "square.grid.3x3.fill")
-                            .font(.caption.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.bordered)
-                }
-                Text("Dữ liệu thu phí và 4.726 đoạn đường lỗi đã được cách ly.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
                 Label(
                     "Vị trí chỉ dùng cho dẫn đường; không quảng cáo, không tracking.",
                     systemImage: "hand.raised.fill"
@@ -942,68 +885,6 @@ private struct MapLayerSheet: View {
                 model.refreshLayerVisibility()
             }
         }
-    }
-}
-
-private struct SignCatalogItem: Identifiable {
-    let code: String
-    let name: String
-    let asset: String
-    var id: String { code }
-}
-
-private struct SignCatalogView: View {
-    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 12)]
-    private let signs: [SignCatalogItem] = [
-        .init(code: "P.101", name: "Đường cấm", asset: "TrafficSigns/TrafficSign_P101"),
-        .init(code: "P.102", name: "Cấm ngược chiều", asset: "TrafficSigns/TrafficSign_P102"),
-        .init(code: "P.103c", name: "Cấm ô tô rẽ trái", asset: "TrafficSigns/TrafficSign_P103c"),
-        .init(code: "P.122", name: "Dừng lại", asset: "TrafficSigns/TrafficSign_P122"),
-        .init(code: "P.123a", name: "Cấm rẽ trái", asset: "TrafficSigns/TrafficSign_P123a"),
-        .init(code: "P.123b", name: "Cấm rẽ phải", asset: "TrafficSigns/TrafficSign_P123b"),
-        .init(code: "P.125", name: "Cấm vượt", asset: "TrafficSigns/TrafficSign_P125"),
-        .init(code: "P.130", name: "Cấm dừng và đỗ", asset: "TrafficSigns/TrafficSign_P130"),
-        .init(code: "P.131a", name: "Cấm đỗ", asset: "TrafficSigns/TrafficSign_P131a"),
-        .init(code: "W.208", name: "Nhường đường", asset: "TrafficSigns/TrafficSign_W208"),
-        .init(code: "W.224", name: "Người đi bộ", asset: "TrafficSigns/TrafficSign_W224"),
-        .init(code: "W.225", name: "Trẻ em", asset: "TrafficSigns/TrafficSign_W225"),
-        .init(code: "W.245a", name: "Đi chậm", asset: "TrafficSigns/TrafficSign_W245a"),
-        .init(code: "R.302a", name: "Phải đi vòng", asset: "TrafficSigns/TrafficSign_R302a"),
-        .init(code: "I.437", name: "Đường cao tốc", asset: "TrafficSigns/TrafficSign_I437")
-    ] + stride(from: 30, through: 120, by: 10).map { speed in
-        SignCatalogItem(
-            code: "P.127.\(speed)",
-            name: "Tối đa \(speed) km/h",
-            asset: "TrafficSigns/TrafficSign_P127_\(speed)"
-        )
-    }
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(signs) { sign in
-                    VStack(spacing: 7) {
-                        Image(sign.asset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 58, height: 58)
-                        Text(sign.code)
-                            .font(.caption.weight(.black))
-                        Text(sign.name)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 116)
-                    .padding(8)
-                    .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
-                }
-            }
-            .padding(16)
-        }
-        .navigationTitle("Asset biển báo")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

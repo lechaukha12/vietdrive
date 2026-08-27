@@ -256,32 +256,32 @@ final class OfflineAlertStore {
             case 1:
                 kind = speed > 0 ? .speedLimit : .camera
                 signCode = "IGO:1"
-                assetName = speed > 0 ? "TrafficSigns/TrafficSign_P127_\(speed)" : nil
+                assetName = speed > 0 ? "TrafficSigns/TrafficSign_P127_\(speed)" : "TrafficSigns/TrafficSign_CameraSpeed"
                 message = rawWarning ?? (speed > 0 ? "Biển giới hạn tốc độ \(speed) km/h" : "Camera giám sát tốc độ")
             case 2:
                 kind = .camera
                 signCode = "IGO:2"
-                assetName = nil
+                assetName = "TrafficSigns/TrafficSign_CameraTraffic"
                 message = rawWarning ?? "Camera đèn tín hiệu giao thông"
             case 4:
-                kind = .roadSign
+                kind = .camera
                 signCode = "IGO:4"
-                assetName = "TrafficSigns/TrafficSign_P125"
-                message = rawWarning ?? "Đoạn đường cấm vượt"
+                assetName = "TrafficSigns/TrafficSign_CameraSection"
+                message = rawWarning ?? "Camera đo tốc độ theo đoạn"
             case 5:
                 kind = .toll
                 signCode = "IGO:5"
-                assetName = "TrafficSigns/TrafficSign_I437"
+                assetName = "TrafficSigns/TrafficSign_Toll"
                 message = rawWarning ?? "Trạm thu phí"
             case 10:
                 kind = .roadSign
                 signCode = "IGO:10"
-                assetName = "TrafficSigns/TrafficSign_R302a"
+                assetName = "TrafficSigns/TrafficSign_R420"
                 message = rawWarning ?? "Khu đông dân cư"
             case 11:
                 kind = .camera
                 signCode = "IGO:11"
-                assetName = speed > 0 ? "TrafficSigns/TrafficSign_P127_\(speed)" : nil
+                assetName = "TrafficSigns/TrafficSign_CameraDual"
                 message = rawWarning ?? (speed > 0 ? "Camera phạt nguội đèn đỏ và tốc độ \(speed) km/h" : "Camera phạt nguội đèn đỏ và tốc độ")
             default:
                 kind = .hazard
@@ -532,9 +532,23 @@ final class OfflineAlertStore {
             let assetName: String?
             if let parking {
                 kind = .parkingRestriction
-                let isStopping = parking.value.lowercased().contains("stopping")
-                message = isStopping ? "Cấm dừng và đỗ xe" : "Cấm đỗ xe"
-                assetName = isStopping ? "TrafficSigns/TrafficSign_P130" : "TrafficSigns/TrafficSign_P131a"
+                let val = parking.value.lowercased()
+                let isStopping = val.contains("stopping")
+                let isOdd = val.contains("odd")
+                let isEven = val.contains("even")
+                if isStopping {
+                    message = "Cấm dừng và đỗ xe"
+                    assetName = "TrafficSigns/TrafficSign_P130"
+                } else if isOdd {
+                    message = "Cấm đỗ xe ngày lẻ"
+                    assetName = "TrafficSigns/TrafficSign_P131b"
+                } else if isEven {
+                    message = "Cấm đỗ xe ngày chẵn"
+                    assetName = "TrafficSigns/TrafficSign_P131c"
+                } else {
+                    message = "Cấm đỗ xe"
+                    assetName = "TrafficSigns/TrafficSign_P131a"
+                }
             } else {
                 kind = .turnRestriction
                 message = "Đường hạn chế phương tiện"
@@ -1183,7 +1197,14 @@ final class OfflineAlertStore {
         switch restriction {
         case "no_left_turn": "TrafficSigns/TrafficSign_P123a"
         case "no_right_turn": "TrafficSigns/TrafficSign_P123b"
+        case "no_u_turn": "TrafficSigns/TrafficSign_P124a"
+        case "no_straight_on": "TrafficSigns/TrafficSign_NoStraight"
+        case "only_straight_on": "TrafficSigns/TrafficSign_R301a"
+        case "only_right_turn": "TrafficSigns/TrafficSign_R301b"
+        case "only_left_turn": "TrafficSigns/TrafficSign_R301c"
         case "no_entry": "TrafficSigns/TrafficSign_P102"
+        case "no_parking": "TrafficSigns/TrafficSign_P131a"
+        case "no_stopping": "TrafficSigns/TrafficSign_P130"
         default: nil
         }
     }

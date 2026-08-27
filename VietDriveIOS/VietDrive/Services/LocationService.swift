@@ -23,6 +23,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     override init() {
         super.init()
         manager.delegate = self
+        authorizationStatus = manager.authorizationStatus
         manager.activityType = .automotiveNavigation
         manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         manager.distanceFilter = 2
@@ -32,10 +33,27 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func requestAuthorization() {
-#if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--demo") { return }
-#endif
-        manager.requestWhenInUseAuthorization()
+        authorizationStatus = manager.authorizationStatus
+        if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
+            start()
+        } else {
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
+    var routingLocation: CLLocation? {
+        guard authorizationStatus == .authorizedAlways
+                || authorizationStatus == .authorizedWhenInUse,
+              fixQuality != .unavailable,
+              let location,
+              location.horizontalAccuracy >= 0,
+              location.horizontalAccuracy <= 65,
+              abs(location.timestamp.timeIntervalSinceNow) <= 20 else { return nil }
+        return location
+    }
+
+    var authorizationDenied: Bool {
+        authorizationStatus == .denied || authorizationStatus == .restricted
     }
 
     func start() {
@@ -59,6 +77,11 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         manager.stopUpdatingHeading()
         staleFixTimer?.invalidate()
         staleFixTimer = nil
+    }
+
+    func shutdown() {
+        setNavigationActive(false)
+        stop()
     }
 
     func setNavigationActive(_ active: Bool) {

@@ -57,11 +57,35 @@ struct RecordedVoiceCatalog {
     }
 }
 
-final class VoiceAlertService {
+final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesizerDelegate {
+    private enum PromptPriority: Int {
+        case preview = 10
+        case information = 30
+        case safetyAlert = 50
+        case overSpeed = 70
+        case navigation = 90
+        case criticalNavigation = 100
+    }
+
+    private struct PendingPrompt {
+        let id: String
+        let group: String
+        let recordedKey: String?
+        let fallbackText: String
+        let priority: PromptPriority
+        let expiresAt: Date
+        let sequence: Int
+    }
+
     private let synthesizer = AVSpeechSynthesizer()
     private let voice: AVSpeechSynthesisVoice?
     private let recordedCatalog = RecordedVoiceCatalog()
     private var audioPlayer: AVAudioPlayer?
+    private var activePrompt: PendingPrompt?
+    private var pendingPrompts: [PendingPrompt] = []
+    private var promptSequence = 0
+    private var isAudioInterrupted = false
+    private var interruptionObserver: NSObjectProtocol?
     private var lastAlertID: Int?
     private var lastSpokenAt = Date.distantPast
     private var announcedOverSpeed = false
@@ -69,7 +93,11 @@ final class VoiceAlertService {
     private var navigationStage = 0
     private var lastGPSAvailable: Bool?
 
-    var isEnabled = true
+    var isEnabled = true {
+        didSet {
+            if !isEnabled { stopAll() }
+        }
+    }
     var onDiagnostic: ((String) -> Void)?
 
     var voiceDescription: String {
@@ -84,18 +112,36 @@ final class VoiceAlertService {
         }
     }
 
-    init() {
+    override init() {
         voice = Self.bestVietnameseVoice()
+        super.init()
+        synthesizer.delegate = self
         configureAudioSession()
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleAudioInterruption(notification)
+        }
+    }
+
+    deinit {
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
     }
 
     func preview() {
-        if !playRecorded("preview", interrupt: true) {
-            speak(
-                "Xin chào, tôi sẽ nhắc đường và biển báo cho bạn trong suốt hành trình.",
-                interrupt: true
-            )
-        }
+        enqueue(
+            id: "preview",
+            group: "preview",
+            recordedKey: "preview",
+            fallbackText: "Xin chào, tôi sẽ nhắc đường và biển báo cho bạn trong suốt hành trình.",
+            priority: .preview,
+            lifetime: 15,
+            forceInterrupt: true
+        )
     }
 
     func announce(alert: DriveAlert) {
@@ -107,8 +153,6 @@ final class VoiceAlertService {
         let now = Date()
         guard lastAlertID != alert.id || now.timeIntervalSince(lastSpokenAt) > 90 else { return }
 
-        lastAlertID = alert.id
-        lastSpokenAt = now
         let distance = naturalDistance(alert.distanceMeters)
         let message: String
         let recordedKey: String?
@@ -138,20 +182,30 @@ final class VoiceAlertService {
             recordedKey = nil
             message = "Phía trước \(distance), \(alert.message.lowercased())."
         }
-        if let recordedKey, playRecorded(recordedKey) { return }
-        speak(message)
+        if enqueue(
+            id: "alert-\(alert.id)",
+            group: "alert-\(alert.id)",
+            recordedKey: recordedKey,
+            fallbackText: message,
+            priority: .safetyAlert,
+            lifetime: 18
+        ) {
+            lastAlertID = alert.id
+            lastSpokenAt = now
+        }
     }
 
     func updateOverSpeed(_ isOverSpeed: Bool, limit: Int) {
         guard isEnabled else { return }
         if isOverSpeed, !announcedOverSpeed, limit > 0 {
-            announcedOverSpeed = true
-            // A speed warning must not cut off an active turn instruction.
-            if !playRecorded("overspeed") {
-                speak(
-                    "Bạn đang chạy quá giới hạn \(limit). Vui lòng giảm tốc."
-                )
-            }
+            announcedOverSpeed = enqueue(
+                id: "overspeed-\(limit)",
+                group: "overspeed",
+                recordedKey: "overspeed",
+                fallbackText: "Bạn đang chạy quá giới hạn \(limit). Vui lòng giảm tốc.",
+                priority: .overSpeed,
+                lifetime: 12
+            )
         } else if !isOverSpeed {
             announcedOverSpeed = false
         }
@@ -172,24 +226,30 @@ final class VoiceAlertService {
             return
         }
         guard stage > navigationStage else { return }
-        navigationStage = stage
-        if let key = Self.maneuverPromptKey(step: step, stage: stage),
-           playRecorded(key) {
-            return
-        }
         let message = distanceMeters <= 80
             ? "Ngay phía trước, \(step.instruction.lowercased())."
             : "Sau \(naturalDistance(Double(distanceMeters))), \(step.instruction.lowercased())."
-        speak(message)
+        let accepted = enqueue(
+            id: "navigation-\(step.id)-\(stage)",
+            group: "navigation-step-\(step.id)",
+            recordedKey: Self.maneuverPromptKey(step: step, stage: stage),
+            fallbackText: message,
+            priority: stage == 2 ? .criticalNavigation : .navigation,
+            lifetime: stage == 2 ? 9 : 24
+        )
+        if accepted { navigationStage = stage }
     }
 
     func announceReroute() {
-        if !playRecorded("reroute", interrupt: true) {
-            speak(
-                "Bạn đã đi lệch tuyến. Đang tìm đường mới.",
-                interrupt: true
-            )
-        }
+        enqueue(
+            id: "reroute",
+            group: "navigation-status",
+            recordedKey: "reroute",
+            fallbackText: "Bạn đã đi lệch tuyến. Đang tìm đường mới.",
+            priority: .criticalNavigation,
+            lifetime: 12,
+            forceInterrupt: true
+        )
     }
 
     func announceArrival(modifier: String = "") {
@@ -197,9 +257,15 @@ final class VoiceAlertService {
         let key = normalized.contains("left")
             ? "arrival.left"
             : normalized.contains("right") ? "arrival.right" : "arrival"
-        if !playRecorded(key, interrupt: true) {
-            speak("Bạn đã đến điểm đến.", interrupt: true)
-        }
+        enqueue(
+            id: "arrival",
+            group: "navigation-status",
+            recordedKey: key,
+            fallbackText: "Bạn đã đến điểm đến.",
+            priority: .criticalNavigation,
+            lifetime: 15,
+            forceInterrupt: true
+        )
     }
 
     func updateGPSAvailability(_ isAvailable: Bool) {
@@ -207,13 +273,38 @@ final class VoiceAlertService {
         defer { lastGPSAvailable = isAvailable }
         guard lastGPSAvailable != nil else { return }
         let key = isAvailable ? "gps.found" : "gps.lost"
-        guard !playRecorded(key, interrupt: false) else { return }
-        speak(isAvailable ? "Đã tìm thấy tín hiệu GPS." : "Tín hiệu GPS yếu.")
+        enqueue(
+            id: key,
+            group: "gps-status",
+            recordedKey: key,
+            fallbackText: isAvailable ? "Đã tìm thấy tín hiệu GPS." : "Tín hiệu GPS yếu.",
+            priority: .information,
+            lifetime: 12
+        )
     }
 
     func resetNavigation() {
         navigationStepID = nil
         navigationStage = 0
+        pendingPrompts.removeAll { $0.group.hasPrefix("navigation-") }
+    }
+
+    func stopAll() {
+        pendingPrompts.removeAll()
+        activePrompt = nil
+        lastAlertID = nil
+        lastSpokenAt = .distantPast
+        announcedOverSpeed = false
+        navigationStepID = nil
+        navigationStage = 0
+        lastGPSAvailable = nil
+        audioPlayer?.delegate = nil
+        audioPlayer?.stop()
+        audioPlayer = nil
+        synthesizer.delegate = nil
+        synthesizer.stopSpeaking(at: .immediate)
+        synthesizer.delegate = self
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func speedPromptKey(limit: Int) -> String? {
@@ -239,29 +330,132 @@ final class VoiceAlertService {
         return "maneuver.\(timing).\(modifier)"
     }
 
-    private func playRecorded(_ key: String, interrupt: Bool = false) -> Bool {
-        guard isEnabled, let url = recordedCatalog?.url(for: key) else { return false }
-        if audioPlayer?.isPlaying == true {
-            guard interrupt else { return true }
-            audioPlayer?.stop()
+    @discardableResult
+    private func enqueue(
+        id: String,
+        group: String,
+        recordedKey: String?,
+        fallbackText: String,
+        priority: PromptPriority,
+        lifetime: TimeInterval,
+        forceInterrupt: Bool = false
+    ) -> Bool {
+        guard isEnabled else { return false }
+        promptSequence += 1
+        let prompt = PendingPrompt(
+            id: id,
+            group: group,
+            recordedKey: recordedKey,
+            fallbackText: fallbackText,
+            priority: priority,
+            expiresAt: Date().addingTimeInterval(lifetime),
+            sequence: promptSequence
+        )
+
+        pendingPrompts.removeAll { $0.id == id || $0.group == group }
+        if forceInterrupt || (activePrompt.map { priority.rawValue > $0.priority.rawValue } ?? false) {
+            cancelCurrentPlayback(requeue: false)
         }
-        if synthesizer.isSpeaking {
-            guard interrupt else { return true }
-            synthesizer.stopSpeaking(at: .immediate)
+        pendingPrompts.append(prompt)
+        pendingPrompts.sort {
+            if $0.priority.rawValue != $1.priority.rawValue {
+                return $0.priority.rawValue > $1.priority.rawValue
+            }
+            return $0.sequence < $1.sequence
         }
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            let player = try AVAudioPlayer(contentsOf: url)
+        if pendingPrompts.count > 10 {
+            pendingPrompts.removeLast(pendingPrompts.count - 10)
+        }
+        startNextPromptIfPossible()
+        return activePrompt?.id == id || pendingPrompts.contains { $0.id == id }
+    }
+
+    private func startNextPromptIfPossible() {
+        guard isEnabled, !isAudioInterrupted, activePrompt == nil else { return }
+        let now = Date()
+        pendingPrompts.removeAll { $0.expiresAt <= now }
+        guard !pendingPrompts.isEmpty else {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            return
+        }
+        let prompt = pendingPrompts.removeFirst()
+        activePrompt = prompt
+        try? AVAudioSession.sharedInstance().setActive(true)
+
+        if let key = prompt.recordedKey,
+           let url = recordedCatalog?.url(for: key),
+           let player = try? AVAudioPlayer(contentsOf: url) {
+            player.delegate = self
             player.volume = 1
             player.prepareToPlay()
             audioPlayer = player
-            let didPlay = player.play()
-            if didPlay { diagnose("MP3 VietMap · \(key) · \(url.lastPathComponent)") }
-            return didPlay
-        } catch {
-            diagnose("Lỗi MP3 \(key) · \(error.localizedDescription)")
-            return false
+            if player.play() {
+                diagnose("MP3 VietMap · \(key) · \(url.lastPathComponent)")
+                return
+            }
+            audioPlayer = nil
         }
+
+        let utterance = AVSpeechUtterance(string: prompt.fallbackText)
+        utterance.voice = voice
+        utterance.rate = 0.47
+        utterance.pitchMultiplier = 1.03
+        utterance.volume = 0.95
+        utterance.preUtteranceDelay = 0.08
+        utterance.postUtteranceDelay = 0.12
+        synthesizer.speak(utterance)
+        diagnose("TTS iOS · \(prompt.fallbackText)")
+    }
+
+    private func cancelCurrentPlayback(requeue: Bool) {
+        if requeue, let activePrompt, activePrompt.expiresAt > Date() {
+            pendingPrompts.append(activePrompt)
+        }
+        activePrompt = nil
+        audioPlayer?.delegate = nil
+        audioPlayer?.stop()
+        audioPlayer = nil
+        synthesizer.delegate = nil
+        synthesizer.stopSpeaking(at: .immediate)
+        synthesizer.delegate = self
+    }
+
+    private func finishActivePrompt() {
+        activePrompt = nil
+        audioPlayer = nil
+        startNextPromptIfPossible()
+    }
+
+    private func handleAudioInterruption(_ notification: Notification) {
+        guard let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
+        switch type {
+        case .began:
+            isAudioInterrupted = true
+            cancelCurrentPlayback(requeue: true)
+        case .ended:
+            isAudioInterrupted = false
+            startNextPromptIfPossible()
+        @unknown default:
+            break
+        }
+    }
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        finishActivePrompt()
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        if let error { diagnose("Lỗi phát MP3 · \(error.localizedDescription)") }
+        finishActivePrompt()
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        finishActivePrompt()
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        finishActivePrompt()
     }
 
     private func naturalDistance(_ meters: Double) -> String {
@@ -273,27 +467,6 @@ final class VoiceAlertService {
         }
         let rounded = max(50, Int((meters / 50).rounded()) * 50)
         return "khoảng \(rounded) mét"
-    }
-
-    private func speak(_ text: String, interrupt: Bool = false) {
-        guard isEnabled else { return }
-        if audioPlayer?.isPlaying == true {
-            guard interrupt else { return }
-            audioPlayer?.stop()
-        }
-        if synthesizer.isSpeaking {
-            guard interrupt else { return }
-            synthesizer.stopSpeaking(at: .immediate)
-        }
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice
-        utterance.rate = 0.47
-        utterance.pitchMultiplier = 1.03
-        utterance.volume = 0.95
-        utterance.preUtteranceDelay = 0.08
-        utterance.postUtteranceDelay = 0.12
-        synthesizer.speak(utterance)
-        diagnose("TTS iOS · \(text)")
     }
 
     static func isSilentTurnRestriction(_ alert: DriveAlert) -> Bool {

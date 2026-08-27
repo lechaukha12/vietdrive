@@ -42,6 +42,7 @@ final class AppSessionModel: ObservableObject {
     }
 
     func logout() {
+        NavigationSessionStore.shared.clear()
         username = ""
         stage = .login
     }

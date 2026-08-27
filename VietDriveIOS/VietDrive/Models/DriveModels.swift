@@ -84,19 +84,6 @@ struct DriveAlert: Identifiable, Equatable, Codable {
     }
 }
 
-struct DemoRoutePosition {
-    let coordinate: CLLocationCoordinate2D
-    let heading: Double
-    /// Chỉ dùng để điều khiển tốc độ xe mô phỏng. Đây không phải giới hạn
-    /// pháp lý và tuyệt đối không được đưa lên biển giới hạn tốc độ trong UI.
-    let simulatedCruisingSpeedKmh: Int
-    let speedSource: String
-    let roadName: String
-    let nextManeuver: NavigationStep?
-    let maneuverDistanceMeters: Int
-    let maneuverCoordinate: CLLocationCoordinate2D?
-}
-
 struct RoadOverlay: Identifiable {
     let id: Int
     let speedLimit: Int

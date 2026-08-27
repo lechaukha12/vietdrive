@@ -96,12 +96,6 @@ Sau khi host database, dùng `data_pipeline/package_release.py` và cấu hình
 sau khi kiểm tra kích thước, SHA-256 và `PRAGMA integrity_check`; bản trước được
 giữ lại để rollback.
 
-## Chạy thử không cần GPS
-
-Chọn điểm A và B, tìm tuyến rồi nhấn “Mô phỏng” để chạy chính geometry và
-chỉ dẫn của tuyến OSRM vừa chọn. Xe được nội suy liên tục ở 10 FPS và nén thời
-gian x8.
-
 ## Chẩn đoán và phát lại GPS
 
 Khi dẫn đường thật, app mặc định ghi GPS cục bộ và checkpoint mỗi 10 mẫu; giữ tối
@@ -153,8 +147,7 @@ Database schema v3 được bundle để phát triển nhưng VietDrive chủ đ
 `toll_booth`: nguồn hiện tại đánh dấu tất cả 5.517 đoạn đường là thu phí. Map-matching
 đoạn đường phục hồi chỉ bật cho 791 segment vượt quality gate. Giới hạn tốc độ
 trên HUD ưu tiên 29.980 way OSM có `maxspeed`, khớp theo khoảng cách, hướng
-tuyến và chiều `oneway`; giá trị ước lượng của mô phỏng không còn được trình bày
-như giới hạn pháp lý. Nếu đoạn đường không có `maxspeed` đáng tin cậy, HUD hiển thị
+tuyến và chiều `oneway`. Nếu đoạn đường không có `maxspeed` đáng tin cậy, HUD hiển thị
 `—`; VietDrive tuyệt đối không tự suy luận giới hạn tốc độ. Camera và biển tốc độ
 được dùng như lớp cảnh báo đã gắn hướng/tuyến khi metadata cho phép.
 Ngoài ra, 2.049 điểm tốc độ do người dùng cung cấp trong `speed_signs.geojson`

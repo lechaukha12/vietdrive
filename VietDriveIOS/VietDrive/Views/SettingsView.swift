@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("autoRecordDriveTrace") private var autoRecordDriveTrace = true
     @AppStorage("mapAppearance") private var mapAppearanceRaw = MapAppearance.automatic.rawValue
+    @State private var confirmOfflineMapRemoval = false
 
     var body: some View {
         NavigationStack {
@@ -19,7 +20,7 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 14) {
                         accountCard
-                        SettingsCard(title: "TRỢ LÝ MÂY", icon: "sparkles", tint: DriveTheme.pink) {
+                        SettingsCard(title: "TRẢI NGHIỆM", icon: "sparkles", tint: DriveTheme.pink) {
                             SettingsToggle(
                                 title: "Hiện mascot trên bản đồ",
                                 subtitle: "Mây phản ứng theo chỉ dẫn và cảnh báo",
@@ -41,9 +42,6 @@ struct SettingsView: View {
                                 tint: DriveTheme.mint,
                                 isOn: $hapticsEnabled
                             )
-                        }
-
-                        SettingsCard(title: "ÂM THANH", icon: "speaker.wave.2.fill", tint: DriveTheme.skyDeep) {
                             SettingsToggle(
                                 title: "Hướng dẫn bằng giọng nói",
                                 subtitle: model.voiceDescription,
@@ -136,7 +134,7 @@ struct SettingsView: View {
                                     .frame(width: 34, height: 34)
                                     .background(DriveTheme.mint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Dữ liệu offline v5 · map-data")
+                                    Text("Dữ liệu bản đồ offline · schema 6")
                                         .font(.subheadline.weight(.bold))
                                     Text("\(model.mapDataRoadLinkCount) đoạn đường · \(model.pendingReviewCount) chờ duyệt · \(model.datasetVersion)")
                                         .font(.caption2)
@@ -190,6 +188,33 @@ struct SettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            HStack(spacing: 8) {
+                                Button {
+                                    if model.offlineMapIsDownloading {
+                                        model.pauseOfflineMapDownload()
+                                    } else {
+                                        model.resumeOfflineMapDownload()
+                                    }
+                                } label: {
+                                    Label(
+                                        model.offlineMapIsDownloading ? "Tạm dừng" : "Tiếp tục",
+                                        systemImage: model.offlineMapIsDownloading ? "pause.fill" : "play.fill"
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(model.offlineMapPackCount == 0)
+
+                                Button(role: .destructive) {
+                                    confirmOfflineMapRemoval = true
+                                } label: {
+                                    Label("Xóa vùng", systemImage: "trash.fill")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(model.offlineMapPackCount == 0)
+                            }
+                            .font(.caption.weight(.bold))
                             if model.offlineMapProgress > 0, model.offlineMapProgress < 1 {
                                 ProgressView(value: model.offlineMapProgress)
                                     .tint(DriveTheme.skyDeep)
@@ -230,7 +255,7 @@ struct SettingsView: View {
                             .padding(.bottom, 10)
                         }
 
-                        SettingsCard(title: "PHÁT TRIỂN", icon: "hammer.fill", tint: DriveTheme.amber) {
+                        SettingsCard(title: "CHẨN ĐOÁN", icon: "stethoscope", tint: DriveTheme.amber) {
                             SettingsToggle(
                                 title: "Tự động ghi GPS khi dẫn đường",
                                 subtitle: "Giữ tối đa 10 hành trình trên thiết bị để tái hiện lỗi",
@@ -249,21 +274,10 @@ struct SettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            Button {
-                                model.toggleDemo()
-                                dismiss()
-                            } label: {
-                                SettingsActionRow(
-                                    title: model.isDemoActive ? "Dừng mô phỏng" : "Mô phỏng tuyến A → B đã chọn",
-                                    icon: model.isDemoActive ? "stop.fill" : "play.fill",
-                                    tint: model.isDemoActive ? DriveTheme.danger : DriveTheme.skyDeep
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(!model.isDemoActive && !model.canStartSimulation)
                         }
 
                         Button(role: .destructive) {
+                            model.endUserSession()
                             dismiss()
                             session.logout()
                         } label: {
@@ -293,12 +307,24 @@ struct SettingsView: View {
                 }
             }
             .onDisappear { model.refreshLayerVisibility() }
+            .confirmationDialog(
+                "Xóa toàn bộ vùng bản đồ offline?",
+                isPresented: $confirmOfflineMapRemoval,
+                titleVisibility: .visible
+            ) {
+                Button("Xóa toàn bộ", role: .destructive) {
+                    model.removeAllOfflineMaps()
+                }
+                Button("Hủy", role: .cancel) {}
+            } message: {
+                Text("Có thể tải lại các vùng này khi cần.")
+            }
         }
     }
 
     private var accountCard: some View {
         HStack(spacing: 14) {
-            MascotMayView(mood: .neutral, size: 76)
+            MascotMayView(mood: .neutral, size: 58)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Xin chào, \(session.username)!")
                     .font(.system(size: 21, weight: .black, design: .rounded))
@@ -311,7 +337,7 @@ struct SettingsView: View {
             Image(systemName: "checkmark.seal.fill")
                 .foregroundStyle(DriveTheme.skyDeep)
         }
-        .padding(15)
+        .padding(12)
         .background(.white.opacity(0.88), in: RoundedRectangle(cornerRadius: 24))
         .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white, lineWidth: 2))
         .shadow(color: DriveTheme.sky.opacity(0.15), radius: 14, y: 7)

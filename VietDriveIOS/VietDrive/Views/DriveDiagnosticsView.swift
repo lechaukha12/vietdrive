@@ -79,7 +79,7 @@ struct DriveDiagnosticsView: View {
                         }
                     }
                     if model.navigationRoute == nil {
-                        Text("Chọn một tuyến A → B trước khi phát lại để kiểm tra map matching và reroute.")
+                        Text("Chọn một tuyến trước khi phát lại hành trình GPS để kiểm tra map matching và đổi tuyến.")
                             .font(.caption2)
                             .foregroundStyle(DriveTheme.amber)
                     }
