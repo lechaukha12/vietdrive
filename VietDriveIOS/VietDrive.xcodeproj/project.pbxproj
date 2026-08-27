@@ -1,0 +1,1061 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01FBBAE066C6CB77E4376B9F /* gps_signal_lost.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */; };
+		02B692456DFBB6D1B7519980 /* gps_signal_found.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */; };
+		056318DA9E39B2AE1174D085 /* ConditionalRuleEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6EEF36BA745BB3F4DA4E57 /* ConditionalRuleEvaluator.swift */; };
+		05C307DBCF38BADB8BD1D0D9 /* turn_sharp_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D7264F433197FD11C04936BC /* turn_sharp_right.mp3 */; };
+		063860DEC23A007DCC208E00 /* DemoRouteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0B0868C9A0BEC207446949 /* DemoRouteServiceTests.swift */; };
+		0670C5BB86AB460043FC3FC0 /* 300_roundabout_9_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */; };
+		0A4487529D80950E867E0DEB /* roundabout_1_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6A0AA75142AD3FB4E86D2F48 /* roundabout_1_exit.mp3 */; };
+		0D264BA00009F36F8DB44082 /* NavigationSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC14D4C0C7A930920A11A8D /* NavigationSessionStore.swift */; };
+		0D6A573713A954825F800848 /* OfflineAlertStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69CAA30364223461585D5467 /* OfflineAlertStore.swift */; };
+		0F7EE2D784C802D7955A0B3F /* 300_turn_slight_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 32B69CA623729ECCF2B215CA /* 300_turn_slight_right.mp3 */; };
+		1042395B4E068A78D4C6C634 /* DemoRouteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64E864B371406DBA29F3E37B /* DemoRouteService.swift */; };
+		126DEA6A195DE9C6BA7B289E /* next_speed_30.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = CCC7B6A70F26B342E05F5D17 /* next_speed_30.mp3 */; };
+		129AFBCEE7A72A1A65AE7F50 /* DriveTraceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B6AA2A95AC35F4EB0AC173 /* DriveTraceStore.swift */; };
+		13E534ECBBEAD7A2AC1563DA /* next_speed_100.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 424754007711C49915BAA00A /* next_speed_100.mp3 */; };
+		157AE3111F9365CA37142B4E /* VoiceAlertServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */; };
+		1603DEFC5EB1EC2D76CD07A8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */; };
+		17FBD38D6024A051531ADB31 /* RouteProgressEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81CD9C93DD0A8D394A3CC4F /* RouteProgressEngine.swift */; };
+		1DC74A2756924D9D3D90427C /* checksums.json in Resources */ = {isa = PBXBuildFile; fileRef = 6818C28B868CE97BFF848EDC /* checksums.json */; };
+		1E26AB5BE76680D212CC9AB8 /* camera.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E00AF88B6424881DAA5534E3 /* camera.mp3 */; };
+		1F8B4C2BD9D1D950F748F3C5 /* tram_thu_phi.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 02200FB4D20E387CF2EDDC4B /* tram_thu_phi.mp3 */; };
+		23376E7DE37FFC73AE64243A /* current_speed_70.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C265F0F541F9E014EB9EA458 /* current_speed_70.mp3 */; };
+		2340804C6135AF4C66BB0C0B /* arriver.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3F1678484B12D70D862AC5EC /* arriver.mp3 */; };
+		23C918D308093F49CD0A9DF3 /* turn_straight.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 407333DD48A725A48C0E1493 /* turn_straight.mp3 */; };
+		260DA569525DF4C0F8AA3AED /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = D461EF256FDA501F55946F7B /* DriveTheme.swift */; };
+		26216200538365A5F98847D1 /* 300_roundabout_4_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F4806FB466AE56ADD288479A /* 300_roundabout_4_exit.mp3 */; };
+		26992EA25564BEBCF875C64C /* AppSessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2658DFA673DC7CA919913F2D /* AppSessionModel.swift */; };
+		2878A0ACA87B19FD41946830 /* camera_speed.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BF59AE28D930A4178EE01AF5 /* camera_speed.mp3 */; };
+		2F08E3640F8777386A9186BF /* RouteProgressEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */; };
+		30F316A6455290D225885C55 /* tram_dung.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 2A7F112C1C0F2E23141564A9 /* tram_dung.mp3 */; };
+		3106DDEF10CA5E58B8B7E06B /* 300_turn_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AC71249DF1FF0E9C1F906344 /* 300_turn_right.mp3 */; };
+		31CC29EBAB4361C8DB1EE2D8 /* VietDriveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE9626899B71BE33105846B9 /* VietDriveApp.swift */; };
+		321E10E9E5355FAD8AF879B6 /* current_speed_60.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8A4DA032094C6EDFACC47CC9 /* current_speed_60.mp3 */; };
+		3442D41CF5F45AB2EA80BF05 /* 300_roundabout_1_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */; };
+		3761FC99A273E895BA877344 /* roundabout_4_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 74DE014F859EDD4D06ECF585 /* roundabout_4_exit.mp3 */; };
+		3B53114593C7A9631DE3090B /* roundabout_6_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 50505B13873D24876F43D006 /* roundabout_6_exit.mp3 */; };
+		3E7E26C165DFD314A4CE453A /* vao_kdc.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 80850E3065CF43CDFD21C8C8 /* vao_kdc.mp3 */; };
+		435A30BF45CCDF6BA18C559D /* DriveModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665EF9810DD5F8898A74B82B /* DriveModels.swift */; };
+		4BA8D51547AF6D187F07A0A2 /* next_speed_40.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DA84870A4D7331840C62DFA4 /* next_speed_40.mp3 */; };
+		4CC141156B254F1E243EF42F /* OpenMapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88A455388EBD8EA48C02C0B /* OpenMapService.swift */; };
+		4FF2440929916CB75B321CF6 /* current_speed_100.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 52876583CCC56135DFAAD4A6 /* current_speed_100.mp3 */; };
+		52398727FCD7D5566E08842F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */; };
+		53D5908C405A8FAD8E42C09A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */; };
+		55551F479CE912DA4F4B8271 /* MapDataIssueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */; };
+		566460781F07231B87FAC06E /* current_speed_120.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E7C093D86C236D702018990C /* current_speed_120.mp3 */; };
+		5A39AE21A1E3E3D0DA2380D6 /* turn_uturn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 039A7DB72BE1757A37B0A969 /* turn_uturn.mp3 */; };
+		5C7043D0F226DCF078A88689 /* roundabout_8_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 403F61888A827751BF8A0DF2 /* roundabout_8_exit.mp3 */; };
+		5EC11F63F8143BD276638103 /* next_speed_50.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */; };
+		5EF174C6EE2EEC7BAD9412D7 /* reroute_warning.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A2A17B291C781AF8C962324C /* reroute_warning.mp3 */; };
+		601117A727BB0E263109A832 /* turn_sharp_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 967DC79A62818FFA2C5BC173 /* turn_sharp_left.mp3 */; };
+		623BA2FCCC8261544A999CE1 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 69508DA54CD280AEFB01F962 /* README.md */; };
+		66EC62C6A94B69C4D6916CCE /* roundabout_9_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FB8A66BFA98F13B23B22CF88 /* roundabout_9_exit.mp3 */; };
+		67386064209AC6C6D0E84120 /* turn_slight_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A670B080C717890E22ECC0B0 /* turn_slight_left.mp3 */; };
+		67F49306201FA0DE6173F2F7 /* roundabout_7_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 03A83A7E6F71CC81DB274944 /* roundabout_7_exit.mp3 */; };
+		6B38EA0A459BA424BD235626 /* next_speed_80.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 37C541CC8BB9D7898F953872 /* next_speed_80.mp3 */; };
+		6CA873D43C2DB4E9E2F6F050 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 1FE3A8D2C4171622E4DAE0E4 /* manifest.json */; };
+		6D48FD0A20143569F54D7A8A /* 300_turn_sharp_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 487BA93720BEFA1E49C5E944 /* 300_turn_sharp_right.mp3 */; };
+		703596EC96F7B87875308C31 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1C8A032C6C84C8A2A635E /* LocationService.swift */; };
+		7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCAAC75F8A45D2197B261487 /* LoginView.swift */; };
+		76B0ED6928CFA2888FFE120D /* DriveTraceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4175472EEF8F66B2E9A650 /* DriveTraceStoreTests.swift */; };
+		7796417A4C230D30AE29E040 /* VoiceAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D5DB0398FE92B60556D17F2 /* VoiceAlertService.swift */; };
+		79506FC76A5C3B8A130DAAC9 /* arriver_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 82FA6A151A1B29A2F6F66E1A /* arriver_right.mp3 */; };
+		7A7EEE88449C6E909C2EE1FC /* map_database_v2.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 64599A3B3078CDCAF1830A5F /* map_database_v2.sqlite */; };
+		7ECE0519CD3F24B6889628D7 /* 300_turn_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 9F3C35DE163CFDD58029E836 /* 300_turn_left.mp3 */; };
+		80D48A64D1E4DE0E0614A38D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF3AF62A43A3BDEC2A64B0A /* SettingsView.swift */; };
+		833AC7CB9070B0C75A297AF1 /* ConditionalRuleEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF2EEAB3CDDD6BCBFD4A9E1 /* ConditionalRuleEvaluatorTests.swift */; };
+		86618841A134F0E01E31991C /* turn_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DD3263C04CFE05523D6B7BA6 /* turn_right.mp3 */; };
+		8697088539792EB238465E01 /* ra_cam_vuot.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 09A6866DD0EFA9EA155D2B47 /* ra_cam_vuot.mp3 */; };
+		86B7004E076C05E7F2DF0721 /* AppSessionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A8B1E5C3911A525E29EA52 /* AppSessionModelTests.swift */; };
+		86C65AB2473E615FEF0E2617 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C17271717DE113C085BA13E4 /* libsqlite3.tbd */; };
+		88A1486AD57632C14193105F /* camera_ai.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 618B6C80C6D45CC262C7BF74 /* camera_ai.mp3 */; };
+		88CC539F60822D060A915D02 /* roundabout_2_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1E85BDEC21D2302F5627C1F6 /* roundabout_2_exit.mp3 */; };
+		8B5F5114CCAA0FCB708CDC0B /* arriver_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C70D8D2F57351CC2E6930D11 /* arriver_left.mp3 */; };
+		8C60CEA8F1F4E6EA21BCB40D /* 300_roundabout_5_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 12F27D2B122F30A8612AC2A6 /* 300_roundabout_5_exit.mp3 */; };
+		8C800796C758C02B5A5A8E79 /* 300_turn_straight.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 66F374D9F9F8A6818428C668 /* 300_turn_straight.mp3 */; };
+		8F7D4FD0EA3DA6FEF9D607F5 /* next_speed_60.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 005232845C943AE36B4B6A6F /* next_speed_60.mp3 */; };
+		946F1D6DAE74C1D0FE126CEA /* current_speed_80.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6996A8EACAFF5C257A8D5CE4 /* current_speed_80.mp3 */; };
+		95194B893F70520EEC915422 /* 300_roundabout_8_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6634E8C27DBA30F112A7AA73 /* 300_roundabout_8_exit.mp3 */; };
+		97F1B3B63BCF6761CFDFE3A8 /* roundabout_5_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = ADF2DB81A7534D7F30C1C5CF /* roundabout_5_exit.mp3 */; };
+		98AC7135F9759F3F7D1EF1B4 /* CommunityContributionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FF47F64EA327E0A42204F0 /* CommunityContributionStore.swift */; };
+		98C8C714421C21D85BFF4DC6 /* giao_duong_sat.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 72B41277E0D182011867F6E7 /* giao_duong_sat.mp3 */; };
+		9981DA3582783B5DA1C785B1 /* turn_slight_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7225606A3CB9A1563CF39A61 /* turn_slight_right.mp3 */; };
+		9F668B2CD0B782D9A25CA835 /* 300_roundabout_7_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DE47F7BE22CD00F717CDC2F5 /* 300_roundabout_7_exit.mp3 */; };
+		A07453385171CB9C54347FE1 /* under_min_speed.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 692F1A0B4B37253DC5411932 /* under_min_speed.mp3 */; };
+		A20113F8E79C34C69E338B19 /* current_speed_40.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4730EFAE19FD71564C2D1981 /* current_speed_40.mp3 */; };
+		A6748BAABE44CC78F62BF7BA /* over_speed_limit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AC0050630447603F35DF0844 /* over_speed_limit.mp3 */; };
+		A83E827C2E140E1664E8421F /* DriveDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */; };
+		AA2AAC3D3D188E43DE52B82A /* MapDataIssueStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CA24E19E3053E0CB3F3697 /* MapDataIssueStoreTests.swift */; };
+		ADD837C905F62EB160D895B1 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = BEB695E4D317736BB92B56F5 /* MapLibre */; };
+		AE6F175BA85228A02D1384F2 /* vao_duong_ham.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FA6C43C2202DD455619929CB /* vao_duong_ham.mp3 */; };
+		AF9687343C039FB2E4ED9A5C /* 300_turn_sharp_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 563F20055180729E60C4FAE9 /* 300_turn_sharp_left.mp3 */; };
+		B0490BADFB3783F2B16BF671 /* DriveDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */; };
+		BC5C89FD659E64F0E6A18505 /* OfflineMapDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED353CE5044CA33BC4C1C1F8 /* OfflineMapDownloadService.swift */; };
+		BD6313388521070470DF435E /* CommunityContribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD997E12F042C0E2ED831526 /* CommunityContribution.swift */; };
+		BD76DB2F04CA346A18FDF47D /* CartoonBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6E1017441077FB642EAAC4 /* CartoonBackground.swift */; };
+		BDB143EB1A151C04D9CF3959 /* turn_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */; };
+		BF43592EEDAAAC273C9665AB /* camera_traffic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C4EB0CF04C38FF87E9533F45 /* camera_traffic.mp3 */; };
+		C0EAA26FA74241EF46C53382 /* roundabout_3_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F0B46BE91EF43F8C68F72DF2 /* roundabout_3_exit.mp3 */; };
+		C1608D5BABB436C00CCD8A19 /* DestinationSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */; };
+		C2317119A635150450A063D1 /* DriveViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D0734533CFF9C22A5EF49 /* DriveViewModel.swift */; };
+		C28EA844580DF35A82D09A46 /* MascotMayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3119761D74686B55C2D3B5E3 /* MascotMayView.swift */; };
+		C6B1FC9A46ED361F791211AC /* CommunityContributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770CAA2831742E04EC1DA658 /* CommunityContributionTests.swift */; };
+		CDDBDA9030092C7DA550896A /* next_speed_120.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */; };
+		D2B6DFF3603D883253317158 /* MapDataUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B80F01997377BDCF33E54C3 /* MapDataUpdateService.swift */; };
+		D41C7129F0A6BE44439F8CC7 /* next_speed_70.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5164DB194CCD4E5D1FD07751 /* next_speed_70.mp3 */; };
+		D63D96165E126CB3DDDB6D59 /* current_speed_30.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C85831FAEB14AC675D784B76 /* current_speed_30.mp3 */; };
+		DA112C10426906B0D4DE4060 /* CommunityImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078E5FC3F125000C257C0B1A /* CommunityImportParser.swift */; };
+		DA264656AEE8DD144E3982AD /* current_speed_90.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 9F8E603C571267343DFDD391 /* current_speed_90.mp3 */; };
+		DB20B5C069F93FA97DFA85CD /* 300_turn_slight_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 12B3CBD8B114A3CF1599F720 /* 300_turn_slight_left.mp3 */; };
+		E1EEA6EB3A8C58507EB1AE0F /* 300_roundabout_2_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 45004A54AF6DC7BD1275CFB2 /* 300_roundabout_2_exit.mp3 */; };
+		E4E519804060B0FA1C867EC1 /* 300_turn_uturn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1EC0270144845C4506385A42 /* 300_turn_uturn.mp3 */; };
+		E60C21A307596BBC85667E4C /* OpenMapServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */; };
+		E655139CCB50CC52E1A2D958 /* MapLibreMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531B98E431655712CE17EEE2 /* MapLibreMapView.swift */; };
+		E7A19DAE36EBB28E07316E0A /* ra_kdc.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4082F190F5B6C8FBDABFEE6E /* ra_kdc.mp3 */; };
+		E7C0DBAEF4FCDAF5B087BFB6 /* data_manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 4A1F523D26F943F374A3BA5B /* data_manifest.json */; };
+		E95C6A92CF16E5F4B4A34BA6 /* next_speed_90.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AB078BEA7FF1C82B8FC2F407 /* next_speed_90.mp3 */; };
+		EA8BFA706A350DCACFB33CC2 /* CommunityDataHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60FA858DF334B86BCFD1B33 /* CommunityDataHubView.swift */; };
+		EBA690C2CCBEC35951B8E2F3 /* tpms_error.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1AB230D9AF8EDB8C42D61684 /* tpms_error.mp3 */; };
+		F0D39C1B7ECDEC5147A08895 /* 300_roundabout_3_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */; };
+		F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */; };
+		F6BDE8997ED9122C9CB6EDB4 /* current_speed_50.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D76256E1179B32B3ABDAAFF3 /* current_speed_50.mp3 */; };
+		FABE366CD63509E242F57B65 /* vao_cam_vuot.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */; };
+		FBC9379D06F018EAF741CF26 /* NavigationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */; };
+		FD4B5BD890B0381226704263 /* 300_roundabout_6_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 96E57D9D0DB147FD62DC7B25 /* 300_roundabout_6_exit.mp3 */; };
+		FE7B304E138FA17A0A42E649 /* kiem_tra_toc_do.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F2CE834464D421999678060F /* kiem_tra_toc_do.mp3 */; };
+		FF1C8A2EBA4F4D9F42499FC3 /* tram_dung_cao_toc.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C03B59236FDB462DCD4F81E8 /* tram_dung_cao_toc.mp3 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		97E2C3975FA76E2DF6381B64 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FBBE9D548DA84D42518E1A78 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F0560B2EB873D72FB799D3B;
+			remoteInfo = VietDrive;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		005232845C943AE36B4B6A6F /* next_speed_60.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_60.mp3; sourceTree = "<group>"; };
+		01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_120.mp3; sourceTree = "<group>"; };
+		021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_50.mp3; sourceTree = "<group>"; };
+		02200FB4D20E387CF2EDDC4B /* tram_thu_phi.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = tram_thu_phi.mp3; sourceTree = "<group>"; };
+		039A7DB72BE1757A37B0A969 /* turn_uturn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_uturn.mp3; sourceTree = "<group>"; };
+		03A83A7E6F71CC81DB274944 /* roundabout_7_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_7_exit.mp3; sourceTree = "<group>"; };
+		078E5FC3F125000C257C0B1A /* CommunityImportParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityImportParser.swift; sourceTree = "<group>"; };
+		09A6866DD0EFA9EA155D2B47 /* ra_cam_vuot.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = ra_cam_vuot.mp3; sourceTree = "<group>"; };
+		0B80F01997377BDCF33E54C3 /* MapDataUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDataUpdateService.swift; sourceTree = "<group>"; };
+		0E0D0734533CFF9C22A5EF49 /* DriveViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveViewModel.swift; sourceTree = "<group>"; };
+		12B3CBD8B114A3CF1599F720 /* 300_turn_slight_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_slight_left.mp3; sourceTree = "<group>"; };
+		12F27D2B122F30A8612AC2A6 /* 300_roundabout_5_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_5_exit.mp3; sourceTree = "<group>"; };
+		18FF47F64EA327E0A42204F0 /* CommunityContributionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityContributionStore.swift; sourceTree = "<group>"; };
+		1AB230D9AF8EDB8C42D61684 /* tpms_error.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = tpms_error.mp3; sourceTree = "<group>"; };
+		1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_1_exit.mp3; sourceTree = "<group>"; };
+		1E85BDEC21D2302F5627C1F6 /* roundabout_2_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_2_exit.mp3; sourceTree = "<group>"; };
+		1EC0270144845C4506385A42 /* 300_turn_uturn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_uturn.mp3; sourceTree = "<group>"; };
+		1FE3A8D2C4171622E4DAE0E4 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		1FF2EEAB3CDDD6BCBFD4A9E1 /* ConditionalRuleEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionalRuleEvaluatorTests.swift; sourceTree = "<group>"; };
+		2658DFA673DC7CA919913F2D /* AppSessionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSessionModel.swift; sourceTree = "<group>"; };
+		2A7F112C1C0F2E23141564A9 /* tram_dung.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = tram_dung.mp3; sourceTree = "<group>"; };
+		2D5DB0398FE92B60556D17F2 /* VoiceAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAlertService.swift; sourceTree = "<group>"; };
+		3119761D74686B55C2D3B5E3 /* MascotMayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotMayView.swift; sourceTree = "<group>"; };
+		32B69CA623729ECCF2B215CA /* 300_turn_slight_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_slight_right.mp3; sourceTree = "<group>"; };
+		34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = gps_signal_lost.mp3; sourceTree = "<group>"; };
+		37C541CC8BB9D7898F953872 /* next_speed_80.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_80.mp3; sourceTree = "<group>"; };
+		3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_left.mp3; sourceTree = "<group>"; };
+		3F1678484B12D70D862AC5EC /* arriver.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = arriver.mp3; sourceTree = "<group>"; };
+		3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_9_exit.mp3; sourceTree = "<group>"; };
+		403F61888A827751BF8A0DF2 /* roundabout_8_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_8_exit.mp3; sourceTree = "<group>"; };
+		407333DD48A725A48C0E1493 /* turn_straight.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_straight.mp3; sourceTree = "<group>"; };
+		4082F190F5B6C8FBDABFEE6E /* ra_kdc.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = ra_kdc.mp3; sourceTree = "<group>"; };
+		424754007711C49915BAA00A /* next_speed_100.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_100.mp3; sourceTree = "<group>"; };
+		45004A54AF6DC7BD1275CFB2 /* 300_roundabout_2_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_2_exit.mp3; sourceTree = "<group>"; };
+		4730EFAE19FD71564C2D1981 /* current_speed_40.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_40.mp3; sourceTree = "<group>"; };
+		487BA93720BEFA1E49C5E944 /* 300_turn_sharp_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_sharp_right.mp3; sourceTree = "<group>"; };
+		4A1F523D26F943F374A3BA5B /* data_manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = data_manifest.json; sourceTree = "<group>"; };
+		4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VietDriveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		50505B13873D24876F43D006 /* roundabout_6_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_6_exit.mp3; sourceTree = "<group>"; };
+		5164DB194CCD4E5D1FD07751 /* next_speed_70.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_70.mp3; sourceTree = "<group>"; };
+		52876583CCC56135DFAAD4A6 /* current_speed_100.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_100.mp3; sourceTree = "<group>"; };
+		531B98E431655712CE17EEE2 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
+		563F20055180729E60C4FAE9 /* 300_turn_sharp_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_sharp_left.mp3; sourceTree = "<group>"; };
+		56A8B1E5C3911A525E29EA52 /* AppSessionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSessionModelTests.swift; sourceTree = "<group>"; };
+		58CA24E19E3053E0CB3F3697 /* MapDataIssueStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDataIssueStoreTests.swift; sourceTree = "<group>"; };
+		5A0B0868C9A0BEC207446949 /* DemoRouteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRouteServiceTests.swift; sourceTree = "<group>"; };
+		5AC14D4C0C7A930920A11A8D /* NavigationSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationSessionStore.swift; sourceTree = "<group>"; };
+		5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAlertServiceTests.swift; sourceTree = "<group>"; };
+		618B6C80C6D45CC262C7BF74 /* camera_ai.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera_ai.mp3; sourceTree = "<group>"; };
+		63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_3_exit.mp3; sourceTree = "<group>"; };
+		63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMapServiceTests.swift; sourceTree = "<group>"; };
+		64599A3B3078CDCAF1830A5F /* map_database_v2.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = map_database_v2.sqlite; sourceTree = "<group>"; };
+		64E864B371406DBA29F3E37B /* DemoRouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRouteService.swift; sourceTree = "<group>"; };
+		6634E8C27DBA30F112A7AA73 /* 300_roundabout_8_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_8_exit.mp3; sourceTree = "<group>"; };
+		665EF9810DD5F8898A74B82B /* DriveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveModels.swift; sourceTree = "<group>"; };
+		66F374D9F9F8A6818428C668 /* 300_turn_straight.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_straight.mp3; sourceTree = "<group>"; };
+		6818C28B868CE97BFF848EDC /* checksums.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = checksums.json; sourceTree = "<group>"; };
+		68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteProgressEngineTests.swift; sourceTree = "<group>"; };
+		692F1A0B4B37253DC5411932 /* under_min_speed.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = under_min_speed.mp3; sourceTree = "<group>"; };
+		69508DA54CD280AEFB01F962 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		6996A8EACAFF5C257A8D5CE4 /* current_speed_80.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_80.mp3; sourceTree = "<group>"; };
+		69CAA30364223461585D5467 /* OfflineAlertStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAlertStore.swift; sourceTree = "<group>"; };
+		6A0AA75142AD3FB4E86D2F48 /* roundabout_1_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_1_exit.mp3; sourceTree = "<group>"; };
+		6BC9B3028623FBD213A465EE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7225606A3CB9A1563CF39A61 /* turn_slight_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_slight_right.mp3; sourceTree = "<group>"; };
+		72B41277E0D182011867F6E7 /* giao_duong_sat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = giao_duong_sat.mp3; sourceTree = "<group>"; };
+		74DE014F859EDD4D06ECF585 /* roundabout_4_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_4_exit.mp3; sourceTree = "<group>"; };
+		75A1C8A032C6C84C8A2A635E /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		770CAA2831742E04EC1DA658 /* CommunityContributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityContributionTests.swift; sourceTree = "<group>"; };
+		7AF3AF62A43A3BDEC2A64B0A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		80850E3065CF43CDFD21C8C8 /* vao_kdc.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = vao_kdc.mp3; sourceTree = "<group>"; };
+		82FA6A151A1B29A2F6F66E1A /* arriver_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = arriver_right.mp3; sourceTree = "<group>"; };
+		8A4DA032094C6EDFACC47CC9 /* current_speed_60.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_60.mp3; sourceTree = "<group>"; };
+		8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDataIssueStore.swift; sourceTree = "<group>"; };
+		967DC79A62818FFA2C5BC173 /* turn_sharp_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_sharp_left.mp3; sourceTree = "<group>"; };
+		96E57D9D0DB147FD62DC7B25 /* 300_roundabout_6_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_6_exit.mp3; sourceTree = "<group>"; };
+		9F3C35DE163CFDD58029E836 /* 300_turn_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_left.mp3; sourceTree = "<group>"; };
+		9F4C61464CA9138E80E34CAB /* VietDrive.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VietDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F8E603C571267343DFDD391 /* current_speed_90.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_90.mp3; sourceTree = "<group>"; };
+		A2A17B291C781AF8C962324C /* reroute_warning.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = reroute_warning.mp3; sourceTree = "<group>"; };
+		A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationSearchView.swift; sourceTree = "<group>"; };
+		A670B080C717890E22ECC0B0 /* turn_slight_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_slight_left.mp3; sourceTree = "<group>"; };
+		AB078BEA7FF1C82B8FC2F407 /* next_speed_90.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_90.mp3; sourceTree = "<group>"; };
+		AC0050630447603F35DF0844 /* over_speed_limit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = over_speed_limit.mp3; sourceTree = "<group>"; };
+		AC71249DF1FF0E9C1F906344 /* 300_turn_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_right.mp3; sourceTree = "<group>"; };
+		ADF2DB81A7534D7F30C1C5CF /* roundabout_5_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_5_exit.mp3; sourceTree = "<group>"; };
+		AE4175472EEF8F66B2E9A650 /* DriveTraceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTraceStoreTests.swift; sourceTree = "<group>"; };
+		B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAlertStoreTests.swift; sourceTree = "<group>"; };
+		BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModels.swift; sourceTree = "<group>"; };
+		BF59AE28D930A4178EE01AF5 /* camera_speed.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera_speed.mp3; sourceTree = "<group>"; };
+		BF6EEF36BA745BB3F4DA4E57 /* ConditionalRuleEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionalRuleEvaluator.swift; sourceTree = "<group>"; };
+		C03B59236FDB462DCD4F81E8 /* tram_dung_cao_toc.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = tram_dung_cao_toc.mp3; sourceTree = "<group>"; };
+		C17271717DE113C085BA13E4 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		C265F0F541F9E014EB9EA458 /* current_speed_70.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_70.mp3; sourceTree = "<group>"; };
+		C4EB0CF04C38FF87E9533F45 /* camera_traffic.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera_traffic.mp3; sourceTree = "<group>"; };
+		C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveDiagnosticsView.swift; sourceTree = "<group>"; };
+		C70D8D2F57351CC2E6930D11 /* arriver_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = arriver_left.mp3; sourceTree = "<group>"; };
+		C85831FAEB14AC675D784B76 /* current_speed_30.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_30.mp3; sourceTree = "<group>"; };
+		C88A455388EBD8EA48C02C0B /* OpenMapService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMapService.swift; sourceTree = "<group>"; };
+		C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = gps_signal_found.mp3; sourceTree = "<group>"; };
+		CCC7B6A70F26B342E05F5D17 /* next_speed_30.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_30.mp3; sourceTree = "<group>"; };
+		CE6E1017441077FB642EAAC4 /* CartoonBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartoonBackground.swift; sourceTree = "<group>"; };
+		D461EF256FDA501F55946F7B /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
+		D5B6AA2A95AC35F4EB0AC173 /* DriveTraceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTraceStore.swift; sourceTree = "<group>"; };
+		D7264F433197FD11C04936BC /* turn_sharp_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_sharp_right.mp3; sourceTree = "<group>"; };
+		D76256E1179B32B3ABDAAFF3 /* current_speed_50.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_50.mp3; sourceTree = "<group>"; };
+		DA84870A4D7331840C62DFA4 /* next_speed_40.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_40.mp3; sourceTree = "<group>"; };
+		DCAAC75F8A45D2197B261487 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		DD3263C04CFE05523D6B7BA6 /* turn_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_right.mp3; sourceTree = "<group>"; };
+		DD997E12F042C0E2ED831526 /* CommunityContribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityContribution.swift; sourceTree = "<group>"; };
+		DE47F7BE22CD00F717CDC2F5 /* 300_roundabout_7_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_7_exit.mp3; sourceTree = "<group>"; };
+		DE9626899B71BE33105846B9 /* VietDriveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietDriveApp.swift; sourceTree = "<group>"; };
+		E00AF88B6424881DAA5534E3 /* camera.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera.mp3; sourceTree = "<group>"; };
+		E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		E7C093D86C236D702018990C /* current_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_120.mp3; sourceTree = "<group>"; };
+		E81CD9C93DD0A8D394A3CC4F /* RouteProgressEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteProgressEngine.swift; sourceTree = "<group>"; };
+		ED353CE5044CA33BC4C1C1F8 /* OfflineMapDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMapDownloadService.swift; sourceTree = "<group>"; };
+		EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = vao_cam_vuot.mp3; sourceTree = "<group>"; };
+		F0B46BE91EF43F8C68F72DF2 /* roundabout_3_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_3_exit.mp3; sourceTree = "<group>"; };
+		F2CE834464D421999678060F /* kiem_tra_toc_do.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = kiem_tra_toc_do.mp3; sourceTree = "<group>"; };
+		F4806FB466AE56ADD288479A /* 300_roundabout_4_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_4_exit.mp3; sourceTree = "<group>"; };
+		F60FA858DF334B86BCFD1B33 /* CommunityDataHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityDataHubView.swift; sourceTree = "<group>"; };
+		FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveDashboardView.swift; sourceTree = "<group>"; };
+		FA6C43C2202DD455619929CB /* vao_duong_ham.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = vao_duong_ham.mp3; sourceTree = "<group>"; };
+		FB8A66BFA98F13B23B22CF88 /* roundabout_9_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_9_exit.mp3; sourceTree = "<group>"; };
+		FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3BFA267B871B1663A0599AA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ADD837C905F62EB160D895B1 /* MapLibre in Frameworks */,
+				86C65AB2473E615FEF0E2617 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		053336E61858F37F7CCEFA73 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				18FF47F64EA327E0A42204F0 /* CommunityContributionStore.swift */,
+				078E5FC3F125000C257C0B1A /* CommunityImportParser.swift */,
+				BF6EEF36BA745BB3F4DA4E57 /* ConditionalRuleEvaluator.swift */,
+				64E864B371406DBA29F3E37B /* DemoRouteService.swift */,
+				D5B6AA2A95AC35F4EB0AC173 /* DriveTraceStore.swift */,
+				75A1C8A032C6C84C8A2A635E /* LocationService.swift */,
+				8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */,
+				0B80F01997377BDCF33E54C3 /* MapDataUpdateService.swift */,
+				5AC14D4C0C7A930920A11A8D /* NavigationSessionStore.swift */,
+				69CAA30364223461585D5467 /* OfflineAlertStore.swift */,
+				ED353CE5044CA33BC4C1C1F8 /* OfflineMapDownloadService.swift */,
+				C88A455388EBD8EA48C02C0B /* OpenMapService.swift */,
+				E81CD9C93DD0A8D394A3CC4F /* RouteProgressEngine.swift */,
+				2D5DB0398FE92B60556D17F2 /* VoiceAlertService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		34BF9761486DA3E9F34ED54E /* VietDrive */ = {
+			isa = PBXGroup;
+			children = (
+				5C2192F6C25A20723D9BA5CD /* App */,
+				D8A5C9B35666F64CDF8CE0D9 /* Design */,
+				D7B60931320F5FEB8C08E128 /* Map */,
+				505FB4833EAF445CDC69F7DF /* Models */,
+				6B8C826A305C91F0EB9A09F0 /* Resources */,
+				053336E61858F37F7CCEFA73 /* Services */,
+				B032066725F112959FDB9A3B /* Support */,
+				ABBF6CC78099B48078A0529F /* ViewModels */,
+				BBF47BA98066CDC2B1ABD222 /* Views */,
+			);
+			path = VietDrive;
+			sourceTree = "<group>";
+		};
+		505FB4833EAF445CDC69F7DF /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				DD997E12F042C0E2ED831526 /* CommunityContribution.swift */,
+				665EF9810DD5F8898A74B82B /* DriveModels.swift */,
+				BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		5C2192F6C25A20723D9BA5CD /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2658DFA673DC7CA919913F2D /* AppSessionModel.swift */,
+				DE9626899B71BE33105846B9 /* VietDriveApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		65E9BDECB6B48BF4DBF4B575 = {
+			isa = PBXGroup;
+			children = (
+				A6EA0D45D01239A816C65E7C /* project-map */,
+				34BF9761486DA3E9F34ED54E /* VietDrive */,
+				E25B4C10777ECBBFE22A109F /* VietDriveTests */,
+				C5D5D0D2782367EAF2731CB2 /* Frameworks */,
+				E3296AB722930621C680813A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6B8C826A305C91F0EB9A09F0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */,
+				EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */,
+				A137781CB8785A6DFA327F2B /* VoicePacks */,
+				79D007B5FE941A6D82CEFAE5 /* VoicePrompts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		79D007B5FE941A6D82CEFAE5 /* VoicePrompts */ = {
+			isa = PBXGroup;
+			children = (
+				1FE3A8D2C4171622E4DAE0E4 /* manifest.json */,
+				69508DA54CD280AEFB01F962 /* README.md */,
+			);
+			path = VoicePrompts;
+			sourceTree = "<group>";
+		};
+		A137781CB8785A6DFA327F2B /* VoicePacks */ = {
+			isa = PBXGroup;
+			children = (
+				EA44C10C7F2315CBCB509353 /* south_female_1 */,
+			);
+			path = VoicePacks;
+			sourceTree = "<group>";
+		};
+		A1AE32AF5DC4DE10225D324D /* extracted */ = {
+			isa = PBXGroup;
+			children = (
+				4A1F523D26F943F374A3BA5B /* data_manifest.json */,
+				64599A3B3078CDCAF1830A5F /* map_database_v2.sqlite */,
+			);
+			path = extracted;
+			sourceTree = "<group>";
+		};
+		A6EA0D45D01239A816C65E7C /* project-map */ = {
+			isa = PBXGroup;
+			children = (
+				A1AE32AF5DC4DE10225D324D /* extracted */,
+			);
+			name = "project-map";
+			path = ..;
+			sourceTree = "<group>";
+		};
+		ABBF6CC78099B48078A0529F /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0E0D0734533CFF9C22A5EF49 /* DriveViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B032066725F112959FDB9A3B /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				6BC9B3028623FBD213A465EE /* Info.plist */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		BBF47BA98066CDC2B1ABD222 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CE6E1017441077FB642EAAC4 /* CartoonBackground.swift */,
+				F60FA858DF334B86BCFD1B33 /* CommunityDataHubView.swift */,
+				A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */,
+				FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */,
+				C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */,
+				DCAAC75F8A45D2197B261487 /* LoginView.swift */,
+				3119761D74686B55C2D3B5E3 /* MascotMayView.swift */,
+				E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */,
+				7AF3AF62A43A3BDEC2A64B0A /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C5D5D0D2782367EAF2731CB2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C17271717DE113C085BA13E4 /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D7B60931320F5FEB8C08E128 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				531B98E431655712CE17EEE2 /* MapLibreMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		D8A5C9B35666F64CDF8CE0D9 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				D461EF256FDA501F55946F7B /* DriveTheme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		E25B4C10777ECBBFE22A109F /* VietDriveTests */ = {
+			isa = PBXGroup;
+			children = (
+				56A8B1E5C3911A525E29EA52 /* AppSessionModelTests.swift */,
+				770CAA2831742E04EC1DA658 /* CommunityContributionTests.swift */,
+				1FF2EEAB3CDDD6BCBFD4A9E1 /* ConditionalRuleEvaluatorTests.swift */,
+				5A0B0868C9A0BEC207446949 /* DemoRouteServiceTests.swift */,
+				AE4175472EEF8F66B2E9A650 /* DriveTraceStoreTests.swift */,
+				58CA24E19E3053E0CB3F3697 /* MapDataIssueStoreTests.swift */,
+				B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */,
+				63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */,
+				68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */,
+				5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */,
+			);
+			path = VietDriveTests;
+			sourceTree = "<group>";
+		};
+		E3296AB722930621C680813A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9F4C61464CA9138E80E34CAB /* VietDrive.app */,
+				4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EA44C10C7F2315CBCB509353 /* south_female_1 */ = {
+			isa = PBXGroup;
+			children = (
+				1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */,
+				45004A54AF6DC7BD1275CFB2 /* 300_roundabout_2_exit.mp3 */,
+				63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */,
+				F4806FB466AE56ADD288479A /* 300_roundabout_4_exit.mp3 */,
+				12F27D2B122F30A8612AC2A6 /* 300_roundabout_5_exit.mp3 */,
+				96E57D9D0DB147FD62DC7B25 /* 300_roundabout_6_exit.mp3 */,
+				DE47F7BE22CD00F717CDC2F5 /* 300_roundabout_7_exit.mp3 */,
+				6634E8C27DBA30F112A7AA73 /* 300_roundabout_8_exit.mp3 */,
+				3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */,
+				9F3C35DE163CFDD58029E836 /* 300_turn_left.mp3 */,
+				AC71249DF1FF0E9C1F906344 /* 300_turn_right.mp3 */,
+				563F20055180729E60C4FAE9 /* 300_turn_sharp_left.mp3 */,
+				487BA93720BEFA1E49C5E944 /* 300_turn_sharp_right.mp3 */,
+				12B3CBD8B114A3CF1599F720 /* 300_turn_slight_left.mp3 */,
+				32B69CA623729ECCF2B215CA /* 300_turn_slight_right.mp3 */,
+				66F374D9F9F8A6818428C668 /* 300_turn_straight.mp3 */,
+				1EC0270144845C4506385A42 /* 300_turn_uturn.mp3 */,
+				C70D8D2F57351CC2E6930D11 /* arriver_left.mp3 */,
+				82FA6A151A1B29A2F6F66E1A /* arriver_right.mp3 */,
+				3F1678484B12D70D862AC5EC /* arriver.mp3 */,
+				618B6C80C6D45CC262C7BF74 /* camera_ai.mp3 */,
+				BF59AE28D930A4178EE01AF5 /* camera_speed.mp3 */,
+				C4EB0CF04C38FF87E9533F45 /* camera_traffic.mp3 */,
+				E00AF88B6424881DAA5534E3 /* camera.mp3 */,
+				6818C28B868CE97BFF848EDC /* checksums.json */,
+				C85831FAEB14AC675D784B76 /* current_speed_30.mp3 */,
+				4730EFAE19FD71564C2D1981 /* current_speed_40.mp3 */,
+				D76256E1179B32B3ABDAAFF3 /* current_speed_50.mp3 */,
+				8A4DA032094C6EDFACC47CC9 /* current_speed_60.mp3 */,
+				C265F0F541F9E014EB9EA458 /* current_speed_70.mp3 */,
+				6996A8EACAFF5C257A8D5CE4 /* current_speed_80.mp3 */,
+				9F8E603C571267343DFDD391 /* current_speed_90.mp3 */,
+				52876583CCC56135DFAAD4A6 /* current_speed_100.mp3 */,
+				E7C093D86C236D702018990C /* current_speed_120.mp3 */,
+				72B41277E0D182011867F6E7 /* giao_duong_sat.mp3 */,
+				C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */,
+				34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */,
+				F2CE834464D421999678060F /* kiem_tra_toc_do.mp3 */,
+				CCC7B6A70F26B342E05F5D17 /* next_speed_30.mp3 */,
+				DA84870A4D7331840C62DFA4 /* next_speed_40.mp3 */,
+				021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */,
+				005232845C943AE36B4B6A6F /* next_speed_60.mp3 */,
+				5164DB194CCD4E5D1FD07751 /* next_speed_70.mp3 */,
+				37C541CC8BB9D7898F953872 /* next_speed_80.mp3 */,
+				AB078BEA7FF1C82B8FC2F407 /* next_speed_90.mp3 */,
+				424754007711C49915BAA00A /* next_speed_100.mp3 */,
+				01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */,
+				AC0050630447603F35DF0844 /* over_speed_limit.mp3 */,
+				09A6866DD0EFA9EA155D2B47 /* ra_cam_vuot.mp3 */,
+				4082F190F5B6C8FBDABFEE6E /* ra_kdc.mp3 */,
+				A2A17B291C781AF8C962324C /* reroute_warning.mp3 */,
+				6A0AA75142AD3FB4E86D2F48 /* roundabout_1_exit.mp3 */,
+				1E85BDEC21D2302F5627C1F6 /* roundabout_2_exit.mp3 */,
+				F0B46BE91EF43F8C68F72DF2 /* roundabout_3_exit.mp3 */,
+				74DE014F859EDD4D06ECF585 /* roundabout_4_exit.mp3 */,
+				ADF2DB81A7534D7F30C1C5CF /* roundabout_5_exit.mp3 */,
+				50505B13873D24876F43D006 /* roundabout_6_exit.mp3 */,
+				03A83A7E6F71CC81DB274944 /* roundabout_7_exit.mp3 */,
+				403F61888A827751BF8A0DF2 /* roundabout_8_exit.mp3 */,
+				FB8A66BFA98F13B23B22CF88 /* roundabout_9_exit.mp3 */,
+				1AB230D9AF8EDB8C42D61684 /* tpms_error.mp3 */,
+				C03B59236FDB462DCD4F81E8 /* tram_dung_cao_toc.mp3 */,
+				2A7F112C1C0F2E23141564A9 /* tram_dung.mp3 */,
+				02200FB4D20E387CF2EDDC4B /* tram_thu_phi.mp3 */,
+				3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */,
+				DD3263C04CFE05523D6B7BA6 /* turn_right.mp3 */,
+				967DC79A62818FFA2C5BC173 /* turn_sharp_left.mp3 */,
+				D7264F433197FD11C04936BC /* turn_sharp_right.mp3 */,
+				A670B080C717890E22ECC0B0 /* turn_slight_left.mp3 */,
+				7225606A3CB9A1563CF39A61 /* turn_slight_right.mp3 */,
+				407333DD48A725A48C0E1493 /* turn_straight.mp3 */,
+				039A7DB72BE1757A37B0A969 /* turn_uturn.mp3 */,
+				692F1A0B4B37253DC5411932 /* under_min_speed.mp3 */,
+				F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */,
+				FA6C43C2202DD455619929CB /* vao_duong_ham.mp3 */,
+				80850E3065CF43CDFD21C8C8 /* vao_kdc.mp3 */,
+			);
+			path = south_female_1;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6F0560B2EB873D72FB799D3B /* VietDrive */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 70F4C20141D520C048A8417D /* Build configuration list for PBXNativeTarget "VietDrive" */;
+			buildPhases = (
+				4A0DDC4781E2529424E87272 /* Sources */,
+				0E463726945B42753CC6CDAB /* Resources */,
+				3BFA267B871B1663A0599AA0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VietDrive;
+			packageProductDependencies = (
+				BEB695E4D317736BB92B56F5 /* MapLibre */,
+			);
+			productName = VietDrive;
+			productReference = 9F4C61464CA9138E80E34CAB /* VietDrive.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9533C7C4CF431879A6CBDE1B /* VietDriveTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 85D058E519C54B84F56B0AF8 /* Build configuration list for PBXNativeTarget "VietDriveTests" */;
+			buildPhases = (
+				2B57AC3D0B264C50CC082B5E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C13B1C6286B9116C9D7FB325 /* PBXTargetDependency */,
+			);
+			name = VietDriveTests;
+			packageProductDependencies = (
+			);
+			productName = VietDriveTests;
+			productReference = 4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FBBE9D548DA84D42518E1A78 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					6F0560B2EB873D72FB799D3B = {
+						DevelopmentTeam = Y22YY8X6F4;
+						ProvisioningStyle = Automatic;
+					};
+					9533C7C4CF431879A6CBDE1B = {
+						DevelopmentTeam = Y22YY8X6F4;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 69EF4E5EA4A689C7B2AD9366 /* Build configuration list for PBXProject "VietDrive" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 65E9BDECB6B48BF4DBF4B575;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				915D04059E66BE7BEDF7624D /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E3296AB722930621C680813A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6F0560B2EB873D72FB799D3B /* VietDrive */,
+				9533C7C4CF431879A6CBDE1B /* VietDriveTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0E463726945B42753CC6CDAB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3442D41CF5F45AB2EA80BF05 /* 300_roundabout_1_exit.mp3 in Resources */,
+				E1EEA6EB3A8C58507EB1AE0F /* 300_roundabout_2_exit.mp3 in Resources */,
+				F0D39C1B7ECDEC5147A08895 /* 300_roundabout_3_exit.mp3 in Resources */,
+				26216200538365A5F98847D1 /* 300_roundabout_4_exit.mp3 in Resources */,
+				8C60CEA8F1F4E6EA21BCB40D /* 300_roundabout_5_exit.mp3 in Resources */,
+				FD4B5BD890B0381226704263 /* 300_roundabout_6_exit.mp3 in Resources */,
+				9F668B2CD0B782D9A25CA835 /* 300_roundabout_7_exit.mp3 in Resources */,
+				95194B893F70520EEC915422 /* 300_roundabout_8_exit.mp3 in Resources */,
+				0670C5BB86AB460043FC3FC0 /* 300_roundabout_9_exit.mp3 in Resources */,
+				7ECE0519CD3F24B6889628D7 /* 300_turn_left.mp3 in Resources */,
+				3106DDEF10CA5E58B8B7E06B /* 300_turn_right.mp3 in Resources */,
+				AF9687343C039FB2E4ED9A5C /* 300_turn_sharp_left.mp3 in Resources */,
+				6D48FD0A20143569F54D7A8A /* 300_turn_sharp_right.mp3 in Resources */,
+				DB20B5C069F93FA97DFA85CD /* 300_turn_slight_left.mp3 in Resources */,
+				0F7EE2D784C802D7955A0B3F /* 300_turn_slight_right.mp3 in Resources */,
+				8C800796C758C02B5A5A8E79 /* 300_turn_straight.mp3 in Resources */,
+				E4E519804060B0FA1C867EC1 /* 300_turn_uturn.mp3 in Resources */,
+				52398727FCD7D5566E08842F /* Assets.xcassets in Resources */,
+				1603DEFC5EB1EC2D76CD07A8 /* PrivacyInfo.xcprivacy in Resources */,
+				623BA2FCCC8261544A999CE1 /* README.md in Resources */,
+				2340804C6135AF4C66BB0C0B /* arriver.mp3 in Resources */,
+				8B5F5114CCAA0FCB708CDC0B /* arriver_left.mp3 in Resources */,
+				79506FC76A5C3B8A130DAAC9 /* arriver_right.mp3 in Resources */,
+				1E26AB5BE76680D212CC9AB8 /* camera.mp3 in Resources */,
+				88A1486AD57632C14193105F /* camera_ai.mp3 in Resources */,
+				2878A0ACA87B19FD41946830 /* camera_speed.mp3 in Resources */,
+				BF43592EEDAAAC273C9665AB /* camera_traffic.mp3 in Resources */,
+				1DC74A2756924D9D3D90427C /* checksums.json in Resources */,
+				4FF2440929916CB75B321CF6 /* current_speed_100.mp3 in Resources */,
+				566460781F07231B87FAC06E /* current_speed_120.mp3 in Resources */,
+				D63D96165E126CB3DDDB6D59 /* current_speed_30.mp3 in Resources */,
+				A20113F8E79C34C69E338B19 /* current_speed_40.mp3 in Resources */,
+				F6BDE8997ED9122C9CB6EDB4 /* current_speed_50.mp3 in Resources */,
+				321E10E9E5355FAD8AF879B6 /* current_speed_60.mp3 in Resources */,
+				23376E7DE37FFC73AE64243A /* current_speed_70.mp3 in Resources */,
+				946F1D6DAE74C1D0FE126CEA /* current_speed_80.mp3 in Resources */,
+				DA264656AEE8DD144E3982AD /* current_speed_90.mp3 in Resources */,
+				E7C0DBAEF4FCDAF5B087BFB6 /* data_manifest.json in Resources */,
+				98C8C714421C21D85BFF4DC6 /* giao_duong_sat.mp3 in Resources */,
+				02B692456DFBB6D1B7519980 /* gps_signal_found.mp3 in Resources */,
+				01FBBAE066C6CB77E4376B9F /* gps_signal_lost.mp3 in Resources */,
+				FE7B304E138FA17A0A42E649 /* kiem_tra_toc_do.mp3 in Resources */,
+				6CA873D43C2DB4E9E2F6F050 /* manifest.json in Resources */,
+				7A7EEE88449C6E909C2EE1FC /* map_database_v2.sqlite in Resources */,
+				13E534ECBBEAD7A2AC1563DA /* next_speed_100.mp3 in Resources */,
+				CDDBDA9030092C7DA550896A /* next_speed_120.mp3 in Resources */,
+				126DEA6A195DE9C6BA7B289E /* next_speed_30.mp3 in Resources */,
+				4BA8D51547AF6D187F07A0A2 /* next_speed_40.mp3 in Resources */,
+				5EC11F63F8143BD276638103 /* next_speed_50.mp3 in Resources */,
+				8F7D4FD0EA3DA6FEF9D607F5 /* next_speed_60.mp3 in Resources */,
+				D41C7129F0A6BE44439F8CC7 /* next_speed_70.mp3 in Resources */,
+				6B38EA0A459BA424BD235626 /* next_speed_80.mp3 in Resources */,
+				E95C6A92CF16E5F4B4A34BA6 /* next_speed_90.mp3 in Resources */,
+				A6748BAABE44CC78F62BF7BA /* over_speed_limit.mp3 in Resources */,
+				8697088539792EB238465E01 /* ra_cam_vuot.mp3 in Resources */,
+				E7A19DAE36EBB28E07316E0A /* ra_kdc.mp3 in Resources */,
+				5EF174C6EE2EEC7BAD9412D7 /* reroute_warning.mp3 in Resources */,
+				0A4487529D80950E867E0DEB /* roundabout_1_exit.mp3 in Resources */,
+				88CC539F60822D060A915D02 /* roundabout_2_exit.mp3 in Resources */,
+				C0EAA26FA74241EF46C53382 /* roundabout_3_exit.mp3 in Resources */,
+				3761FC99A273E895BA877344 /* roundabout_4_exit.mp3 in Resources */,
+				97F1B3B63BCF6761CFDFE3A8 /* roundabout_5_exit.mp3 in Resources */,
+				3B53114593C7A9631DE3090B /* roundabout_6_exit.mp3 in Resources */,
+				67F49306201FA0DE6173F2F7 /* roundabout_7_exit.mp3 in Resources */,
+				5C7043D0F226DCF078A88689 /* roundabout_8_exit.mp3 in Resources */,
+				66EC62C6A94B69C4D6916CCE /* roundabout_9_exit.mp3 in Resources */,
+				EBA690C2CCBEC35951B8E2F3 /* tpms_error.mp3 in Resources */,
+				30F316A6455290D225885C55 /* tram_dung.mp3 in Resources */,
+				FF1C8A2EBA4F4D9F42499FC3 /* tram_dung_cao_toc.mp3 in Resources */,
+				1F8B4C2BD9D1D950F748F3C5 /* tram_thu_phi.mp3 in Resources */,
+				BDB143EB1A151C04D9CF3959 /* turn_left.mp3 in Resources */,
+				86618841A134F0E01E31991C /* turn_right.mp3 in Resources */,
+				601117A727BB0E263109A832 /* turn_sharp_left.mp3 in Resources */,
+				05C307DBCF38BADB8BD1D0D9 /* turn_sharp_right.mp3 in Resources */,
+				67386064209AC6C6D0E84120 /* turn_slight_left.mp3 in Resources */,
+				9981DA3582783B5DA1C785B1 /* turn_slight_right.mp3 in Resources */,
+				23C918D308093F49CD0A9DF3 /* turn_straight.mp3 in Resources */,
+				5A39AE21A1E3E3D0DA2380D6 /* turn_uturn.mp3 in Resources */,
+				A07453385171CB9C54347FE1 /* under_min_speed.mp3 in Resources */,
+				FABE366CD63509E242F57B65 /* vao_cam_vuot.mp3 in Resources */,
+				AE6F175BA85228A02D1384F2 /* vao_duong_ham.mp3 in Resources */,
+				3E7E26C165DFD314A4CE453A /* vao_kdc.mp3 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2B57AC3D0B264C50CC082B5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				86B7004E076C05E7F2DF0721 /* AppSessionModelTests.swift in Sources */,
+				C6B1FC9A46ED361F791211AC /* CommunityContributionTests.swift in Sources */,
+				833AC7CB9070B0C75A297AF1 /* ConditionalRuleEvaluatorTests.swift in Sources */,
+				063860DEC23A007DCC208E00 /* DemoRouteServiceTests.swift in Sources */,
+				76B0ED6928CFA2888FFE120D /* DriveTraceStoreTests.swift in Sources */,
+				AA2AAC3D3D188E43DE52B82A /* MapDataIssueStoreTests.swift in Sources */,
+				F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */,
+				E60C21A307596BBC85667E4C /* OpenMapServiceTests.swift in Sources */,
+				2F08E3640F8777386A9186BF /* RouteProgressEngineTests.swift in Sources */,
+				157AE3111F9365CA37142B4E /* VoiceAlertServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A0DDC4781E2529424E87272 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26992EA25564BEBCF875C64C /* AppSessionModel.swift in Sources */,
+				BD76DB2F04CA346A18FDF47D /* CartoonBackground.swift in Sources */,
+				BD6313388521070470DF435E /* CommunityContribution.swift in Sources */,
+				98AC7135F9759F3F7D1EF1B4 /* CommunityContributionStore.swift in Sources */,
+				EA8BFA706A350DCACFB33CC2 /* CommunityDataHubView.swift in Sources */,
+				DA112C10426906B0D4DE4060 /* CommunityImportParser.swift in Sources */,
+				056318DA9E39B2AE1174D085 /* ConditionalRuleEvaluator.swift in Sources */,
+				1042395B4E068A78D4C6C634 /* DemoRouteService.swift in Sources */,
+				C1608D5BABB436C00CCD8A19 /* DestinationSearchView.swift in Sources */,
+				A83E827C2E140E1664E8421F /* DriveDashboardView.swift in Sources */,
+				B0490BADFB3783F2B16BF671 /* DriveDiagnosticsView.swift in Sources */,
+				435A30BF45CCDF6BA18C559D /* DriveModels.swift in Sources */,
+				260DA569525DF4C0F8AA3AED /* DriveTheme.swift in Sources */,
+				129AFBCEE7A72A1A65AE7F50 /* DriveTraceStore.swift in Sources */,
+				C2317119A635150450A063D1 /* DriveViewModel.swift in Sources */,
+				703596EC96F7B87875308C31 /* LocationService.swift in Sources */,
+				7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */,
+				55551F479CE912DA4F4B8271 /* MapDataIssueStore.swift in Sources */,
+				D2B6DFF3603D883253317158 /* MapDataUpdateService.swift in Sources */,
+				E655139CCB50CC52E1A2D958 /* MapLibreMapView.swift in Sources */,
+				C28EA844580DF35A82D09A46 /* MascotMayView.swift in Sources */,
+				FBC9379D06F018EAF741CF26 /* NavigationModels.swift in Sources */,
+				0D264BA00009F36F8DB44082 /* NavigationSessionStore.swift in Sources */,
+				0D6A573713A954825F800848 /* OfflineAlertStore.swift in Sources */,
+				BC5C89FD659E64F0E6A18505 /* OfflineMapDownloadService.swift in Sources */,
+				53D5908C405A8FAD8E42C09A /* OnboardingView.swift in Sources */,
+				4CC141156B254F1E243EF42F /* OpenMapService.swift in Sources */,
+				17FBD38D6024A051531ADB31 /* RouteProgressEngine.swift in Sources */,
+				80D48A64D1E4DE0E0614A38D /* SettingsView.swift in Sources */,
+				31CC29EBAB4361C8DB1EE2D8 /* VietDriveApp.swift in Sources */,
+				7796417A4C230D30AE29E040 /* VoiceAlertService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C13B1C6286B9116C9D7FB325 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F0560B2EB873D72FB799D3B /* VietDrive */;
+			targetProxy = 97E2C3975FA76E2DF6381B64 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		129FEBDADB73301BC7A9CFFC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = Y22YY8X6F4;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3B70BEF82AD86592CCD2332C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Y22YY8X6F4;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		6363936323871E5D9AFE0A4F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = VietDrive/Support/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios;
+				PRODUCT_NAME = VietDrive;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		739FCC8D90F004B48A7F4C9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VietDrive.app/VietDrive";
+			};
+			name = Release;
+		};
+		AD3D14CE3074308C222E58C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = VietDrive/Support/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios;
+				PRODUCT_NAME = VietDrive;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FEBD138215E508F3FFD3CE7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VietDrive.app/VietDrive";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		69EF4E5EA4A689C7B2AD9366 /* Build configuration list for PBXProject "VietDrive" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				129FEBDADB73301BC7A9CFFC /* Debug */,
+				3B70BEF82AD86592CCD2332C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		70F4C20141D520C048A8417D /* Build configuration list for PBXNativeTarget "VietDrive" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD3D14CE3074308C222E58C9 /* Debug */,
+				6363936323871E5D9AFE0A4F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		85D058E519C54B84F56B0AF8 /* Build configuration list for PBXNativeTarget "VietDriveTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FEBD138215E508F3FFD3CE7D /* Debug */,
+				739FCC8D90F004B48A7F4C9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		915D04059E66BE7BEDF7624D /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution.git";
+			requirement = {
+				kind = exactVersion;
+				version = 6.29.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BEB695E4D317736BB92B56F5 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 915D04059E66BE7BEDF7624D /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = FBBE9D548DA84D42518E1A78 /* Project object */;
+}

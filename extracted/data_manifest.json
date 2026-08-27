@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "databaseContract": "vn.vietdrive.map-data",
+  "databaseContractVersion": 1,
+  "databaseSchemaVersion": 6,
+  "datasetVersion": "2026-08-27T03:55:27+00:00",
+  "minimumAppVersion": "0.3.0",
+  "database": {
+    "fileName": "map_database_v2.sqlite",
+    "bytes": 616771584,
+    "sha256": "7cbc10efef35b30ac6b44ac7dabb39830455c39cc54941335165618e729514c6"
+  },
+  "counts": {
+    "alerts": 36820,
+    "mapDataPoints": 36820,
+    "speedPoints": 16400,
+    "mapDataRoadLinks": 1875900,
+    "directionalSpeedLinks": 1875812,
+    "turnRestrictions": 1659,
+    "roadRuleWays": 135125
+  },
+  "sources": {
+    "traffic_points.csv": {
+      "sha256": "b4f7cd4f360972cb48971b0df9dd880aed2f39385f8b5eb951358901354e1eaf",
+      "bytes": 2092964
+    },
+    "road_links.csv": {
+      "sha256": "55570fb708689460397df6a25a99386a3c6d53503e552df481d74fd764c7127a",
+      "bytes": 264851173
+    },
+    "cities.csv": {
+      "sha256": "c092aacb7e67284e9920ff0a1a967faf72a61add74613b314ca8f37d69d19e4a",
+      "bytes": 639
+    },
+    "districts.csv": {
+      "sha256": "4d9f56d29cf60c2a3a9ccb5d3fb271eef965f29f76c0c9779ea6f26ad4621b3f",
+      "bytes": 81677
+    },
+    "road_name_quarantine.csv": {
+      "sha256": "e3ea0d3371a8ebbf81178bedcdb841ca23cd7a6b393a39b5b519da45e0d4a40a",
+      "bytes": 47
+    },
+    "summary.json": {
+      "sha256": "a5c03e6bd0660a91b4d55ecf10185c7204357e3ae3a7e3b175b42ed4adfe7f06",
+      "bytes": 1975
+    },
+    "secrect.bin": {
+      "sha256": "c3210a65bf0e766a9dcb49b20ee07ab3abf507f238885e6a6122f48da2391cb1",
+      "bytes": 105568153
+    },
+    "camera_alerts.geojson": {
+      "sha256": "63c6b0a19293b5adb5de93aa753d26f743d41366e6fb43836a841a207f6bdb62",
+      "bytes": 1025618
+    },
+    "road_lines.geojson": {
+      "sha256": "90b1f817f8ff9f46260cdd5c511215d47c86ba198a8dc6d432e73871dc98a6d1",
+      "bytes": 2856299
+    },
+    "speed_signs.geojson": {
+      "sha256": "80177012e58e3e4ed506144be84e47878b8eb6430a03c59e93a04a9e117ac957",
+      "bytes": 2269988
+    },
+    "osm_traffic_signs.geojson": {
+      "sha256": "bbe93801d4790d8e08255fe69a11dd887733bd002c4d9ff399ae78aec02cfd2e",
+      "bytes": 74478
+    },
+    "osm_turn_restrictions.geojson": {
+      "sha256": "17afc446c9ccd761c4082b4f4a75aabd7c6ae8aa4c204c07ff0e4d9c9e272b9b",
+      "bytes": 997055
+    },
+    "osm_road_rules.geojson": {
+      "sha256": "4ee5221cd36c4a43727be9a5c8fa13d1db2e2765faea3e7c6ad528d65010cc6f",
+      "bytes": 97098198
+    },
+    "osm_sign_quarantine.json": {
+      "sha256": "07bfc7d781d81b2d83830abe227fd3fc1f63f6c91c6c1457f5f417dbb6f6c565",
+      "bytes": 271845
+    },
+    "osm_restriction_quarantine.json": {
+      "sha256": "488c9a8f86284e65c6bcbac2a9f1bae425b6399f557d59ab547e679c2f3b2c57",
+      "bytes": 915428
+    }
+  }
+}

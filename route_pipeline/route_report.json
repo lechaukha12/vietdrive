@@ -1,0 +1,37 @@
+{
+  "generated_at_utc": "2026-08-25T03:59:20+00:00",
+  "route": {
+    "distance_meters": 168327.7,
+    "duration_seconds": 7142.5,
+    "alternative_count": 2,
+    "route_point_count": 1263,
+    "explicit_maxspeed_points": 899,
+    "explicit_maxspeed_coverage_percent": 71.2,
+    "way_segment_count": 3544
+  },
+  "traffic_signs": {
+    "published_count": 45,
+    "corridor_snapshot": "live",
+    "city_snapshot": "previous_snapshot",
+    "by_code": {
+      "P102": 1,
+      "P103c": 1,
+      "P122": 4,
+      "P125": 2,
+      "P127.50": 22,
+      "P127.60": 3,
+      "P127.70": 3,
+      "P127.90": 2,
+      "P130": 1,
+      "R302a": 1,
+      "W208": 4,
+      "W245a": 1
+    }
+  },
+  "outputs": {
+    "route": "/Users/lechaukha12/Desktop/project-map/VietDriveIOS/VietDrive/Resources/Demo/hcm_phan_thiet_route.json",
+    "route_sha256": "117275daf3d919fa8b1ae83fa892f94af823dfe2ed43ee7f2761eb8a4b6698d5",
+    "signs": "/Users/lechaukha12/Desktop/project-map/extracted/osm_traffic_signs.geojson",
+    "signs_sha256": "28a84afa9c998710848e4ab78a94c94200c74c781a7ec1f34bb26a9e2944caa7"
+  }
+}

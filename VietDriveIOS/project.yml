@@ -1,0 +1,71 @@
+name: VietDrive
+
+options:
+  bundleIdPrefix: vn.vietdrive
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+packages:
+  MapLibre:
+    url: https://github.com/maplibre/maplibre-gl-native-distribution.git
+    exactVersion: 6.29.0
+
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    SWIFT_STRICT_CONCURRENCY: minimal
+    DEVELOPMENT_TEAM: Y22YY8X6F4
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  VietDrive:
+    type: application
+    platform: iOS
+    sources:
+      - path: VietDrive
+        excludes:
+          - Services/BluetoothBridgeService.swift
+          - Views/DeviceProjectionView.swift
+      - path: ../extracted/map_database_v2.sqlite
+        buildPhase: resources
+      - path: ../extracted/data_manifest.json
+        buildPhase: resources
+    dependencies:
+      - package: MapLibre
+      - sdk: libsqlite3.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios
+        PRODUCT_NAME: VietDrive
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_FILE: VietDrive/Support/Info.plist
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.3.0
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+  VietDriveTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: VietDriveTests
+    dependencies:
+      - target: VietDrive
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  VietDrive:
+    build:
+      targets:
+        VietDrive: all
+    run:
+      config: Debug
+    test:
+      targets:
+        - VietDriveTests

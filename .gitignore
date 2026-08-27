@@ -1,0 +1,21 @@
+.DS_Store
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/cache/
+
+# Local Xcode state and generated build products
+**/xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Reproducible extraction intermediates. The canonical database and release
+# artifacts under extracted/ remain tracked.
+map-data/extracted_data/
+data_pipeline/map_database_v2.sqlite
+
+# Duplicate of extracted/map_database_v2.sqlite; XcodeGen bundles the canonical
+# file from extracted/ as configured in VietDriveIOS/project.yml.
+VietDriveIOS/VietDrive/Resources/map_database_v2.sqlite
+

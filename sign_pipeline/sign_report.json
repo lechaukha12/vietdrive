@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-08-25T07:20:27+00:00",
+  "source": {
+    "url": "https://download.geofabrik.de/asia/vietnam-latest.osm.pbf",
+    "path": "/Users/lechaukha12/Desktop/project-map/sign_pipeline/cache/vietnam-latest.osm.pbf",
+    "bytes": 327118545,
+    "sha256": "bf85b0d005c3ac7a4bcd5afc589dcc262ac42fe253996fff7efd6fe54b5e76ec"
+  },
+  "raw_physical_sign_nodes": 822,
+  "published_sign_nodes": 134,
+  "unrecognized_nodes": 688,
+  "published_bounds_lon_lat": [
+    102.8076496,
+    9.9723002,
+    109.1361453,
+    22.3856912
+  ],
+  "by_code": {
+    "P102": 7,
+    "P103c": 1,
+    "P122": 14,
+    "P123a": 1,
+    "P125": 2,
+    "P127.100": 8,
+    "P127.120": 1,
+    "P127.40": 6,
+    "P127.50": 25,
+    "P127.60": 5,
+    "P127.70": 9,
+    "P127.80": 1,
+    "P127.90": 28,
+    "P130": 1,
+    "R302a": 2,
+    "W208": 20,
+    "W245a": 3
+  },
+  "top_raw_traffic_sign_values": [
+    [
+      "yes",
+      635
+    ],
+    [
+      "maxspeed",
+      92
+    ],
+    [
+      "city_limit",
+      16
+    ],
+    [
+      "hazard",
+      4
+    ],
+    [
+      "stop",
+      3
+    ],
+    [
+      "VN:102",
+      3
+    ],
+    [
+      "P.102: Wrong way",
+      3
+    ],
+    [
+      "W.245a: Slow down",
+      3
+    ],
+    [
+      "distance_marker",
+      2
+    ],
+    [
+      "maxheight",
+      2
+    ],
+    [
+      "overtaking",
+      2
+    ],
+    [
+      "Cấm ô tô rẽ trái từ 6:00AM đến 22:00PM",
+      2
+    ],
+    [
+      "Go straight/ Turn right",
+      2
+    ],
+    [
+      "motorcycle:conditional=no @ (displacement < 70cc),P.110a: No bicycles, P.110b: No cargo bicycles, P.112: No pedestrians, P.113: No handcarts",
+      2
+    ],
+    [
+      "W.227: Construction site ahead",
+      2
+    ],
+    [
+      "VI:W.210",
+      1
+    ],
+    [
+      "give_way",
+      1
+    ],
+    [
+      "residential",
+      1
+    ],
+    [
+      "VN:302a",
+      1
+    ],
+    [
+      "VN:402",
+      1
+    ],
+    [
+      "VN:401,127[60]",
+      1
+    ],
+    [
+      "VN:P.102",
+      1
+    ],
+    [
+      "VN:P.103c",
+      1
+    ],
+    [
+      "VN:P.130",
+      1
+    ],
+    [
+      "Junction",
+      1
+    ],
+    [
+      "VN:R.420",
+      1
+    ],
+    [
+      "Go straight/ Turn left",
+      1
+    ],
+    [
+      "IE.466: Show one-way exit diagrams at all intersections on the road expressway",
+      1
+    ],
+    [
+      "W.207b: Road junction with priority",
+      1
+    ],
+    [
+      "I.423b: Pedestrian crossing",
+      1
+    ],
+    [
+      "W.247: Attention to the parked car",
+      1
+    ],
+    [
+      "P.123a: No left turn",
+      1
+    ],
+    [
+      "W.208: Give way",
+      1
+    ],
+    [
+      "W.221b: Road bump",
+      1
+    ],
+    [
+      "R.302a: Keep right",
+      1
+    ]
+  ],
+  "raw_maxspeed_values": [
+    [
+      "90",
+      28
+    ],
+    [
+      "50",
+      25
+    ],
+    [
+      "70",
+      9
+    ],
+    [
+      "100",
+      8
+    ],
+    [
+      "40",
+      7
+    ],
+    [
+      "60",
+      5
+    ],
+    [
+      "implicit",
+      2
+    ],
+    [
+      "5",
+      2
+    ],
+    [
+      "80",
+      1
+    ],
+    [
+      "120",
+      1
+    ],
+    [
+      "20",
+      1
+    ]
+  ],
+  "top_unrecognized_values": [
+    [
+      "yes",
+      635
+    ],
+    [
+      "city_limit",
+      16
+    ],
+    [
+      "maxspeed",
+      10
+    ],
+    [
+      "hazard",
+      4
+    ],
+    [
+      "distance_marker",
+      2
+    ],
+    [
+      "maxheight",
+      2
+    ],
+    [
+      "Cấm ô tô rẽ trái từ 6:00AM đến 22:00PM",
+      2
+    ],
+    [
+      "Go straight/ Turn right",
+      2
+    ],
+    [
+      "motorcycle:conditional=no @ (displacement < 70cc),P.110a: No bicycles, P.110b: No cargo bicycles, P.112: No pedestrians, P.113: No handcarts",
+      2
+    ],
+    [
+      "W.227: Construction site ahead",
+      2
+    ],
+    [
+      "unknown",
+      1
+    ],
+    [
+      "residential",
+      1
+    ],
+    [
+      "VN:402",
+      1
+    ],
+    [
+      "Junction",
+      1
+    ],
+    [
+      "VN:R.420",
+      1
+    ],
+    [
+      "Go straight/ Turn left",
+      1
+    ],
+    [
+      "IE.466: Show one-way exit diagrams at all intersections on the road expressway",
+      1
+    ],
+    [
+      "W.207b: Road junction with priority",
+      1
+    ],
+    [
+      "I.423b: Pedestrian crossing",
+      1
+    ],
+    [
+      "W.247: Attention to the parked car",
+      1
+    ],
+    [
+      "W.221b: Road bump",
+      1
+    ]
+  ],
+  "output": "/Users/lechaukha12/Desktop/project-map/extracted/osm_traffic_signs.geojson",
+  "quarantine_output": "/Users/lechaukha12/Desktop/project-map/extracted/osm_sign_quarantine.json"
+}

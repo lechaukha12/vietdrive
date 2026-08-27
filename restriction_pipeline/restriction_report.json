@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-08-25T15:05:15+00:00",
+  "source": {
+    "path": "/Users/lechaukha12/Desktop/project-map/sign_pipeline/cache/vietnam-latest.osm.pbf",
+    "bytes": 327118545,
+    "sha256": "bf85b0d005c3ac7a4bcd5afc589dcc262ac42fe253996fff7efd6fe54b5e76ec"
+  },
+  "raw_restriction_relations": 3512,
+  "published_turn_restrictions": 1659,
+  "published_road_rule_ways": 135125,
+  "published_road_rule_entries": 165843,
+  "quarantined_records": 1853,
+  "turns_by_type": {
+    "no_left_turn": 633,
+    "no_right_turn": 573,
+    "no_straight_on": 154,
+    "no_u_turn": 182,
+    "only_left_turn": 18,
+    "only_right_turn": 44,
+    "only_straight_on": 55
+  },
+  "rules_by_key": {
+    "access": 11575,
+    "access:conditional": 13,
+    "hgv": 2379,
+    "hgv:conditional": 462,
+    "maxspeed": 29980,
+    "maxspeed:backward": 12,
+    "maxspeed:conditional": 68,
+    "maxspeed:forward": 13,
+    "motor_vehicle": 9229,
+    "motor_vehicle:conditional": 333,
+    "motorcar": 25324,
+    "motorcar:conditional": 59,
+    "motorcycle": 5688,
+    "motorcycle:conditional": 65,
+    "oneway": 78241,
+    "parking:both": 1752,
+    "parking:both:restriction": 5,
+    "parking:left": 562,
+    "parking:left:restriction": 4,
+    "parking:right": 62,
+    "parking:right:restriction": 17
+  },
+  "outputs": {
+    "turn_restrictions": "/Users/lechaukha12/Desktop/project-map/extracted/osm_turn_restrictions.geojson",
+    "road_rules": "/Users/lechaukha12/Desktop/project-map/extracted/osm_road_rules.geojson",
+    "quarantine": "/Users/lechaukha12/Desktop/project-map/extracted/osm_restriction_quarantine.json"
+  }
+}
