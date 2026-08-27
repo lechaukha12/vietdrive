@@ -220,6 +220,31 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         }
     }
 
+    private var lastSpokenNextSpeed: Int?
+    private var lastSpokenNextSpeedAt = Date.distantPast
+
+    func announceNextSpeed(limit: Int, distanceMeters: Double) {
+        guard isEnabled, distanceMeters >= 120, distanceMeters <= 500 else { return }
+        let now = Date()
+        guard lastSpokenNextSpeed != limit || now.timeIntervalSince(lastSpokenNextSpeedAt) > 45 else { return }
+
+        let distance = naturalDistance(distanceMeters)
+        let key = "speed.next.\(limit)"
+        let fallback = "Phía trước \(distance), sắp đến đoạn đường giới hạn tốc độ \(limit) ki lô mét một giờ."
+
+        if enqueue(
+            id: "next-speed-\(limit)",
+            group: "next-speed",
+            recordedKey: key,
+            fallbackText: fallback,
+            priority: .information,
+            lifetime: 15
+        ) {
+            lastSpokenNextSpeed = limit
+            lastSpokenNextSpeedAt = now
+        }
+    }
+
     func updateOverSpeed(_ isOverSpeed: Bool, limit: Int) {
         guard isEnabled else { return }
         if isOverSpeed, !announcedOverSpeed, limit > 0 {

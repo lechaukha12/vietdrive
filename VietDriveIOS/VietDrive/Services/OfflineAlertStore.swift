@@ -148,7 +148,7 @@ final class OfflineAlertStore {
             guard let self, let database = self.database else {
                 DispatchQueue.main.async {
                     completion(OfflineMapContext(
-                        alerts: [], roads: [], speedLimitMatch: nil, matchedRoadRules: []
+                        alerts: [], roads: [], speedLimitMatch: nil, nextSpeedMatch: nil, matchedRoadRules: []
                     ))
                 }
                 return
@@ -197,6 +197,14 @@ final class OfflineAlertStore {
                 matchedDistanceMeters: matchedDistanceMeters,
                 radiusMeters: alertRadiusMeters
             )
+            let nextSpeed = self.lookaheadNextSpeedMatch(
+                currentRoadID: matchedSpeed != nil ? retainedRoadID : nil,
+                currentSpeedLimit: matchedSpeed?.limit ?? 0,
+                location: location,
+                heading: heading,
+                speedKmh: speedKmh,
+                roads: mapDataRoads
+            )
             let context = OfflineMapContext(
                 alerts: alerts,
                 // Road links are queried only for map matching. Drawing them
@@ -204,6 +212,7 @@ final class OfflineAlertStore {
                 // hundreds of polylines on every GPS update.
                 roads: [],
                 speedLimitMatch: matchedSpeed,
+                nextSpeedMatch: nextSpeed,
                 matchedRoadRules: roadRuleResults.matchedRules
             )
             if let matchedSpeed {
@@ -932,7 +941,17 @@ final class OfflineAlertStore {
         let candidate = retained ?? measured
             .filter { $0.distance <= maxSearchRadius }
             .filter { Self.supportedSpeedLimits.contains($0.road.direction1Speed) || Self.supportedSpeedLimits.contains($0.road.direction2Speed) }
-            .min { $0.distance < $1.distance }
+            .min { a, b in
+                var scoreA = a.distance
+                var scoreB = b.distance
+                let maxA = max(a.road.direction1Speed, a.road.direction2Speed)
+                let maxB = max(b.road.direction1Speed, b.road.direction2Speed)
+                if speedKmh >= 65 {
+                    if maxA >= 70 && maxB <= 60 { scoreA -= 20 }
+                    if maxB >= 70 && maxA <= 60 { scoreB -= 20 }
+                }
+                return scoreA < scoreB
+            }
             ?? measured.filter { $0.distance <= maxSearchRadius }.min { $0.distance < $1.distance }
 
         guard let candidate else {
@@ -1013,6 +1032,42 @@ final class OfflineAlertStore {
             canTriggerDrivingAlerts: true,
             province: road.province
         )
+    }
+
+    private func lookaheadNextSpeedMatch(
+        currentRoadID: Int?,
+        currentSpeedLimit: Int,
+        location: CLLocation,
+        heading: Double,
+        speedKmh: Int,
+        roads: [FirmwareRoadCandidate]
+    ) -> NextSpeedMatch? {
+        guard currentSpeedLimit > 0, speedKmh >= 8 else { return nil }
+        var candidates: [(limit: Int, distance: Double)] = []
+        for road in roads where road.id != currentRoadID {
+            guard let nearest = Self.nearestCoordinate(to: location.coordinate, in: road.coordinates) else { continue }
+            guard nearest.distance >= 120, nearest.distance <= 650 else { continue }
+            let vectorBearing = Self.bearing(from: location.coordinate, to: nearest.coordinate)
+            let alignment = Self.angleDifference(heading, vectorBearing)
+            guard alignment <= 45 else { continue }
+
+            let roadSegBearing = nearest.bearing
+            let forwardDiff = Self.angleDifference(heading, roadSegBearing)
+            let reverseDiff = Self.angleDifference(heading, (roadSegBearing + 180).truncatingRemainder(dividingBy: 360))
+            let aheadSpeed: Int
+            if forwardDiff <= 55, Self.supportedSpeedLimits.contains(road.direction1Speed) {
+                aheadSpeed = road.direction1Speed
+            } else if reverseDiff <= 55, Self.supportedSpeedLimits.contains(road.direction2Speed) {
+                aheadSpeed = road.direction2Speed
+            } else {
+                continue
+            }
+            if aheadSpeed > 0, aheadSpeed != currentSpeedLimit {
+                candidates.append((aheadSpeed, nearest.distance))
+            }
+        }
+        guard let nearest = candidates.min(by: { $0.distance < $1.distance }) else { return nil }
+        return NextSpeedMatch(limit: nearest.limit, distanceMeters: nearest.distance)
     }
 
     /// Chỉ dùng điểm khôi phục cho HUD khi GPS nằm ngay trên điểm đó. Không

@@ -51,6 +51,10 @@ struct DriveDashboardView: View {
             VStack(spacing: 10) {
                 topOverlay
                 Spacer(minLength: 80)
+                if let section = model.snapshot.activeSectionSpeed {
+                    SectionSpeedBanner(section: section)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 if let alert = model.countdownBannerAlert {
                     HStack {
                         CompactAlertBanner(alert: alert)
@@ -397,8 +401,13 @@ private struct NavigationBottomBar: View {
     var body: some View {
         HStack(spacing: 13) {
             CompactSpeed(speed: model.snapshot.speedKmh, overSpeed: model.snapshot.isOverSpeed)
-            SpeedLimitSign(limit: model.snapshot.speedLimitKmh)
-                .frame(width: 50, height: 50)
+            SpeedLimitSign(
+                limit: model.snapshot.speedLimitKmh,
+                isOverSpeedCritical: model.snapshot.isOverSpeedCritical,
+                isOverSpeedMinor: model.snapshot.isOverSpeedMinor,
+                nextLimit: model.snapshot.nextSpeedLimitKmh,
+                nextDistanceMeters: model.snapshot.nextSpeedDistanceMeters
+            )
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     VStack(alignment: .leading, spacing: 0) {
@@ -471,8 +480,13 @@ private struct IdleDriveBar: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
-            SpeedLimitSign(limit: snapshot.speedLimitKmh)
-                .frame(width: 48, height: 48)
+            SpeedLimitSign(
+                limit: snapshot.speedLimitKmh,
+                isOverSpeedCritical: snapshot.isOverSpeedCritical,
+                isOverSpeedMinor: snapshot.isOverSpeedMinor,
+                nextLimit: snapshot.nextSpeedLimitKmh,
+                nextDistanceMeters: snapshot.nextSpeedDistanceMeters
+            )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
@@ -536,6 +550,38 @@ private struct CompactAlertBanner: View {
         .background(.regularMaterial, in: Capsule())
         .overlay(Capsule().stroke(DriveTheme.alertColor(alert.kind).opacity(0.35)))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+    }
+}
+
+private struct SectionSpeedBanner: View {
+    let section: SectionSpeedProgress
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image("TrafficSigns/TrafficSign_CameraSection")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("ĐOẠN ĐO TỐC ĐỘ TỰ ĐỘNG")
+                    .font(.system(size: 8, weight: .black))
+                    .foregroundStyle(DriveTheme.pink)
+                HStack(spacing: 8) {
+                    Text("Tốc độ TB: \(section.averageSpeedKmh) km/h")
+                        .font(.caption.weight(.black))
+                        .foregroundStyle(section.averageSpeedKmh > section.speedLimit ? DriveTheme.danger : DriveTheme.mint)
+                    Text("· Giới hạn: \(section.speedLimit) km/h")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(DriveTheme.ink.opacity(0.65))
+                }
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(DriveTheme.pink.opacity(0.35)))
+        .shadow(color: DriveTheme.pink.opacity(0.15), radius: 8, y: 3)
     }
 }
 
@@ -1085,35 +1131,73 @@ private struct SpeedDial: View {
 
 struct SpeedLimitSign: View {
     let limit: Int
+    var isOverSpeedCritical: Bool = false
+    var isOverSpeedMinor: Bool = false
+    var nextLimit: Int? = nil
+    var nextDistanceMeters: Int? = nil
+
     private let supportedLimits = Set([30, 40, 50, 60, 70, 80, 90, 100, 110, 120])
 
     var body: some View {
-        Group {
-            if supportedLimits.contains(limit) {
-                Image("TrafficSigns/TrafficSign_P127_\(limit)")
-                    .resizable()
-                    .scaledToFit()
-                    .background(Color.white, in: Circle())
-            } else {
-                ZStack {
-                    Circle().fill(limit > 0 ? Color.white : Color.white.opacity(0.08))
-                    Circle().stroke(
-                        limit > 0 ? DriveTheme.danger : Color.white.opacity(0.14),
-                        lineWidth: 6
-                    )
-                    if limit > 0 {
-                Text("\(limit)")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundStyle(DriveTheme.ink)
-                    } else {
-                        Image(systemName: "minus")
-                            .font(.title2.bold())
-                            .foregroundStyle(DriveTheme.textMuted)
+        HStack(spacing: 5) {
+            ZStack {
+                if supportedLimits.contains(limit) {
+                    Image("TrafficSigns/TrafficSign_P127_\(limit)")
+                        .resizable()
+                        .scaledToFit()
+                        .background(Color.white, in: Circle())
+                } else {
+                    ZStack {
+                        Circle().fill(limit > 0 ? Color.white : Color.white.opacity(0.08))
+                        Circle().stroke(
+                            limit > 0 ? DriveTheme.danger : Color.white.opacity(0.14),
+                            lineWidth: 5
+                        )
+                        if limit > 0 {
+                            Text("\(limit)")
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundStyle(DriveTheme.ink)
+                        } else {
+                            Image(systemName: "minus")
+                                .font(.title2.bold())
+                                .foregroundStyle(DriveTheme.textMuted)
+                        }
                     }
                 }
             }
+            .frame(width: 48, height: 48)
+            .overlay(
+                Circle()
+                    .stroke(
+                        isOverSpeedCritical ? Color.red : (isOverSpeedMinor ? Color.orange : Color.clear),
+                        lineWidth: 3.5
+                    )
+            )
+
+            if let nextLimit, let nextDistanceMeters, nextLimit != limit {
+                VStack(spacing: 1) {
+                    ZStack {
+                        if supportedLimits.contains(nextLimit) {
+                            Image("TrafficSigns/TrafficSign_P127_\(nextLimit)")
+                                .resizable()
+                                .scaledToFit()
+                                .background(Color.white, in: Circle())
+                        } else {
+                            Circle().fill(Color.white)
+                            Circle().stroke(DriveTheme.danger, lineWidth: 2.5)
+                            Text("\(nextLimit)")
+                                .font(.system(size: 10, weight: .black, design: .rounded))
+                                .foregroundStyle(DriveTheme.ink)
+                        }
+                    }
+                    .frame(width: 26, height: 26)
+                    Text("\(nextDistanceMeters)m")
+                        .font(.system(size: 8, weight: .black))
+                        .foregroundStyle(DriveTheme.ink.opacity(0.70))
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
         }
-        .frame(width: 60, height: 60)
         .accessibilityLabel(
             limit > 0
                 ? "Giới hạn tốc độ \(limit)"

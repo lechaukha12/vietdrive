@@ -75,12 +75,15 @@ final class DriveViewModel: ObservableObject {
     private var offRouteSamples = 0
     private var wrongDirectionSamples = 0
     private var lastRerouteAt = Date.distantPast
+    private var routePlanningToken = UUID()
     private var lastHapticAlertID: Int?
     private var wasOverSpeed = false
+    private var sectionSpeedStartTime: Date?
+    private var sectionSpeedLimit: Int?
+    private var sectionStartLocation: CLLocation?
     private var matchedRouteDistanceMeters: Double?
     private var lastSessionSaveAt = Date.distantPast
     private var journeyTask: Task<Void, Never>?
-    private var routePlanningToken = UUID()
     private var rerouteTask: Task<Void, Never>?
     private var rerouteToken = UUID()
     private var traceReplay: DriveTraceReplay?
@@ -690,13 +693,32 @@ final class DriveViewModel: ObservableObject {
             }
         }
 
-        let isOverConfirmedLimit = snapshot.isOverSpeed
-            && snapshot.speedLimitCanTriggerAlerts
-        voice.updateOverSpeed(isOverConfirmedLimit, limit: snapshot.speedLimitKmh)
-        if isOverConfirmedLimit, !wasOverSpeed, hapticsEnabled {
+        // Update section speed tracking if active
+        if let startTime = sectionSpeedStartTime, let limit = sectionSpeedLimit, let startLoc = sectionStartLocation {
+            let elapsed = Date().timeIntervalSince(startTime)
+            let distance = location.distance(from: startLoc)
+            if distance > 12_000 || elapsed > 900 {
+                // Section ended or timed out
+                sectionSpeedStartTime = nil
+                sectionSpeedLimit = nil
+                sectionStartLocation = nil
+                snapshot.activeSectionSpeed = nil
+            } else if elapsed >= 4 {
+                let avgSpeedKmh = Int(((distance / elapsed) * 3.6).rounded())
+                snapshot.activeSectionSpeed = SectionSpeedProgress(
+                    speedLimit: limit,
+                    averageSpeedKmh: avgSpeedKmh,
+                    distanceTraveledMeters: distance
+                )
+            }
+        }
+
+        let isOverCritical = snapshot.isOverSpeedCritical && snapshot.speedLimitCanTriggerAlerts
+        voice.updateOverSpeed(isOverCritical, limit: snapshot.speedLimitKmh)
+        if isOverCritical, !wasOverSpeed, hapticsEnabled {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
         }
-        wasOverSpeed = isOverConfirmedLimit
+        wasOverSpeed = isOverCritical
     }
 
     private func updateNavigationProgress(
@@ -1002,6 +1024,25 @@ final class DriveViewModel: ObservableObject {
             speedLimitDiagnosticText = "Chưa có điểm tốc độ map-data phù hợp gần vị trí hiện tại"
             Self.speedLogger.info("display limit=unknown")
         }
+        snapshot.nextSpeedLimitKmh = context.nextSpeedMatch?.limit
+        snapshot.nextSpeedDistanceMeters = context.nextSpeedMatch.map { Int($0.distanceMeters.rounded()) }
+        if let next = context.nextSpeedMatch {
+            voice.announceNextSpeed(limit: next.limit, distanceMeters: next.distanceMeters)
+        }
+
+        // Check if passing into a section speed camera (Type 4)
+        if let sectionCam = context.alerts.first(where: {
+            ($0.signCode == "IGO:4" || ($0.assetName?.contains("CameraSection") ?? false))
+            && $0.distanceMeters <= 60
+        }) {
+            let limit = sectionCam.speedLimit > 0 ? sectionCam.speedLimit : snapshot.speedLimitKmh
+            if limit > 0 && sectionSpeedStartTime == nil {
+                sectionSpeedStartTime = Date()
+                sectionSpeedLimit = limit
+                sectionStartLocation = locationService.routingLocation
+            }
+        }
+
         if let nearest = snapshot.primaryAlert {
             voice.announce(alert: nearest)
             if nearest.distanceMeters <= 450,

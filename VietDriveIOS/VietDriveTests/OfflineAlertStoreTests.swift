@@ -37,6 +37,7 @@ final class OfflineAlertStoreTests: XCTestCase {
             XCTAssertTrue(context.speedLimitMatch?.source.hasPrefix("map-data/roadsenz.bin #") == true)
             XCTAssertLessThan(context.speedLimitMatch?.distanceMeters ?? .greatestFiniteMagnitude, 2)
             XCTAssertEqual(context.speedLimitMatch?.canTriggerDrivingAlerts, true)
+            XCTAssertEqual(context.speedLimitMatch?.province.isEmpty, false)
             completed.fulfill()
         }
 

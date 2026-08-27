@@ -119,10 +119,22 @@ struct SpeedLimitMatch: Equatable {
     }
 }
 
+struct NextSpeedMatch: Equatable {
+    let limit: Int
+    let distanceMeters: Double
+}
+
+struct SectionSpeedProgress: Equatable {
+    let speedLimit: Int
+    let averageSpeedKmh: Int
+    let distanceTraveledMeters: Double
+}
+
 struct OfflineMapContext {
     let alerts: [DriveAlert]
     let roads: [RoadOverlay]
     let speedLimitMatch: SpeedLimitMatch?
+    let nextSpeedMatch: NextSpeedMatch?
     let matchedRoadRules: [String]
 
     var matchedSpeedLimit: Int { speedLimitMatch?.limit ?? 0 }
@@ -149,10 +161,21 @@ struct DriveSnapshot {
     var journeyEvent: MascotJourneyEvent = .idle
     var journeyEventRevision = 0
     var primaryAlert: DriveAlert?
+    var nextSpeedLimitKmh: Int? = nil
+    var nextSpeedDistanceMeters: Int? = nil
+    var activeSectionSpeed: SectionSpeedProgress? = nil
     var isDemo = false
 
     var isOverSpeed: Bool {
         speedLimitKmh > 0 && speedKmh > speedLimitKmh
+    }
+
+    var isOverSpeedCritical: Bool {
+        speedLimitKmh > 0 && speedKmh >= speedLimitKmh + 5
+    }
+
+    var isOverSpeedMinor: Bool {
+        speedLimitKmh > 0 && speedKmh > speedLimitKmh && speedKmh < speedLimitKmh + 5
     }
 
     var mascotCueCoordinate: CLLocationCoordinate2D? {

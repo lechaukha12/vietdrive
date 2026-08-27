@@ -15,6 +15,18 @@ final class VoiceAlertServiceTests: XCTestCase {
             try XCTUnwrap(catalog.url(for: "maneuver.300.right")).lastPathComponent,
             "300_turn_right.mp3"
         )
+        XCTAssertEqual(
+            try XCTUnwrap(catalog.url(for: "speed.next.60")).lastPathComponent,
+            "next_speed_60.mp3"
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(catalog.url(for: "alert.camera.traffic")).lastPathComponent,
+            "camera_traffic.mp3"
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(catalog.url(for: "alert.town.in")).lastPathComponent,
+            "vao_kdc.mp3"
+        )
         XCTAssertNil(catalog.manifest.prompts["alert.turn_restriction"])
     }
 
