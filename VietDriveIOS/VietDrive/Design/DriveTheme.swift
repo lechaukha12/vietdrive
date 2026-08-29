@@ -25,6 +25,46 @@ enum MapAppearance: String, CaseIterable, Identifiable {
     }
 }
 
+enum MapDisplayMode: String, CaseIterable, Identifiable {
+    case drive3D
+    case standard
+    case satellite
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .drive3D: "Lái xe 3D"
+        case .standard: "Bản đồ"
+        case .satellite: "Vệ tinh"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .drive3D: "Góc nhìn theo hướng xe, hiển thị khối nhà"
+        case .standard: "Góc nhìn từ trên cao để tìm và xem khu vực"
+        case .satellite: "Ảnh thực tế kết hợp nhãn đường và cảnh báo"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .drive3D: "move.3d"
+        case .standard: "map.fill"
+        case .satellite: "globe.americas.fill"
+        }
+    }
+
+    var cameraPitch: CGFloat {
+        switch self {
+        case .drive3D: 54
+        case .standard: 0
+        case .satellite: 42
+        }
+    }
+}
+
 enum DriveTheme {
     static let ink = Color(red: 0.055, green: 0.13, blue: 0.30)
     static let panel = Color.white

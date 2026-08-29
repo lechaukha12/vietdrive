@@ -125,14 +125,6 @@ enum TrafficSignCatalog {
                 voicePromptKey: "alert.town.out",
                 voicePhrase: "hết khu đông dân cư"
             ),
-            // iGO/firmware type 10 is a logical town-entry alert. It must not
-            // be presented as proof that a physical Vietnamese R420 sign is
-            // installed at the stored coordinate.
-            TrafficSignDefinition(
-                "TOWN_ENTRY", "TrafficSign_TownEntry", "Đi vào khu đông dân cư",
-                voicePromptKey: "alert.town.in",
-                voicePhrase: "đi vào khu đông dân cư"
-            ),
             TrafficSignDefinition(
                 "DP133", "TrafficSign_DP133", "Hết cấm vượt",
                 voicePromptKey: "alert.overtaking.out",
@@ -192,7 +184,7 @@ enum TrafficSignCatalog {
         "IGO:2": "CAMERA_TRAFFIC",
         "IGO:4": "CAMERA_SECTION",
         "IGO:5": "TOLL",
-        "IGO:10": "TOWN_ENTRY",
+        "IGO:10": "R420",
         "IGO:11": "CAMERA_DUAL",
         "no_left_turn": "P123a",
         "no_right_turn": "P123b",
@@ -299,7 +291,7 @@ enum TrafficSignCatalog {
             code = "TOLL"
         case 10:
             kind = .townBoundary
-            code = "TOWN_ENTRY"
+            code = "R420"
         case 11:
             kind = .camera
             code = "CAMERA_DUAL"
@@ -315,11 +307,22 @@ enum TrafficSignCatalog {
         let speedMessage = speedLimit > 0
             ? "Biển giới hạn tốc độ \(speedLimit) km/h"
             : "Camera giám sát tốc độ"
+        let message: String
+        if typeCode == 10 {
+            // The decoded row carries the generic pipeline label "Điểm vào
+            // khu dân cư". Present the official sign meaning to drivers.
+            message = definition?.defaultMessage ?? "Bắt đầu khu đông dân cư"
+        } else {
+            message = warningText
+                ?? (typeCode == 1
+                    ? speedMessage
+                    : definition?.defaultMessage ?? "Cảnh báo giao thông")
+        }
         return FirmwareAlertDefinition(
             kind: kind,
             signCode: code,
             assetName: assetName(for: code, speedLimit: speedLimit),
-            message: warningText ?? (typeCode == 1 ? speedMessage : definition?.defaultMessage ?? "Cảnh báo giao thông")
+            message: message
         )
     }
 
@@ -381,6 +384,14 @@ struct DriveAlert: Identifiable, Equatable, Codable {
 
     var isMapDataSpeedPoint: Bool {
         source == "map-data/edogen.bin" && speedLimit > 0
+    }
+
+    /// iGO type 10 is an approach warning, not a proof that a physical sign
+    /// should be painted permanently in every map viewport.
+    var isFirmwareTownEntry: Bool {
+        kind == .townBoundary
+            && signCode == "R420"
+            && source == "map-data/edogen.bin"
     }
 
     var isRoadRuleDerived: Bool {

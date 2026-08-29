@@ -163,6 +163,7 @@ private struct CarPlayMapSurfaceView: View {
             routeViewportRevision: coordinator.mapRevision,
             showGuidanceMascot: false,
             isNightMode: false,
+            displayMode: .drive3D,
             onUserInteraction: {},
             onViewportChanged: { _, _ in },
             onAlertSelected: { _ in }

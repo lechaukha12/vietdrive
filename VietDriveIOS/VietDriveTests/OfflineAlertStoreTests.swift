@@ -65,24 +65,85 @@ final class OfflineAlertStoreTests: XCTestCase {
         wait(for: [completed], timeout: 3)
     }
 
-    func testTownEntryTypeIsExposedAsLogicalBoundaryRatherThanPhysicalSign() {
+    func testApproachingFirmwareTownEntryUsesOfficialR420Artwork() {
         let store = OfflineAlertStore()
         let completed = expectation(description: "map-data town entry query")
         let location = CLLocation(latitude: 9.055951, longitude: 105.039931)
         store.nearbyContext(
             location: location,
-            heading: 0,
-            speedKmh: 0
+            heading: 42,
+            speedKmh: 30
         ) { context in
             let observation = context.alerts.first {
-                $0.signCode == "TOWN_ENTRY" && $0.kind == .townBoundary
+                $0.signCode == "R420" && $0.kind == .townBoundary
             }
             XCTAssertNotNil(observation)
             XCTAssertEqual(
                 observation?.assetName,
-                "TrafficSigns/TrafficSign_TownEntry"
+                "TrafficSigns/TrafficSign_R420Official"
             )
+            XCTAssertEqual(observation?.message, "Bắt đầu khu đông dân cư")
             XCTAssertLessThan(observation?.distanceMeters ?? 100, 2)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testFirmwareTownEntryIsNotPaintedAsAStaticViewportSign() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "town entry viewport query")
+        let center = CLLocationCoordinate2D(latitude: 9.055951, longitude: 105.039931)
+
+        store.mapDataPoints(center: center, radiusMeters: 500) { points in
+            XCTAssertFalse(points.contains { $0.isFirmwareTownEntry })
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testFirmwareTownEntryRequiresMovementInItsEncodedDirection() {
+        let store = OfflineAlertStore()
+        let stopped = expectation(description: "stopped town entry query")
+        let wrongDirection = expectation(description: "wrong-direction town entry query")
+        let location = CLLocation(latitude: 9.055951, longitude: 105.039931)
+
+        store.nearbyContext(
+            location: location,
+            heading: 42,
+            speedKmh: 0
+        ) { context in
+            XCTAssertFalse(context.alerts.contains { $0.isFirmwareTownEntry })
+            stopped.fulfill()
+        }
+        store.nearbyContext(
+            location: location,
+            heading: 222,
+            speedKmh: 30
+        ) { context in
+            XCTAssertFalse(context.alerts.contains { $0.isFirmwareTownEntry })
+            wrongDirection.fulfill()
+        }
+
+        wait(for: [stopped, wrongDirection], timeout: 3)
+    }
+
+    func testIsolatedTownEntryInsideHoChiMinhCityIsRejected() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "isolated urban town entry query")
+        // Firmware point #7355 on Hoàng Sa has no reciprocal type-10 point
+        // for the opposite travel direction near the same boundary.
+        let location = CLLocation(latitude: 10.786191, longitude: 106.682166)
+
+        store.nearbyContext(
+            location: location,
+            heading: 61,
+            speedKmh: 30,
+            alertRadiusMeters: 1_500
+        ) { context in
+            XCTAssertFalse(context.alerts.contains { $0.id == 50_007_355 })
+            XCTAssertFalse(context.alerts.contains { $0.isFirmwareTownEntry })
             completed.fulfill()
         }
 
@@ -124,9 +185,9 @@ final class OfflineAlertStoreTests: XCTestCase {
         wait(for: [completed], timeout: 3)
     }
 
-    func testParkingRoadRuleIsNotDroppedByBroadRTreeLimit() {
+    func testParkingRoadRuleIsHiddenInFreeDriveMode() {
         let store = OfflineAlertStore()
-        let completed = expectation(description: "parking road-rule query")
+        let completed = expectation(description: "parking road-rule free-drive query")
         // Đường Phó Cơ Điều, OSM way 32580466: parking:right:restriction=no_parking.
         let location = CLLocation(latitude: 10.7620, longitude: 106.65703)
 
@@ -137,17 +198,15 @@ final class OfflineAlertStoreTests: XCTestCase {
             alertRadiusMeters: 1_500
         ) { context in
             let sign = context.alerts.first { $0.id == 20_000_409 }
-            XCTAssertEqual(sign?.kind, .parkingRestriction)
-            XCTAssertEqual(sign?.signCode, "P131a")
-            XCTAssertEqual(sign?.assetName, "TrafficSigns/TrafficSign_P131a")
-            XCTAssertLessThan(sign?.distanceMeters ?? 100, 10)
+            XCTAssertNil(sign)
+            XCTAssertTrue(context.matchedRoadRules.isEmpty)
             completed.fulfill()
         }
 
         wait(for: [completed], timeout: 3)
     }
 
-    func testAbsoluteVehicleAccessRuleIsVisibleAsRoadSign() {
+    func testAbsoluteVehicleAccessRuleIsHiddenInFreeDriveMode() {
         let store = OfflineAlertStore()
         let completed = expectation(description: "vehicle prohibition query")
         // Bến Cần Giuộc, OSM way 32577220: motor_vehicle=no.
@@ -160,17 +219,15 @@ final class OfflineAlertStoreTests: XCTestCase {
             alertRadiusMeters: 1_500
         ) { context in
             let sign = context.alerts.first { $0.id == 30_000_302 }
-            XCTAssertEqual(sign?.kind, .roadSign)
-            XCTAssertEqual(sign?.signCode, "P105")
-            XCTAssertEqual(sign?.assetName, "TrafficSigns/TrafficSign_P105")
-            XCTAssertEqual(sign?.message, "Cấm ô tô và mô tô")
+            XCTAssertNil(sign)
+            XCTAssertFalse(context.alerts.contains { $0.isRoadRuleDerived })
             completed.fulfill()
         }
 
         wait(for: [completed], timeout: 3)
     }
 
-    func testOneRoadRuleCanExposeParkingAndAccessSigns() {
+    func testOneRoadRuleCannotExposeSyntheticSignsInFreeDriveMode() {
         let store = OfflineAlertStore()
         let completed = expectation(description: "multi-sign road-rule query")
         // OSM way 231668454 contains both motorcar=no and parking:both=no.
@@ -182,10 +239,10 @@ final class OfflineAlertStoreTests: XCTestCase {
             speedKmh: 0,
             alertRadiusMeters: 1_500
         ) { context in
-            XCTAssertTrue(context.alerts.contains {
+            XCTAssertFalse(context.alerts.contains {
                 $0.id == 20_008_492 && $0.signCode == "P131a"
             })
-            XCTAssertTrue(context.alerts.contains {
+            XCTAssertFalse(context.alerts.contains {
                 $0.id == 30_008_492 && $0.signCode == "P103a"
             })
             completed.fulfill()
@@ -194,19 +251,31 @@ final class OfflineAlertStoreTests: XCTestCase {
         wait(for: [completed], timeout: 3)
     }
 
-    func testTurnRestrictionRelationsAreAvailableToViewport() {
+    func testTurnRestrictionRelationsAreHiddenFromFreeDriveViewport() {
         let store = OfflineAlertStore()
         let completed = expectation(description: "turn restriction viewport query")
         let center = CLLocationCoordinate2D(latitude: 10.8008406, longitude: 106.6606981)
 
         store.mapDataPoints(center: center, radiusMeters: 500) { points in
             let restriction = points.first { $0.id == 10_000_004 }
-            XCTAssertEqual(restriction?.kind, .turnRestriction)
-            XCTAssertEqual(restriction?.signCode, "P123b")
-            XCTAssertEqual(
-                restriction?.assetName,
-                "TrafficSigns/TrafficSign_P123b"
-            )
+            XCTAssertNil(restriction)
+            XCTAssertFalse(points.contains { $0.kind == .turnRestriction })
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testDenseHoChiMinhViewportContainsNoSyntheticRoadRuleMarkers() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "dense free-drive viewport query")
+        let center = CLLocationCoordinate2D(latitude: 10.7769, longitude: 106.7009)
+
+        store.mapDataPoints(center: center, radiusMeters: 2_000) { points in
+            XCTAssertFalse(points.contains { $0.isRoadRuleDerived })
+            XCTAssertFalse(points.contains { $0.isFirmwareTownEntry })
+            XCTAssertFalse(points.contains { $0.kind == .turnRestriction })
+            XCTAssertFalse(points.contains { $0.kind == .parkingRestriction })
             completed.fulfill()
         }
 
@@ -237,7 +306,7 @@ final class OfflineAlertStoreTests: XCTestCase {
     func testLegacyAndFirmwareCodesNormalizeThroughCatalog() {
         XCTAssertEqual(
             TrafficSignCatalog.canonicalCode(for: "IGO:10"),
-            "TOWN_ENTRY"
+            "R420"
         )
         XCTAssertEqual(
             TrafficSignCatalog.canonicalCode(for: "IGO:1", speedLimit: 60),
