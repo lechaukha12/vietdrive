@@ -13,6 +13,15 @@ struct DriveDiagnosticsView: View {
                         tint: model.locationFixQuality == .weak ? DriveTheme.amber : DriveTheme.mint
                     )
                     DiagnosticValueRow(
+                        title: model.locationService.isNavigationActive
+                            ? "GPS nền lái xe đang bật"
+                            : "GPS nền chưa bật",
+                        value: model.backgroundLocationDiagnosticText,
+                        tint: model.locationService.isNavigationActive
+                            ? DriveTheme.mint
+                            : DriveTheme.amber
+                    )
+                    DiagnosticValueRow(
                         title: "Trạng thái bám tuyến",
                         value: model.mapMatchStatus,
                         tint: DriveTheme.skyDeep

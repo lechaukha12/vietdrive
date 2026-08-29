@@ -12,6 +12,7 @@ struct DestinationSearchView: View {
 
     @EnvironmentObject private var model: DriveViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismissSearch) private var dismissSearch
     @State private var activeField: Field = .destination
     @State private var origin: PlaceSearchResult?
     @State private var destination: PlaceSearchResult?
@@ -58,6 +59,35 @@ struct DestinationSearchView: View {
 
                 searchContent
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let destination {
+                    Button(action: planRoute) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Tìm đường")
+                                    .font(.headline)
+                                Text("Đến \(destination.name)")
+                                    .font(.caption)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.title3)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .background(DriveTheme.cyan, in: RoundedRectangle(cornerRadius: 18))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(origin == nil && !model.canUseCurrentLocationForRouting)
+                    .opacity(origin == nil && !model.canUseCurrentLocationForRouting ? 0.5 : 1)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+                }
+            }
             .navigationTitle("Lập tuyến A → B")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(
@@ -75,12 +105,7 @@ struct DestinationSearchView: View {
                     Button("Đóng") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Tìm đường") {
-                        guard let destination else { return }
-                        hideKeyboard()
-                        model.planRoute(from: origin, to: destination)
-                        dismiss()
-                    }
+                    Button("Tìm đường", action: planRoute)
                     .fontWeight(.bold)
                     .disabled(destination == nil || (origin == nil && !model.canUseCurrentLocationForRouting))
                 }
@@ -230,7 +255,21 @@ struct DestinationSearchView: View {
         query = ""
         results = []
         errorMessage = nil
+        finishSearching()
+    }
+
+    private func planRoute() {
+        guard let destination,
+              origin != nil || model.canUseCurrentLocationForRouting
+        else { return }
+        finishSearching()
+        model.planRoute(from: origin, to: destination)
+        dismiss()
+    }
+
+    private func finishSearching() {
         hideKeyboard()
+        dismissSearch()
     }
 
     private func search() async {

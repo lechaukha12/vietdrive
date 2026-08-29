@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6F0560B2EB873D72FB799D3B"
-               BuildableName = "VietDrive.app"
-               BlueprintName = "VietDrive"
+               BlueprintIdentifier = "AC7EF7133FCAB3DCA9F93C3B"
+               BuildableName = "VietDrive Watch.app"
+               BlueprintName = "VietDriveWatch"
                ReferencedContainer = "container:VietDrive.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -30,24 +30,13 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6F0560B2EB873D72FB799D3B"
-            BuildableName = "VietDrive.app"
-            BlueprintName = "VietDrive"
+            BlueprintIdentifier = "AC7EF7133FCAB3DCA9F93C3B"
+            BuildableName = "VietDrive Watch.app"
+            BlueprintName = "VietDriveWatch"
             ReferencedContainer = "container:VietDrive.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "9533C7C4CF431879A6CBDE1B"
-               BuildableName = "VietDriveTests.xctest"
-               BlueprintName = "VietDriveTests"
-               ReferencedContainer = "container:VietDrive.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -64,9 +53,8 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6F0560B2EB873D72FB799D3B"
-            BuildableName = "VietDrive.app"
-            BlueprintName = "VietDrive"
+            BlueprintIdentifier = "AC7EF7133FCAB3DCA9F93C3B"
+            BuildableName = "VietDrive Watch.app"
             ReferencedContainer = "container:VietDrive.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -81,9 +69,8 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6F0560B2EB873D72FB799D3B"
-            BuildableName = "VietDrive.app"
-            BlueprintName = "VietDrive"
+            BlueprintIdentifier = "AC7EF7133FCAB3DCA9F93C3B"
+            BuildableName = "VietDrive Watch.app"
             ReferencedContainer = "container:VietDrive.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

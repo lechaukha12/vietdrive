@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import UIKit
 
 struct RecordedVoiceManifest: Decodable {
     let schemaVersion: Int
@@ -86,6 +87,11 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     private var promptSequence = 0
     private var isAudioInterrupted = false
     private var interruptionObserver: NSObjectProtocol?
+    private var mediaServicesResetObserver: NSObjectProtocol?
+    private var lifecycleObservers: [NSObjectProtocol] = []
+    private var isNavigationActive = false
+    private var audioRetryWorkItem: DispatchWorkItem?
+    private var consecutiveActivationFailures = 0
     private var lastAlertID: Int?
     private var lastSpokenAt = Date.distantPast
     private var announcedOverSpeed = false
@@ -124,11 +130,68 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         ) { [weak self] notification in
             self?.handleAudioInterruption(notification)
         }
+        mediaServicesResetObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] _ in
+            self?.recoverAfterMediaServicesReset()
+        }
+        lifecycleObservers.append(NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.prepareForBackgroundNavigation(reason: "did_enter_background")
+        })
+        lifecycleObservers.append(NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.prepareForBackgroundNavigation(reason: "will_enter_foreground")
+        })
+        lifecycleObservers.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, !self.pendingPrompts.isEmpty else { return }
+            self.consecutiveActivationFailures = 0
+            self.startNextPromptIfPossible()
+        })
     }
 
     deinit {
         if let interruptionObserver {
             NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+        if let mediaServicesResetObserver {
+            NotificationCenter.default.removeObserver(mediaServicesResetObserver)
+        }
+        lifecycleObservers.forEach(NotificationCenter.default.removeObserver)
+    }
+
+    func setNavigationActive(_ active: Bool) {
+        isNavigationActive = active
+        if active {
+            configureAudioSession()
+            diagnose("Audio navigation session sẵn sàng")
+        } else {
+            diagnose("Audio navigation session đã kết thúc")
+            if activePrompt == nil, pendingPrompts.isEmpty {
+                deactivateAudioSession()
+            }
+        }
+    }
+
+    func prepareForBackgroundNavigation(reason: String) {
+        guard isNavigationActive else { return }
+        configureAudioSession()
+        diagnose("Audio continuity · \(reason)")
+        if activePrompt == nil, !pendingPrompts.isEmpty {
+            consecutiveActivationFailures = 0
+            startNextPromptIfPossible()
         }
     }
 
@@ -149,52 +212,23 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
             diagnose("Đã chặn voice cấm rẽ · \(alert.signCode ?? alert.kind.rawValue)")
             return
         }
-        guard isEnabled, alert.distanceMeters >= 80, alert.distanceMeters <= 450 else { return }
+        let minimumDistance: Double = alert.isRoadRuleDerived ? 0 : 80
+        guard isEnabled,
+              alert.distanceMeters >= minimumDistance,
+              alert.distanceMeters <= 450 else { return }
         let now = Date()
         guard lastAlertID != alert.id || now.timeIntervalSince(lastSpokenAt) > 90 else { return }
 
         let distance = naturalDistance(alert.distanceMeters)
         let message: String
         let recordedKey: String?
-        let signCode = alert.signCode ?? ""
-        let assetName = alert.assetName ?? ""
 
-        if signCode == "IGO:2" || assetName.contains("CameraTraffic") {
-            recordedKey = "alert.camera.traffic"
-            message = "Phía trước \(distance) có camera phạt nguội đèn đỏ."
-        } else if signCode == "IGO:4" || assetName.contains("CameraSection") {
-            recordedKey = "alert.camera.section"
-            message = "Phía trước \(distance) có camera đo tốc độ theo đoạn."
-        } else if signCode == "IGO:11" || assetName.contains("CameraDual") {
-            recordedKey = "alert.camera.dual"
-            message = "Phía trước \(distance) có camera phạt nguội đèn đỏ và tốc độ."
-        } else if signCode == "IGO:10" || signCode == "R420" || assetName.contains("R420") {
-            recordedKey = "alert.town.in"
-            message = "Phía trước \(distance) bắt đầu khu đông dân cư."
-        } else if signCode == "R421" || assetName.contains("R421") {
-            recordedKey = "alert.town.out"
-            message = "Phía trước \(distance) hết khu đông dân cư."
-        } else if signCode == "P125" || assetName.contains("P125") {
-            recordedKey = "alert.overtaking.in"
-            message = "Phía trước \(distance) đoạn đường cấm vượt."
-        } else if signCode == "DP133" || assetName.contains("DP133") {
-            recordedKey = "alert.overtaking.out"
-            message = "Phía trước \(distance) hết cấm vượt."
-        } else if alert.kind == .toll || signCode == "IGO:5" || signCode == "TOLL" || assetName.contains("Toll") {
-            recordedKey = "alert.toll"
-            message = "Phía trước \(distance) có trạm thu phí."
-        } else if signCode == "W240" || assetName.contains("Tunnel") {
-            recordedKey = "alert.tunnel"
-            message = "Phía trước \(distance) có đường hầm."
-        } else if signCode == "W210" || assetName.contains("Railway") {
-            recordedKey = "alert.railway"
-            message = "Phía trước \(distance) giao nhau với đường sắt."
-        } else if signCode == "I433" || assetName.contains("RestArea") {
-            recordedKey = "alert.rest_area"
-            message = "Phía trước \(distance) có trạm dừng nghỉ."
-        } else if assetName.contains("Checkpoint") {
-            recordedKey = "alert.checkpoint"
-            message = "Phía trước \(distance) có trạm kiểm tra tốc độ."
+        if let announcement = TrafficSignCatalog.voiceAnnouncement(
+            for: alert,
+            distanceText: distance
+        ) {
+            recordedKey = announcement.promptKey
+            message = announcement.message
         } else if alert.speedLimit > 0 {
             recordedKey = speedPromptKey(limit: alert.speedLimit)
             message = alert.kind == .camera
@@ -203,6 +237,9 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         } else if alert.kind == .camera {
             recordedKey = "alert.camera"
             message = "Phía trước \(distance) có camera giám sát."
+        } else if alert.isRoadRuleDerived && alert.distanceMeters < 80 {
+            recordedKey = nil
+            message = "Đoạn đường hiện tại, \(alert.message.lowercased())."
         } else {
             recordedKey = nil
             message = "Phía trước \(distance), \(alert.message.lowercased())."
@@ -340,6 +377,9 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     }
 
     func stopAll() {
+        audioRetryWorkItem?.cancel()
+        audioRetryWorkItem = nil
+        consecutiveActivationFailures = 0
         pendingPrompts.removeAll()
         activePrompt = nil
         lastAlertID = nil
@@ -354,7 +394,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         synthesizer.delegate = nil
         synthesizer.stopSpeaking(at: .immediate)
         synthesizer.delegate = self
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        deactivateAudioSession()
     }
 
     private func speedPromptKey(limit: Int) -> String? {
@@ -425,12 +465,22 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         let now = Date()
         pendingPrompts.removeAll { $0.expiresAt <= now }
         guard !pendingPrompts.isEmpty else {
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            deactivateAudioSession()
             return
         }
         let prompt = pendingPrompts.removeFirst()
         activePrompt = prompt
-        try? AVAudioSession.sharedInstance().setActive(true)
+        guard activateAudioSession() else {
+            activePrompt = nil
+            if prompt.expiresAt > Date() {
+                pendingPrompts.insert(prompt, at: 0)
+                scheduleAudioRetry(for: prompt)
+            }
+            return
+        }
+        audioRetryWorkItem?.cancel()
+        audioRetryWorkItem = nil
+        consecutiveActivationFailures = 0
 
         if let key = prompt.recordedKey,
            let url = recordedCatalog?.url(for: key),
@@ -471,6 +521,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     }
 
     private func finishActivePrompt() {
+        consecutiveActivationFailures = 0
         activePrompt = nil
         audioPlayer = nil
         startNextPromptIfPossible()
@@ -481,10 +532,16 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
         switch type {
         case .began:
+            audioRetryWorkItem?.cancel()
+            audioRetryWorkItem = nil
             isAudioInterrupted = true
             cancelCurrentPlayback(requeue: true)
+            diagnose("Audio interruption bắt đầu")
         case .ended:
             isAudioInterrupted = false
+            consecutiveActivationFailures = 0
+            configureAudioSession()
+            diagnose("Audio interruption kết thúc")
             startNextPromptIfPossible()
         @unknown default:
             break
@@ -492,6 +549,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     }
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        diagnose(flag ? "MP3 đã phát xong" : "MP3 kết thúc không thành công")
         finishActivePrompt()
     }
 
@@ -501,6 +559,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        diagnose("TTS đã phát xong")
         finishActivePrompt()
     }
 
@@ -520,14 +579,10 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     }
 
     static func isSilentTurnRestriction(_ alert: DriveAlert) -> Bool {
-        if alert.kind == .turnRestriction { return true }
-        let code = (alert.signCode ?? "").lowercased()
-        return code.hasPrefix("p103")
-            || code.hasPrefix("p123")
-            || code.contains("left_turn")
-            || code.contains("right_turn")
-            || code.contains("u_turn")
-            || code.contains("straight_on")
+        // Relation-derived restrictions do not encode the driver's intended
+        // branch in free-drive mode. Physical sign nodes (P103/P123/P124) do,
+        // and should be announced like other audited road signs.
+        alert.kind == .turnRestriction
     }
 
     private static func bestVietnameseVoice() -> AVSpeechSynthesisVoice? {
@@ -544,10 +599,72 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setCategory(
+                .playback,
+                mode: .voicePrompt,
+                options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
+            )
         } catch {
-            // Recorded prompts and TTS can still use the system defaults.
+            diagnose("Lỗi cấu hình audio · \(error.localizedDescription)")
         }
+    }
+
+    private func activateAudioSession() -> Bool {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(
+                .playback,
+                mode: .voicePrompt,
+                options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
+            )
+            try session.setActive(true)
+            return true
+        } catch {
+            diagnose("Lỗi kích hoạt audio · \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func deactivateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(
+                false,
+                options: .notifyOthersOnDeactivation
+            )
+        } catch {
+            diagnose("Lỗi đóng audio · \(error.localizedDescription)")
+        }
+    }
+
+    private func recoverAfterMediaServicesReset() {
+        audioRetryWorkItem?.cancel()
+        audioRetryWorkItem = nil
+        consecutiveActivationFailures = 0
+        cancelCurrentPlayback(requeue: true)
+        isAudioInterrupted = false
+        configureAudioSession()
+        diagnose("Audio services đã được khôi phục")
+        startNextPromptIfPossible()
+    }
+
+    private func scheduleAudioRetry(for prompt: PendingPrompt) {
+        guard audioRetryWorkItem == nil else { return }
+        consecutiveActivationFailures += 1
+        guard consecutiveActivationFailures <= 3 else {
+            diagnose("Audio chưa thể kích hoạt sau 3 lần · giữ prompt chờ route/lifecycle mới")
+            return
+        }
+        let delay = 0.6 * pow(2, Double(consecutiveActivationFailures - 1))
+        diagnose("Audio retry \(consecutiveActivationFailures)/3 sau \(String(format: "%.1f", delay))s")
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.audioRetryWorkItem = nil
+            guard prompt.expiresAt > Date(),
+                  self.pendingPrompts.contains(where: { $0.id == prompt.id }) else { return }
+            self.startNextPromptIfPossible()
+        }
+        audioRetryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
     private func diagnose(_ message: String) {

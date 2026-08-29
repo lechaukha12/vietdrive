@@ -72,8 +72,7 @@ final class NavigationSessionStore {
 final class NavigationTelemetryRecorder {
     static let shared = NavigationTelemetryRecorder()
 
-    private var fileHandle: FileHandle?
-    private var fileURL: URL?
+    private let writer = NavigationTelemetryWriter()
 
     private init() {}
 
@@ -83,14 +82,10 @@ final class NavigationTelemetryRecorder {
         let directory = base
             .appendingPathComponent("VietDrive", isDirectory: true)
             .appendingPathComponent("NavigationLogs", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        prune(directory: directory)
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let url = directory.appendingPathComponent("nav-\(formatter.string(from: Date())).jsonl")
-        _ = FileManager.default.createFile(atPath: url.path, contents: nil)
-        fileHandle = try? FileHandle(forWritingTo: url)
-        fileURL = url
+        writer.start(directory: directory, fileURL: url)
         event(restored ? "session_restored" : "navigation_started", routeID: routeID)
     }
 
@@ -120,11 +115,35 @@ final class NavigationTelemetryRecorder {
             nextStepID: progress.nextStep?.id,
             nextStepDistanceMeters: progress.distanceToNextStepMeters,
             offRouteSamples: offRouteSamples,
-            applicationState: Self.applicationState
+            applicationState: Self.applicationState,
+            detail: nil
         ))
     }
 
-    func event(_ name: String, routeID: String? = nil) {
+    func rawLocation(
+        _ location: CLLocation,
+        resolvedHeading: Double,
+        headingSource: String,
+        routeID: String
+    ) {
+        write(TelemetryRecord(
+            timestamp: Date(), event: "location_received", routeID: routeID,
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            horizontalAccuracy: location.horizontalAccuracy,
+            speedMetersPerSecond: location.speed,
+            gpsCourse: location.course,
+            resolvedHeading: resolvedHeading,
+            headingSource: headingSource,
+            matchedDistanceMeters: nil, lateralDistanceMeters: nil,
+            routeBearing: nil, headingDifferenceDegrees: nil,
+            nextStepID: nil, nextStepDistanceMeters: nil,
+            offRouteSamples: nil, applicationState: Self.applicationState,
+            detail: nil
+        ))
+    }
+
+    func event(_ name: String, routeID: String? = nil, detail: String? = nil) {
         write(TelemetryRecord(
             timestamp: Date(), event: name, routeID: routeID,
             latitude: nil, longitude: nil, horizontalAccuracy: nil,
@@ -133,38 +152,19 @@ final class NavigationTelemetryRecorder {
             lateralDistanceMeters: nil, routeBearing: nil,
             headingDifferenceDegrees: nil, nextStepID: nil,
             nextStepDistanceMeters: nil, offRouteSamples: nil,
-            applicationState: Self.applicationState
+            applicationState: Self.applicationState, detail: detail
         ))
     }
 
     func finish(event name: String? = "navigation_finished") {
         if let name { event(name) }
-        try? fileHandle?.close()
-        fileHandle = nil
-        fileURL = nil
+        writer.finish()
     }
 
     private func write(_ record: TelemetryRecord) {
-        guard let fileHandle,
-              var data = try? JSONEncoder().encode(record) else { return }
+        guard var data = try? JSONEncoder().encode(record) else { return }
         data.append(0x0A)
-        do {
-            try fileHandle.seekToEnd()
-            try fileHandle.write(contentsOf: data)
-        } catch { }
-    }
-
-    private func prune(directory: URL) {
-        let files = (try? FileManager.default.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.contentModificationDateKey]
-        )) ?? []
-        let sorted = files.sorted {
-            let left = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            let right = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            return left > right
-        }
-        for file in sorted.dropFirst(9) { try? FileManager.default.removeItem(at: file) }
+        writer.append(data)
     }
 
     private static var applicationState: String {
@@ -173,6 +173,72 @@ final class NavigationTelemetryRecorder {
         case .inactive: "inactive"
         case .background: "background"
         @unknown default: "unknown"
+        }
+    }
+}
+
+/// FileHandle operations stay off the Core Location/main callback path. The
+/// serial queue preserves the exact event order, including start → samples →
+/// finish, while complete-until-first-authentication protection keeps logging
+/// available after the user locks an already-unlocked phone.
+private final class NavigationTelemetryWriter: @unchecked Sendable {
+    private let queue = DispatchQueue(
+        label: "vn.vietdrive.navigation-telemetry",
+        qos: .utility
+    )
+    private var fileHandle: FileHandle?
+
+    func start(directory: URL, fileURL: URL) {
+        queue.async { [self] in
+            closeCurrentFile()
+            let fileManager = FileManager.default
+            try? fileManager.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+            prune(directory: directory, fileManager: fileManager)
+            _ = fileManager.createFile(
+                atPath: fileURL.path,
+                contents: nil,
+                attributes: [
+                    .protectionKey: FileProtectionType.completeUntilFirstUserAuthentication
+                ]
+            )
+            fileHandle = try? FileHandle(forWritingTo: fileURL)
+        }
+    }
+
+    func append(_ data: Data) {
+        queue.async { [self] in
+            guard let fileHandle else { return }
+            do {
+                try fileHandle.seekToEnd()
+                try fileHandle.write(contentsOf: data)
+            } catch { }
+        }
+    }
+
+    func finish() {
+        queue.async { [self] in closeCurrentFile() }
+    }
+
+    private func closeCurrentFile() {
+        try? fileHandle?.close()
+        fileHandle = nil
+    }
+
+    private func prune(directory: URL, fileManager: FileManager) {
+        let files = (try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.contentModificationDateKey]
+        )) ?? []
+        let sorted = files.sorted {
+            let left = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let right = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return left > right
+        }
+        for file in sorted.dropFirst(9) {
+            try? fileManager.removeItem(at: file)
         }
     }
 }
@@ -297,4 +363,5 @@ private struct TelemetryRecord: Codable {
     let nextStepDistanceMeters: Int?
     let offRouteSamples: Int?
     let applicationState: String
+    let detail: String?
 }

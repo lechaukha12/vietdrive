@@ -4,6 +4,34 @@ import OSLog
 import SQLite3
 
 final class OfflineAlertStore {
+    private struct RoadRuleSignDescriptor {
+        let idBase: Int
+        let kind: AlertKind
+        let message: String
+        let signCode: String
+        let assetName: String
+        let conditional: String?
+    }
+
+    private struct PolylineProjection {
+        let coordinate: CLLocationCoordinate2D
+        let distanceMeters: Double
+        let segmentBearing: Double
+        let distanceFromStartMeters: Double
+        let totalLengthMeters: Double
+    }
+
+    private struct RoadContinuation {
+        let road: FirmwareRoadCandidate
+        let travelsAlongGeometry: Bool
+        let speedLimit: Int?
+        let roadName: String
+        let exitCoordinate: CLLocationCoordinate2D
+        let exitBearing: Double
+        let lengthMeters: Double
+        let score: Double
+    }
+
     private struct FirmwareRoadCandidate {
         let id: Int
         let roadSerialNumber: Int
@@ -89,6 +117,13 @@ final class OfflineAlertStore {
             trafficSignCount = Self.scalarInt(
                 database,
                 "SELECT COUNT(*) FROM map_data_points WHERE type_code = 10;"
+            ) + Self.scalarInt(
+                database,
+                """
+                SELECT COUNT(*) FROM alerts
+                WHERE type = 'road_sign'
+                  AND sign_code NOT LIKE '\(TrafficSignCatalog.speedCodePrefix)%';
+                """
             )
             suppliedSpeedObservationCount = mapDataSpeedPointCount
             turnRestrictionCount = Self.scalarInt(database, "SELECT COUNT(*) FROM turn_restrictions;")
@@ -126,12 +161,37 @@ final class OfflineAlertStore {
                 latitude: center.latitude,
                 longitude: center.longitude
             )
+            let queryRadius = min(max(radiusMeters, 500), 50_000)
             let points = self.queryMapDataPoints(
                 database: database,
                 location: centerLocation,
-                radiusMeters: min(max(radiusMeters, 500), 50_000)
+                radiusMeters: queryRadius
             )
-            DispatchQueue.main.async { completion(points) }
+            let physicalSigns = self.queryAlerts(
+                database: database,
+                location: centerLocation,
+                radiusMeters: queryRadius
+            ).filter(Self.isNonFirmwarePhysicalSign)
+            // Viewport signs are display-only. Include every semantic source,
+            // while capping dense line rules to the useful local map area.
+            let semanticRadius = min(queryRadius, 2_000)
+            let roadRuleSigns = self.queryRoadRuleAlerts(
+                database: database,
+                location: centerLocation,
+                queryRadiusMeters: semanticRadius,
+                maximumRuleDistanceMeters: semanticRadius
+            ).alerts
+            let turnRestrictions = self.queryTurnRestrictions(
+                database: database,
+                location: centerLocation,
+                radiusMeters: min(queryRadius, 10_000)
+            )
+            DispatchQueue.main.async {
+                completion(
+                    (points + physicalSigns + roadRuleSigns + turnRestrictions)
+                        .sorted { $0.distanceMeters < $1.distanceMeters }
+                )
+            }
         }
     }
 
@@ -181,13 +241,27 @@ final class OfflineAlertStore {
             )
             let roadRuleResults = self.queryRoadRuleAlerts(
                 database: database,
-                location: location
+                location: location,
+                queryRadiusMeters: 500,
+                maximumRuleDistanceMeters: 80
             )
             let turnRestrictions = self.queryTurnRestrictions(
                 database: database,
-                location: location
+                location: location,
+                radiusMeters: route == nil ? alertRadiusMeters : 5_000
             )
-            let allCandidates = mapDataAlerts + roadRuleResults.alerts + turnRestrictions
+            // Physical OSM sign nodes are a separate audited table. They were
+            // previously loaded by queryAlerts() but never joined into either
+            // the driving context or viewport, which made every non-firmware
+            // prohibition sign effectively invisible. Firmware speed signs
+            // remain authoritative and are deliberately not duplicated here.
+            let physicalSigns = self.queryAlerts(
+                database: database,
+                location: location,
+                radiusMeters: route == nil ? alertRadiusMeters : 10_000
+            ).filter(Self.isNonFirmwarePhysicalSign)
+            let allCandidates = mapDataAlerts + physicalSigns
+                + roadRuleResults.alerts + turnRestrictions
             let alerts = self.routeAwareAlerts(
                 allCandidates,
                 location: location,
@@ -266,60 +340,23 @@ final class OfflineAlertStore {
             let rawWarning = Self.text(statement, 8)
             let directionType = Int(sqlite3_column_int(statement, 6))
 
-            let kind: AlertKind
-            let signCode: String
-            let assetName: String?
-            let message: String
-
-            switch typeCode {
-            case 1:
-                kind = speed > 0 ? .speedLimit : .camera
-                signCode = "IGO:1"
-                assetName = speed > 0 ? "TrafficSigns/TrafficSign_P127_\(speed)" : "TrafficSigns/TrafficSign_CameraSpeed"
-                message = rawWarning ?? (speed > 0 ? "Biển giới hạn tốc độ \(speed) km/h" : "Camera giám sát tốc độ")
-            case 2:
-                kind = .camera
-                signCode = "IGO:2"
-                assetName = "TrafficSigns/TrafficSign_CameraTraffic"
-                message = rawWarning ?? "Camera đèn tín hiệu giao thông"
-            case 4:
-                kind = .camera
-                signCode = "IGO:4"
-                assetName = "TrafficSigns/TrafficSign_CameraSection"
-                message = rawWarning ?? "Camera đo tốc độ theo đoạn"
-            case 5:
-                kind = .toll
-                signCode = "IGO:5"
-                assetName = "TrafficSigns/TrafficSign_Toll"
-                message = rawWarning ?? "Trạm thu phí"
-            case 10:
-                kind = .roadSign
-                signCode = "IGO:10"
-                assetName = "TrafficSigns/TrafficSign_R420"
-                message = rawWarning ?? "Khu đông dân cư"
-            case 11:
-                kind = .camera
-                signCode = "IGO:11"
-                assetName = "TrafficSigns/TrafficSign_CameraDual"
-                message = rawWarning ?? (speed > 0 ? "Camera phạt nguội đèn đỏ và tốc độ \(speed) km/h" : "Camera phạt nguội đèn đỏ và tốc độ")
-            default:
-                kind = .hazard
-                signCode = "IGO:\(typeCode)"
-                assetName = nil
-                message = rawWarning ?? "Cảnh báo giao thông"
-            }
+            let definition = TrafficSignCatalog.firmwareAlert(
+                typeCode: typeCode,
+                speedLimit: speed,
+                warningText: rawWarning
+            )
 
             result.append(DriveAlert(
                 id: 50_000_000 + Int(sqlite3_column_int(statement, 0)),
-                kind: kind,
+                kind: definition.kind,
                 speedLimit: speed,
                 latitude: latitude,
                 longitude: longitude,
-                message: message,
+                message: definition.message,
                 province: "",
                 distanceMeters: distance,
-                signCode: signCode,
-                assetName: assetName,
+                signCode: definition.signCode,
+                assetName: definition.assetName,
                 source: Self.text(statement, 9) ?? "map-data/edogen.bin",
                 sourceReference: Self.text(statement, 10),
                 confidence: sqlite3_column_double(statement, 11),
@@ -334,11 +371,9 @@ final class OfflineAlertStore {
     private func queryAlerts(
         database: OpaquePointer,
         location: CLLocation,
-        heading: Double,
-        speedKmh: Int,
         radiusMeters: Double
     ) -> [DriveAlert] {
-        let bounds = Self.bounds(around: location.coordinate, radiusMeters: 10_000)
+        let bounds = Self.bounds(around: location.coordinate, radiusMeters: radiusMeters)
         let query = """
             SELECT a.id, a.type, a.latitude, a.longitude, a.warning_text,
                    a.speed_kmh, a.sign_code, a.asset_name, a.source,
@@ -369,20 +404,30 @@ final class OfflineAlertStore {
             let alertLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
             let distance = location.distance(from: alertLocation)
             let kind = AlertKind(databaseValue: typeText)
-            let allowedRadius = kind == .roadSign ? 10_000.0 : radiusMeters
-            guard distance <= allowedRadius else { continue }
+            guard distance <= radiusMeters else { continue }
+            let speed = Int(sqlite3_column_int(statement, 5))
+            let storedCode = Self.text(statement, 6)
+            let storedAsset = Self.text(statement, 7)
+            let canonicalCode = TrafficSignCatalog.canonicalCode(
+                for: storedCode,
+                speedLimit: speed,
+                assetName: storedAsset
+            ) ?? storedCode
 
             alerts.append(DriveAlert(
                 id: Int(sqlite3_column_int(statement, 0)),
                 kind: kind,
-                speedLimit: Int(sqlite3_column_int(statement, 5)),
+                speedLimit: speed,
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude,
                 message: message,
                 province: "",
                 distanceMeters: distance,
-                signCode: Self.text(statement, 6),
-                assetName: Self.text(statement, 7),
+                signCode: canonicalCode,
+                assetName: TrafficSignCatalog.assetName(
+                    for: canonicalCode,
+                    speedLimit: speed
+                ) ?? storedAsset,
                 source: Self.text(statement, 8) ?? "",
                 sourceReference: Self.text(statement, 9),
                 confidence: sqlite3_column_double(statement, 10),
@@ -438,8 +483,10 @@ final class OfflineAlertStore {
                 message: "Điểm dữ liệu giới hạn tốc độ \(speed) km/h",
                 province: Self.text(statement, 4) ?? "",
                 distanceMeters: distance,
-                signCode: "P127.\(speed)",
-                assetName: "TrafficSigns/TrafficSign_P127_\(speed)",
+                signCode: TrafficSignCatalog.speedCode(speed),
+                assetName: TrafficSignCatalog.assetName(
+                    for: TrafficSignCatalog.speedCode(speed)
+                ),
                 source: "Dữ liệu tốc độ VietDrive cung cấp",
                 confidence: 0.65
             ))
@@ -449,9 +496,10 @@ final class OfflineAlertStore {
 
     private func queryTurnRestrictions(
         database: OpaquePointer,
-        location: CLLocation
+        location: CLLocation,
+        radiusMeters: Double
     ) -> [DriveAlert] {
-        let bounds = Self.bounds(around: location.coordinate, radiusMeters: 10_000)
+        let bounds = Self.bounds(around: location.coordinate, radiusMeters: radiusMeters)
         let query = """
             SELECT t.id, t.restriction, t.warning_text, t.latitude, t.longitude,
                    t.vehicle, t.conditional, t.except_text, t.source,
@@ -460,7 +508,7 @@ final class OfflineAlertStore {
             JOIN turn_restrictions t ON t.id = r.restriction_id
             WHERE r.min_lat <= ? AND r.max_lat >= ?
               AND r.min_lon <= ? AND r.max_lon >= ?
-            LIMIT 300;
+            LIMIT 2_000;
             """
         var statement: OpaquePointer?
         var result: [DriveAlert] = []
@@ -475,7 +523,10 @@ final class OfflineAlertStore {
             guard !exceptText.contains("motorcar"),
                   ConditionalRuleEvaluator.isPotentiallyActive(conditional) else { continue }
             let coordinate = CLLocation(latitude: latitude, longitude: longitude)
+            let distance = location.distance(from: coordinate)
+            guard distance <= radiusMeters else { continue }
             let restrictionCode = Self.text(statement, 1) ?? ""
+            let canonicalCode = TrafficSignCatalog.canonicalRestrictionCode(restrictionCode)
             var message = Self.text(statement, 2) ?? "Hạn chế hướng đi"
             if !conditional.isEmpty { message += " · \(conditional)" }
             result.append(DriveAlert(
@@ -486,9 +537,9 @@ final class OfflineAlertStore {
                 longitude: longitude,
                 message: message,
                 province: "",
-                distanceMeters: location.distance(from: coordinate),
-                signCode: restrictionCode,
-                assetName: Self.assetName(forRestriction: restrictionCode),
+                distanceMeters: distance,
+                signCode: canonicalCode ?? restrictionCode,
+                assetName: TrafficSignCatalog.assetName(for: canonicalCode),
                 source: Self.text(statement, 8) ?? "OpenStreetMap",
                 sourceReference: Self.text(statement, 9),
                 confidence: sqlite3_column_double(statement, 10),
@@ -500,9 +551,18 @@ final class OfflineAlertStore {
 
     private func queryRoadRuleAlerts(
         database: OpaquePointer,
-        location: CLLocation
+        location: CLLocation,
+        queryRadiusMeters: Double,
+        maximumRuleDistanceMeters: Double
     ) -> (alerts: [DriveAlert], matchedRules: [String]) {
-        let bounds = Self.bounds(around: location.coordinate, radiusMeters: 2_000)
+        // Query a compact spatial window before applying LIMIT. The previous
+        // 2 km window could contain thousands of R-tree rows; SQLite then
+        // returned an arbitrary first 240 and frequently discarded the road
+        // directly under the vehicle before geometry matching happened.
+        let bounds = Self.bounds(
+            around: location.coordinate,
+            radiusMeters: queryRadiusMeters
+        )
         let query = """
             SELECT rr.id, rr.rules_json, rr.road_name, rr.geometry_json,
                    rr.source, rr.source_ref, rr.confidence
@@ -510,7 +570,22 @@ final class OfflineAlertStore {
             JOIN road_rules rr ON rr.id = r.rule_id
             WHERE r.min_lat <= ? AND r.max_lat >= ?
               AND r.min_lon <= ? AND r.max_lon >= ?
-            LIMIT 240;
+              AND EXISTS (
+                  SELECT 1
+                  FROM json_each(rr.rules_json) rule
+                  WHERE (
+                      rule.key LIKE 'parking:%'
+                      AND lower(rule.value) LIKE 'no%'
+                  ) OR (
+                      rule.key IN (
+                          'access', 'access:conditional',
+                          'motor_vehicle', 'motor_vehicle:conditional',
+                          'motorcar', 'motorcar:conditional'
+                      )
+                      AND lower(rule.value) LIKE 'no%'
+                  )
+              )
+            LIMIT 5_000;
             """
         var statement: OpaquePointer?
         var alerts: [DriveAlert] = []
@@ -535,61 +610,34 @@ final class OfflineAlertStore {
             guard let nearest = Self.nearestCoordinate(
                 to: location.coordinate,
                 in: coordinates
-            ), nearest.distance <= 80 else { continue }
+            ), nearest.distance <= maximumRuleDistanceMeters else { continue }
             matchedRules.append(contentsOf: rules.map { "\($0.key)=\($0.value)" })
-
-            let parking = rules.first { key, value in
-                key.contains("parking") && ["no", "no_parking", "no_stopping"].contains(value.lowercased())
+            let ruleID = Int(sqlite3_column_int(statement, 0))
+            for sign in Self.resolveRoadRuleSigns(rules) {
+                alerts.append(DriveAlert(
+                    id: sign.idBase + ruleID,
+                    kind: sign.kind,
+                    speedLimit: 0,
+                    latitude: nearest.coordinate.latitude,
+                    longitude: nearest.coordinate.longitude,
+                    message: sign.message,
+                    province: Self.text(statement, 2) ?? "",
+                    distanceMeters: nearest.distance,
+                    signCode: sign.signCode,
+                    assetName: sign.assetName,
+                    source: Self.text(statement, 4) ?? "OpenStreetMap",
+                    sourceReference: Self.text(statement, 5),
+                    confidence: sqlite3_column_double(statement, 6),
+                    conditional: sign.conditional,
+                    directionDegrees: nearest.bearing,
+                    directionType: 2
+                ))
             }
-            let access = rules.first { key, value in
-                ["access", "motor_vehicle", "motorcar"].contains(key)
-                    && ["no", "private", "destination", "delivery"].contains(value.lowercased())
-            }
-            guard parking != nil || access != nil else { continue }
-            let message: String
-            let kind: AlertKind
-            let assetName: String?
-            if let parking {
-                kind = .parkingRestriction
-                let val = parking.value.lowercased()
-                let isStopping = val.contains("stopping")
-                let isOdd = val.contains("odd")
-                let isEven = val.contains("even")
-                if isStopping {
-                    message = "Cấm dừng và đỗ xe"
-                    assetName = "TrafficSigns/TrafficSign_P130"
-                } else if isOdd {
-                    message = "Cấm đỗ xe ngày lẻ"
-                    assetName = "TrafficSigns/TrafficSign_P131b"
-                } else if isEven {
-                    message = "Cấm đỗ xe ngày chẵn"
-                    assetName = "TrafficSigns/TrafficSign_P131c"
-                } else {
-                    message = "Cấm đỗ xe"
-                    assetName = "TrafficSigns/TrafficSign_P131a"
-                }
-            } else {
-                kind = .turnRestriction
-                message = "Đường hạn chế phương tiện"
-                assetName = "TrafficSigns/TrafficSign_P101"
-            }
-            alerts.append(DriveAlert(
-                id: 20_000_000 + Int(sqlite3_column_int(statement, 0)),
-                kind: kind,
-                speedLimit: 0,
-                latitude: nearest.coordinate.latitude,
-                longitude: nearest.coordinate.longitude,
-                message: message,
-                province: Self.text(statement, 2) ?? "",
-                distanceMeters: nearest.distance,
-                signCode: parking?.key ?? access?.key,
-                assetName: assetName,
-                source: Self.text(statement, 4) ?? "OpenStreetMap",
-                sourceReference: Self.text(statement, 5),
-                confidence: sqlite3_column_double(statement, 6)
-            ))
         }
-        return (alerts, Array(Set(matchedRules)).sorted())
+        return (
+            alerts.sorted { $0.distanceMeters < $1.distanceMeters },
+            Array(Set(matchedRules)).sorted()
+        )
     }
 
     private func routeAwareAlerts(
@@ -633,7 +681,7 @@ final class OfflineAlertStore {
                 candidate.lateralDistanceMeters = projection.lateralDistanceMeters
                 return candidate
             }
-            guard alert.distanceMeters <= radiusMeters || alert.kind == .roadSign else { return nil }
+            guard alert.distanceMeters <= radiusMeters else { return nil }
             if speedKmh >= 8, alert.distanceMeters > 70 {
                 let alertBearing = Self.bearing(from: location.coordinate, to: alert.coordinate)
                 guard Self.angleDifference(heading, alertBearing) <= 75 else { return nil }
@@ -1042,32 +1090,74 @@ final class OfflineAlertStore {
         speedKmh: Int,
         roads: [FirmwareRoadCandidate]
     ) -> NextSpeedMatch? {
-        guard currentSpeedLimit > 0, speedKmh >= 8 else { return nil }
-        var candidates: [(limit: Int, distance: Double)] = []
-        for road in roads where road.id != currentRoadID {
-            guard let nearest = Self.nearestCoordinate(to: location.coordinate, in: road.coordinates) else { continue }
-            guard nearest.distance >= 120, nearest.distance <= 650 else { continue }
-            let vectorBearing = Self.bearing(from: location.coordinate, to: nearest.coordinate)
-            let alignment = Self.angleDifference(heading, vectorBearing)
-            guard alignment <= 45 else { continue }
+        guard currentSpeedLimit > 0,
+              speedKmh >= 8,
+              let currentRoadID,
+              let currentRoad = roads.first(where: { $0.id == currentRoadID }),
+              let projection = Self.polylineProjection(
+                of: location.coordinate,
+                on: currentRoad.coordinates
+              )
+        else { return nil }
 
-            let roadSegBearing = nearest.bearing
-            let forwardDiff = Self.angleDifference(heading, roadSegBearing)
-            let reverseDiff = Self.angleDifference(heading, (roadSegBearing + 180).truncatingRemainder(dividingBy: 360))
-            let aheadSpeed: Int
-            if forwardDiff <= 55, Self.supportedSpeedLimits.contains(road.direction1Speed) {
-                aheadSpeed = road.direction1Speed
-            } else if reverseDiff <= 55, Self.supportedSpeedLimits.contains(road.direction2Speed) {
-                aheadSpeed = road.direction2Speed
-            } else {
-                continue
+        let forwardDifference = Self.angleDifference(heading, projection.segmentBearing)
+        let reverseBearing = (projection.segmentBearing + 180).truncatingRemainder(dividingBy: 360)
+        let reverseDifference = Self.angleDifference(heading, reverseBearing)
+        guard min(forwardDifference, reverseDifference) <= 65 else { return nil }
+
+        let travelsAlongGeometry = forwardDifference <= reverseDifference
+        var distanceAhead = travelsAlongGeometry
+            ? projection.totalLengthMeters - projection.distanceFromStartMeters
+            : projection.distanceFromStartMeters
+        var node = travelsAlongGeometry
+            ? currentRoad.coordinates.last!
+            : currentRoad.coordinates.first!
+        var travelBearing = Self.exitBearing(
+            for: currentRoad.coordinates,
+            travelsAlongGeometry: travelsAlongGeometry
+        )
+        var roadName = currentRoad.roadName(forDirection1: travelsAlongGeometry)
+        var visited = Set([currentRoadID])
+
+        // Follow one topologically connected chain instead of scanning every
+        // road inside a forward cone. At a genuinely ambiguous fork free-drive
+        // mode has no route intent, so returning no forecast is safer than
+        // announcing the speed of an arbitrary branch.
+        while distanceAhead <= 500, visited.count <= 80 {
+            let options = roads.compactMap { road -> RoadContinuation? in
+                guard !visited.contains(road.id) else { return nil }
+                return Self.continuation(
+                    road,
+                    from: node,
+                    incomingBearing: travelBearing,
+                    previousRoadName: roadName
+                )
             }
-            if aheadSpeed > 0, aheadSpeed != currentSpeedLimit {
-                candidates.append((aheadSpeed, nearest.distance))
+            .sorted { $0.score < $1.score }
+
+            guard let selected = options.first, selected.score <= 72 else { return nil }
+            if options.count > 1,
+               options[1].score - selected.score < 9 {
+                return nil
             }
+
+            visited.insert(selected.road.id)
+            if let limit = selected.speedLimit,
+               limit != currentSpeedLimit,
+               distanceAhead >= 120 {
+                return NextSpeedMatch(
+                    limit: limit,
+                    distanceMeters: distanceAhead,
+                    roadID: selected.road.id
+                )
+            }
+
+            distanceAhead += selected.lengthMeters
+            node = selected.exitCoordinate
+            travelBearing = selected.exitBearing
+            roadName = selected.roadName
         }
-        guard let nearest = candidates.min(by: { $0.distance < $1.distance }) else { return nil }
-        return NextSpeedMatch(limit: nearest.limit, distanceMeters: nearest.distance)
+        return nil
     }
 
     /// Chỉ dùng điểm khôi phục cho HUD khi GPS nằm ngay trên điểm đó. Không
@@ -1117,6 +1207,130 @@ final class OfflineAlertStore {
               let value = Int(text[match]),
               supportedSpeedLimits.contains(value) else { return nil }
         return value
+    }
+
+    private static func isNonFirmwarePhysicalSign(_ alert: DriveAlert) -> Bool {
+        guard alert.kind == .roadSign else { return false }
+        guard let code = alert.signCode else { return true }
+        return TrafficSignCatalog.speedLimit(from: code) == nil
+    }
+
+    private static func continuation(
+        _ road: FirmwareRoadCandidate,
+        from node: CLLocationCoordinate2D,
+        incomingBearing: Double,
+        previousRoadName: String
+    ) -> RoadContinuation? {
+        guard road.coordinates.count >= 2,
+              let first = road.coordinates.first,
+              let last = road.coordinates.last else { return nil }
+        let firstDistance = CLLocation(latitude: node.latitude, longitude: node.longitude)
+            .distance(from: CLLocation(latitude: first.latitude, longitude: first.longitude))
+        let lastDistance = CLLocation(latitude: node.latitude, longitude: node.longitude)
+            .distance(from: CLLocation(latitude: last.latitude, longitude: last.longitude))
+        guard min(firstDistance, lastDistance) <= 12 else { return nil }
+
+        let travelsAlongGeometry = firstDistance <= lastDistance
+        let outgoingBearing: Double
+        let exitCoordinate: CLLocationCoordinate2D
+        if travelsAlongGeometry {
+            outgoingBearing = bearing(from: road.coordinates[0], to: road.coordinates[1])
+            exitCoordinate = last
+        } else {
+            outgoingBearing = bearing(
+                from: road.coordinates[road.coordinates.count - 1],
+                to: road.coordinates[road.coordinates.count - 2]
+            )
+            exitCoordinate = first
+        }
+        let turnDifference = angleDifference(incomingBearing, outgoingBearing)
+        guard turnDifference <= 75 else { return nil }
+
+        let roadName = road.roadName(forDirection1: travelsAlongGeometry)
+        let previousName = normalizedRoadName(previousRoadName)
+        let nextName = normalizedRoadName(roadName)
+        let nameAdjustment: Double
+        if !previousName.isEmpty, !nextName.isEmpty {
+            nameAdjustment = previousName == nextName ? -24 : 8
+        } else {
+            nameAdjustment = 0
+        }
+        let literalSpeed = travelsAlongGeometry
+            ? road.direction1Speed : road.direction2Speed
+        return RoadContinuation(
+            road: road,
+            travelsAlongGeometry: travelsAlongGeometry,
+            speedLimit: supportedSpeedLimits.contains(literalSpeed) ? literalSpeed : nil,
+            roadName: roadName,
+            exitCoordinate: exitCoordinate,
+            exitBearing: exitBearing(
+                for: road.coordinates,
+                travelsAlongGeometry: travelsAlongGeometry
+            ),
+            lengthMeters: polylineLength(road.coordinates),
+            score: turnDifference + nameAdjustment
+        )
+    }
+
+    private static func normalizedRoadName(_ value: String) -> String {
+        value.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "vi_VN"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func exitBearing(
+        for coordinates: [CLLocationCoordinate2D],
+        travelsAlongGeometry: Bool
+    ) -> Double {
+        guard coordinates.count >= 2 else { return 0 }
+        if travelsAlongGeometry {
+            return bearing(
+                from: coordinates[coordinates.count - 2],
+                to: coordinates[coordinates.count - 1]
+            )
+        }
+        return bearing(from: coordinates[1], to: coordinates[0])
+    }
+
+    private static func polylineLength(_ coordinates: [CLLocationCoordinate2D]) -> Double {
+        zip(coordinates, coordinates.dropFirst()).reduce(0) { result, pair in
+            result + CLLocation(latitude: pair.0.latitude, longitude: pair.0.longitude)
+                .distance(from: CLLocation(latitude: pair.1.latitude, longitude: pair.1.longitude))
+        }
+    }
+
+    private static func polylineProjection(
+        of point: CLLocationCoordinate2D,
+        on coordinates: [CLLocationCoordinate2D]
+    ) -> PolylineProjection? {
+        guard coordinates.count >= 2 else { return nil }
+        let totalLength = polylineLength(coordinates)
+        var traversed = 0.0
+        var best: PolylineProjection?
+        for (start, end) in zip(coordinates, coordinates.dropFirst()) {
+            let nearest = nearestPointOnSegment(point: point, start: start, end: end)
+            let segmentStart = CLLocation(latitude: start.latitude, longitude: start.longitude)
+            let segmentEnd = CLLocation(latitude: end.latitude, longitude: end.longitude)
+            let segmentLength = segmentStart.distance(from: segmentEnd)
+            let projectedLength = min(
+                segmentLength,
+                segmentStart.distance(from: CLLocation(
+                    latitude: nearest.coordinate.latitude,
+                    longitude: nearest.coordinate.longitude
+                ))
+            )
+            let candidate = PolylineProjection(
+                coordinate: nearest.coordinate,
+                distanceMeters: nearest.distance,
+                segmentBearing: nearest.bearing,
+                distanceFromStartMeters: traversed + projectedLength,
+                totalLengthMeters: totalLength
+            )
+            if best == nil || candidate.distanceMeters < best!.distanceMeters {
+                best = candidate
+            }
+            traversed += segmentLength
+        }
+        return best
     }
 
     private static func travelDirection(from rawValue: Any?) -> RoadTravelDirection {
@@ -1244,6 +1458,117 @@ final class OfflineAlertStore {
         return Int(sqlite3_column_int(statement, 0))
     }
 
+    private static func baseRuleValue(_ value: String) -> String {
+        value
+            .split(separator: "@", maxSplits: 1)
+            .first
+            .map(String.init)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+    }
+
+    /// Converts every passenger-car-relevant line rule available in schema v6
+    /// into a sign descriptor. Speed stays firmware-owned; truck/motorcycle
+    /// rules are not shown to a passenger car without a vehicle profile.
+    private static func resolveRoadRuleSigns(
+        _ rules: [String: String]
+    ) -> [RoadRuleSignDescriptor] {
+        var result: [RoadRuleSignDescriptor] = []
+
+        let parkingCandidates = rules
+            .filter { key, value in
+                let base = baseRuleValue(value)
+                return key.hasPrefix("parking:")
+                    && ["no", "no_parking", "no_stopping", "no_parking_odd", "no_parking_even"]
+                        .contains(base)
+            }
+            .sorted { left, right in
+                parkingPriority(left.value) < parkingPriority(right.value)
+            }
+        if let parking = parkingCandidates.first {
+            let value = baseRuleValue(parking.value)
+            if let descriptor = roadRuleDescriptor(
+                idBase: 20_000_000,
+                kind: .parkingRestriction,
+                code: TrafficSignCatalog.parkingCode(for: value),
+                conditional: ruleCondition(parking.value)
+            ) {
+                result.append(descriptor)
+            }
+        }
+
+        let supportedAccessKeys: Set<String> = [
+            "access", "access:conditional",
+            "motor_vehicle", "motor_vehicle:conditional",
+            "motorcar", "motorcar:conditional"
+        ]
+        let accessCandidates = rules
+            .filter { key, value in
+                supportedAccessKeys.contains(key)
+                    && baseRuleValue(value) == "no"
+                    && isPassengerCarRelevantAccessValue(value)
+            }
+            .sorted { accessPriority($0.key) < accessPriority($1.key) }
+        if let access = accessCandidates.first {
+            if let descriptor = roadRuleDescriptor(
+                idBase: 30_000_000,
+                kind: .roadSign,
+                code: TrafficSignCatalog.accessCode(for: access.key),
+                conditional: ruleCondition(access.value)
+            ) {
+                result.append(descriptor)
+            }
+        }
+
+        return result
+    }
+
+    private static func roadRuleDescriptor(
+        idBase: Int,
+        kind: AlertKind,
+        code: String,
+        conditional: String?
+    ) -> RoadRuleSignDescriptor? {
+        guard let definition = TrafficSignCatalog.definition(for: code) else { return nil }
+        return RoadRuleSignDescriptor(
+            idBase: idBase,
+            kind: kind,
+            message: definition.defaultMessage,
+            signCode: definition.code,
+            assetName: definition.assetName,
+            conditional: conditional
+        )
+    }
+
+    private static func parkingPriority(_ value: String) -> Int {
+        let base = baseRuleValue(value)
+        if base.contains("stopping") { return 0 }
+        if base.contains("odd") || base.contains("even") { return 1 }
+        return 2
+    }
+
+    private static func accessPriority(_ key: String) -> Int {
+        let conditionalPenalty = key.hasSuffix(":conditional") ? 10 : 0
+        if key.hasPrefix("motorcar") { return conditionalPenalty }
+        if key.hasPrefix("motor_vehicle") { return 1 + conditionalPenalty }
+        return 2 + conditionalPenalty
+    }
+
+    private static func isPassengerCarRelevantAccessValue(_ value: String) -> Bool {
+        let condition = value.lowercased()
+        let vehicleSpecificTokens = [
+            "passenger_seats", " seats", "weight", "axles", "wheels"
+        ]
+        return !vehicleSpecificTokens.contains { condition.contains($0) }
+    }
+
+    private static func ruleCondition(_ value: String) -> String? {
+        let parts = value.split(separator: "@", maxSplits: 1)
+        guard parts.count == 2 else { return nil }
+        let condition = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return condition.isEmpty ? nil : condition
+    }
+
     private static func isUsable(_ database: OpaquePointer?) -> Bool {
         let requiredTables = scalarInt(database, """
             SELECT COUNT(*) FROM sqlite_master
@@ -1274,22 +1599,6 @@ final class OfflineAlertStore {
         guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK,
               sqlite3_step(statement) == SQLITE_ROW else { return nil }
         return text(statement, 0)
-    }
-
-    private static func assetName(forRestriction restriction: String) -> String? {
-        switch restriction {
-        case "no_left_turn": "TrafficSigns/TrafficSign_P123a"
-        case "no_right_turn": "TrafficSigns/TrafficSign_P123b"
-        case "no_u_turn": "TrafficSigns/TrafficSign_P124a"
-        case "no_straight_on": "TrafficSigns/TrafficSign_NoStraight"
-        case "only_straight_on": "TrafficSigns/TrafficSign_R301a"
-        case "only_right_turn": "TrafficSigns/TrafficSign_R301b"
-        case "only_left_turn": "TrafficSigns/TrafficSign_R301c"
-        case "no_entry": "TrafficSigns/TrafficSign_P102"
-        case "no_parking": "TrafficSigns/TrafficSign_P131a"
-        case "no_stopping": "TrafficSigns/TrafficSign_P130"
-        default: nil
-        }
     }
 
     private static func text(_ statement: OpaquePointer?, _ index: Int32) -> String? {

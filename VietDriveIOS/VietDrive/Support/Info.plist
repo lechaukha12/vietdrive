@@ -23,9 +23,28 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>VietDrive cần vị trí để đo tốc độ và cảnh báo khi bạn đang lái xe.</string>
+	<string>VietDrive cần vị trí khi màn hình khóa để tiếp tục chỉ đường, đo tốc độ và cảnh báo trong suốt hành trình.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>VietDrive cần vị trí để hiển thị hành trình và các cảnh báo gần bạn.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>CPTemplateApplicationScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>VietDrive CarPlay</string>
+					<key>UISceneDelegateClassName</key>
+					<string>CarPlaySceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
@@ -49,11 +68,17 @@
 	</array>
 	<key>VietDriveGeocoderBaseURL</key>
 	<string>https://photon.komoot.io</string>
+	<key>VietDriveGeocoderFallbackBaseURLs</key>
+	<array/>
 	<key>VietDriveRouterBaseURL</key>
 	<string>https://router.project-osrm.org</string>
 	<key>VietDriveRouterFallbackBaseURLs</key>
 	<array>
 		<string>https://routing.openstreetmap.de/routed-car</string>
+	</array>
+	<key>VietDriveValhallaBaseURLs</key>
+	<array>
+		<string>https://valhalla1.openstreetmap.de</string>
 	</array>
 </dict>
 </plist>

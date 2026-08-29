@@ -558,7 +558,9 @@ private struct SectionSpeedBanner: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image("TrafficSigns/TrafficSign_CameraSection")
+            Image(TrafficSignCatalog.assetName(
+                for: TrafficSignCatalog.sectionCameraCode
+            ) ?? "")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 32, height: 32)
@@ -1142,7 +1144,9 @@ struct SpeedLimitSign: View {
         HStack(spacing: 5) {
             ZStack {
                 if supportedLimits.contains(limit) {
-                    Image("TrafficSigns/TrafficSign_P127_\(limit)")
+                    Image(TrafficSignCatalog.assetName(
+                        for: TrafficSignCatalog.speedCode(limit)
+                    ) ?? "")
                         .resizable()
                         .scaledToFit()
                         .background(Color.white, in: Circle())
@@ -1178,7 +1182,9 @@ struct SpeedLimitSign: View {
                 VStack(spacing: 1) {
                     ZStack {
                         if supportedLimits.contains(nextLimit) {
-                            Image("TrafficSigns/TrafficSign_P127_\(nextLimit)")
+                            Image(TrafficSignCatalog.assetName(
+                                for: TrafficSignCatalog.speedCode(nextLimit)
+                            ) ?? "")
                                 .resizable()
                                 .scaledToFit()
                                 .background(Color.white, in: Circle())

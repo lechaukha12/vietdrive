@@ -126,15 +126,18 @@ struct MapLibreMapView: UIViewRepresentable {
             let unclutteredAlerts = (spatiallySeparated(
                 alerts.filter { $0.kind == .camera },
                 minimumDistance: 100,
-                limit: 28
+                limit: 28,
+                heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             ) + spatiallySeparated(
                 alerts.filter { $0.kind == .speedLimit },
                 minimumDistance: 65,
-                limit: 24
+                limit: 24,
+                heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             ) + spatiallySeparated(
                 alerts.filter { $0.kind != .camera && $0.kind != .speedLimit },
                 minimumDistance: 65,
-                limit: 18
+                limit: 18,
+                heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             )).sorted { $0.id < $1.id }
             let signature = unclutteredAlerts.map {
                 "\($0.id):\($0.kind.rawValue):\($0.speedLimit):\($0.coordinate.latitude):\($0.coordinate.longitude):\($0.assetName ?? ""):\($0.message)"
@@ -421,21 +424,44 @@ struct MapLibreMapView: UIViewRepresentable {
         private func spatiallySeparated(
             _ candidates: [DriveAlert],
             minimumDistance: CLLocationDistance,
-            limit: Int
+            limit: Int,
+            heading: Double? = nil
         ) -> [DriveAlert] {
             var selected: [DriveAlert] = []
             for candidate in candidates {
                 let location = CLLocation(latitude: candidate.latitude, longitude: candidate.longitude)
-                let isSeparated = selected.allSatisfy { existing in
+                let collisionIndex = selected.firstIndex { existing in
                     location.distance(from: CLLocation(
                         latitude: existing.latitude,
                         longitude: existing.longitude
-                    )) >= minimumDistance
+                    )) < minimumDistance
                 }
-                if isSeparated { selected.append(candidate) }
-                if selected.count == limit { break }
+                if let collisionIndex, let heading {
+                    // Firmware can store two directional alert points a few
+                    // metres apart for opposite carriageways. Retain the one
+                    // facing the current travel direction instead of whichever
+                    // row happened to be returned first.
+                    let existing = selected[collisionIndex]
+                    if Self.directionDisplayDifference(candidate, heading: heading)
+                        < Self.directionDisplayDifference(existing, heading: heading) {
+                        selected[collisionIndex] = candidate
+                    }
+                } else if collisionIndex == nil, selected.count < limit {
+                    selected.append(candidate)
+                }
             }
             return selected
+        }
+
+        private static func directionDisplayDifference(
+            _ alert: DriveAlert,
+            heading: Double
+        ) -> Double {
+            guard let target = alert.directionDegrees else { return 0 }
+            let forward = abs((heading - target + 540).truncatingRemainder(dividingBy: 360) - 180)
+            guard alert.directionType == 2 else { return forward }
+            let reverse = abs((heading - target + 720).truncatingRemainder(dividingBy: 360) - 180)
+            return min(forward, reverse)
         }
 
         private func scheduleViewportQuery(for mapView: MLNMapView) {

@@ -1,4 +1,5 @@
 import CoreLocation
+import UIKit
 import XCTest
 @testable import VietDrive
 
@@ -10,7 +11,7 @@ final class OfflineAlertStoreTests: XCTestCase {
         store.mapDataPoints(center: center, radiusMeters: 1_000) { points in
             XCTAssertFalse(points.isEmpty)
             XCTAssertTrue(points.allSatisfy { $0.source == "map-data/edogen.bin" })
-            XCTAssertTrue(points.contains { $0.signCode == "IGO:1" && $0.speedLimit == 50 })
+            XCTAssertTrue(points.contains { $0.signCode == "P127.50" && $0.speedLimit == 50 })
             completed.fulfill()
         }
         wait(for: [completed], timeout: 3)
@@ -22,7 +23,7 @@ final class OfflineAlertStoreTests: XCTestCase {
         XCTAssertEqual(store.mapDataCameraCount, 35_798)
         XCTAssertEqual(store.mapDataSpeedPointCount, 16_400)
         XCTAssertEqual(store.mapDataRoadLinkCount, 1_875_900)
-        XCTAssertEqual(store.trafficSignCount, 1_022)
+        XCTAssertEqual(store.trafficSignCount, 1_073)
 
         let completed = expectation(description: "offline database query")
         let knownSign = CLLocation(latitude: 10.825314, longitude: 106.706716)
@@ -64,7 +65,7 @@ final class OfflineAlertStoreTests: XCTestCase {
         wait(for: [completed], timeout: 3)
     }
 
-    func testTownEntryTypeIsExposedAsMapDataRoadSign() {
+    func testTownEntryTypeIsExposedAsLogicalBoundaryRatherThanPhysicalSign() {
         let store = OfflineAlertStore()
         let completed = expectation(description: "map-data town entry query")
         let location = CLLocation(latitude: 9.055951, longitude: 105.039931)
@@ -74,13 +75,185 @@ final class OfflineAlertStoreTests: XCTestCase {
             speedKmh: 0
         ) { context in
             let observation = context.alerts.first {
-                $0.signCode == "IGO:10" && $0.kind == .roadSign
+                $0.signCode == "TOWN_ENTRY" && $0.kind == .townBoundary
             }
             XCTAssertNotNil(observation)
+            XCTAssertEqual(
+                observation?.assetName,
+                "TrafficSigns/TrafficSign_TownEntry"
+            )
             XCTAssertLessThan(observation?.distanceMeters ?? 100, 2)
             completed.fulfill()
         }
 
         wait(for: [completed], timeout: 3)
+    }
+
+    func testTownSignsUseOfficialRectangularArtwork() throws {
+        let entry = try XCTUnwrap(UIImage(
+            named: "TrafficSigns/TrafficSign_R420Official"
+        ))
+        let exit = try XCTUnwrap(UIImage(
+            named: "TrafficSigns/TrafficSign_R421Official"
+        ))
+
+        XCTAssertEqual(entry.size.width / entry.size.height, 1.2, accuracy: 0.02)
+        XCTAssertEqual(exit.size.width / exit.size.height, 1.2, accuracy: 0.02)
+    }
+
+    func testPhysicalProhibitionSignIsExposedInFreeDriveMode() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "physical prohibition sign query")
+        let location = CLLocation(latitude: 10.8263179, longitude: 106.6265799)
+
+        store.nearbyContext(
+            location: location,
+            heading: 0,
+            speedKmh: 0,
+            alertRadiusMeters: 1_500
+        ) { context in
+            let sign = context.alerts.first {
+                $0.signCode == "P102" && $0.kind == .roadSign
+            }
+            XCTAssertNotNil(sign)
+            XCTAssertEqual(sign?.assetName, "TrafficSigns/TrafficSign_P102")
+            XCTAssertLessThan(sign?.distanceMeters ?? 100, 2)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testParkingRoadRuleIsNotDroppedByBroadRTreeLimit() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "parking road-rule query")
+        // Đường Phó Cơ Điều, OSM way 32580466: parking:right:restriction=no_parking.
+        let location = CLLocation(latitude: 10.7620, longitude: 106.65703)
+
+        store.nearbyContext(
+            location: location,
+            heading: 0,
+            speedKmh: 0,
+            alertRadiusMeters: 1_500
+        ) { context in
+            let sign = context.alerts.first { $0.id == 20_000_409 }
+            XCTAssertEqual(sign?.kind, .parkingRestriction)
+            XCTAssertEqual(sign?.signCode, "P131a")
+            XCTAssertEqual(sign?.assetName, "TrafficSigns/TrafficSign_P131a")
+            XCTAssertLessThan(sign?.distanceMeters ?? 100, 10)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testAbsoluteVehicleAccessRuleIsVisibleAsRoadSign() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "vehicle prohibition query")
+        // Bến Cần Giuộc, OSM way 32577220: motor_vehicle=no.
+        let location = CLLocation(latitude: 10.7452906, longitude: 106.6616261)
+
+        store.nearbyContext(
+            location: location,
+            heading: 0,
+            speedKmh: 0,
+            alertRadiusMeters: 1_500
+        ) { context in
+            let sign = context.alerts.first { $0.id == 30_000_302 }
+            XCTAssertEqual(sign?.kind, .roadSign)
+            XCTAssertEqual(sign?.signCode, "P105")
+            XCTAssertEqual(sign?.assetName, "TrafficSigns/TrafficSign_P105")
+            XCTAssertEqual(sign?.message, "Cấm ô tô và mô tô")
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testOneRoadRuleCanExposeParkingAndAccessSigns() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "multi-sign road-rule query")
+        // OSM way 231668454 contains both motorcar=no and parking:both=no.
+        let location = CLLocation(latitude: 20.9668459, longitude: 107.0520588)
+
+        store.nearbyContext(
+            location: location,
+            heading: 0,
+            speedKmh: 0,
+            alertRadiusMeters: 1_500
+        ) { context in
+            XCTAssertTrue(context.alerts.contains {
+                $0.id == 20_008_492 && $0.signCode == "P131a"
+            })
+            XCTAssertTrue(context.alerts.contains {
+                $0.id == 30_008_492 && $0.signCode == "P103a"
+            })
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testTurnRestrictionRelationsAreAvailableToViewport() {
+        let store = OfflineAlertStore()
+        let completed = expectation(description: "turn restriction viewport query")
+        let center = CLLocationCoordinate2D(latitude: 10.8008406, longitude: 106.6606981)
+
+        store.mapDataPoints(center: center, radiusMeters: 500) { points in
+            let restriction = points.first { $0.id == 10_000_004 }
+            XCTAssertEqual(restriction?.kind, .turnRestriction)
+            XCTAssertEqual(restriction?.signCode, "P123b")
+            XCTAssertEqual(
+                restriction?.assetName,
+                "TrafficSigns/TrafficSign_P123b"
+            )
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 3)
+    }
+
+    func testVehicleRestrictionAssetsAreBundled() throws {
+        XCTAssertNotNil(UIImage(named: "TrafficSigns/TrafficSign_P103a"))
+        XCTAssertNotNil(UIImage(named: "TrafficSigns/TrafficSign_P105"))
+    }
+
+    func testEveryCatalogDefinitionHasABundledAsset() {
+        for definition in TrafficSignCatalog.definitions.values {
+            XCTAssertNotNil(
+                UIImage(named: definition.assetName),
+                "Thiếu asset cho \(definition.code): \(definition.assetName)"
+            )
+        }
+        for speed in [30, 40, 50, 60, 70, 80, 90, 100, 110, 120] {
+            let code = TrafficSignCatalog.speedCode(speed)
+            XCTAssertNotNil(
+                UIImage(named: TrafficSignCatalog.assetName(for: code) ?? ""),
+                "Thiếu asset cho \(code)"
+            )
+        }
+    }
+
+    func testLegacyAndFirmwareCodesNormalizeThroughCatalog() {
+        XCTAssertEqual(
+            TrafficSignCatalog.canonicalCode(for: "IGO:10"),
+            "TOWN_ENTRY"
+        )
+        XCTAssertEqual(
+            TrafficSignCatalog.canonicalCode(for: "IGO:1", speedLimit: 60),
+            "P127.60"
+        )
+        XCTAssertEqual(
+            TrafficSignCatalog.canonicalRestrictionCode("only_left_turn"),
+            "R301c"
+        )
+        XCTAssertEqual(
+            TrafficSignCatalog.firmwareAlert(
+                typeCode: 4,
+                speedLimit: 0,
+                warningText: nil
+            ).signCode,
+            TrafficSignCatalog.sectionCameraCode
+        )
     }
 }

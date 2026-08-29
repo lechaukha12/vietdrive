@@ -52,15 +52,15 @@ final class VoiceAlertServiceTests: XCTestCase {
         )
     }
 
-    func testTurnRestrictionAlertsAreAlwaysSilent() {
+    func testOnlyInferredTurnRestrictionsAreSilent() {
         let relationRestriction = alert(kind: .turnRestriction, signCode: "no_left_turn")
         let physicalNoRightTurnSign = alert(kind: .roadSign, signCode: "P103c")
         let physicalNoLeftTurnSign = alert(kind: .roadSign, signCode: "P123a")
         let camera = alert(kind: .camera, signCode: nil)
 
         XCTAssertTrue(VoiceAlertService.isSilentTurnRestriction(relationRestriction))
-        XCTAssertTrue(VoiceAlertService.isSilentTurnRestriction(physicalNoRightTurnSign))
-        XCTAssertTrue(VoiceAlertService.isSilentTurnRestriction(physicalNoLeftTurnSign))
+        XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(physicalNoRightTurnSign))
+        XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(physicalNoLeftTurnSign))
         XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(camera))
     }
 

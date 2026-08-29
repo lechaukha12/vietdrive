@@ -23,20 +23,33 @@ with data_pipeline/normalize.py after changing recovered source data.
 - MapLibre Native 6.29 qua Swift Package Manager.
 - OpenFreeMap/OSM vector tiles cho bản đồ phát triển.
 - SQLite read-only cho dữ liệu cảnh báo offline.
-- Photon cho tìm kiếm địa điểm; OSRM cho tuyến ô tô và maneuver.
+- Photon cho tìm kiếm địa điểm; Valhalla ưu tiên cho tuyến ô tô, OSRM dự phòng.
 - Cache response tìm kiếm/tuyến và MapLibre ambient tile cache 150 MB.
 - CoreLocation và AVSpeechSynthesizer. BLE đang bị loại khỏi target.
 
 Các endpoint development nằm trong `VietDrive/Support/Info.plist`:
 
 - `VietDriveGeocoderBaseURL`
+- `VietDriveGeocoderFallbackBaseURLs`
+- `VietDriveValhallaBaseURLs`
 - `VietDriveRouterBaseURL`
 - `VietDriveRouterFallbackBaseURLs`
 
-Mặc định dùng demo công cộng Photon/OSRM; khi primary lỗi HTTP/timeout app thử
-OSRM dự phòng rồi mới dùng response cache cũ. Màn hình Chẩn đoán hiển thị
+Mặc định dùng demo công cộng Photon/Valhalla/OSRM; khi primary lỗi HTTP/timeout app thử
+endpoint dự phòng rồi mới dùng response cache cũ cho lỗi tạm thời. Màn hình Chẩn đoán hiển thị
 endpoint, latency, cache và trạng thái fallback. Trước khi phát hành vẫn phải
 thay bằng instance VietDrive tự host hoặc nhà cung cấp có SLA.
+
+## Apple Watch và CarPlay
+
+- Target `VietDriveWatch` nhận trạng thái tức thời bằng WatchConnectivity, hiển thị
+  tốc độ, giới hạn tốc độ và biển cấm; dữ liệu camera không được gửi sang đồng hồ.
+- Watch phát haptic khi một biển mới đi vào phạm vi 450 m.
+- CarPlay dùng `CPMapTemplate` và cùng trạng thái GPS/tuyến với màn hình iPhone;
+  không có routing engine riêng cho CarPlay.
+- Apple phải cấp navigation entitlement cho bundle `vn.vietdrive.ios` trước khi
+  CarPlay scene có thể chạy trên xe hoặc CarPlay Simulator. Entitlement hạn chế này
+  không được khai báo giả trong repository vì sẽ làm provisioning bản dev lỗi.
 
 ## Mở project
 

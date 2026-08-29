@@ -3,10 +3,32 @@ import CryptoKit
 import Foundation
 import OSLog
 
-final class OpenMapService {
+final class OpenMapService: NavigationBackend {
+    enum RoutingEngine: String {
+        case valhalla
+        case osrm
+    }
+
+    struct RoutingEndpoint {
+        let baseURL: URL
+        let engine: RoutingEngine
+    }
+
     struct Configuration {
-        let geocoderBaseURL: URL
-        let routerBaseURLs: [URL]
+        let geocoderBaseURLs: [URL]
+        let routingEndpoints: [RoutingEndpoint]
+
+        init(geocoderBaseURL: URL, routerBaseURLs: [URL]) {
+            geocoderBaseURLs = [geocoderBaseURL]
+            routingEndpoints = routerBaseURLs.map {
+                RoutingEndpoint(baseURL: $0, engine: .osrm)
+            }
+        }
+
+        init(geocoderBaseURLs: [URL], routingEndpoints: [RoutingEndpoint]) {
+            self.geocoderBaseURLs = geocoderBaseURLs
+            self.routingEndpoints = routingEndpoints
+        }
 
         static var bundled: Configuration? {
             guard
@@ -22,9 +44,22 @@ final class OpenMapService {
             let fallbackURLs = (Bundle.main.object(
                 forInfoDictionaryKey: "VietDriveRouterFallbackBaseURLs"
             ) as? [String] ?? []).compactMap(URL.init(string:))
+            let geocoderFallbackURLs = (Bundle.main.object(
+                forInfoDictionaryKey: "VietDriveGeocoderFallbackBaseURLs"
+            ) as? [String] ?? []).compactMap(URL.init(string:))
+            let valhallaURLs = (Bundle.main.object(
+                forInfoDictionaryKey: "VietDriveValhallaBaseURLs"
+            ) as? [String] ?? []).compactMap(URL.init(string:))
+            let geocoders = [geocoderURL]
+                + geocoderFallbackURLs.filter { $0 != geocoderURL }
+            let endpoints = valhallaURLs.map {
+                RoutingEndpoint(baseURL: $0, engine: .valhalla)
+            } + ([routerURL] + fallbackURLs.filter { $0 != routerURL }).map {
+                RoutingEndpoint(baseURL: $0, engine: .osrm)
+            }
             return Configuration(
-                geocoderBaseURL: geocoderURL,
-                routerBaseURLs: [routerURL] + fallbackURLs.filter { $0 != routerURL }
+                geocoderBaseURLs: geocoders,
+                routingEndpoints: endpoints
             )
         }
     }
@@ -45,57 +80,115 @@ final class OpenMapService {
         near coordinate: CLLocationCoordinate2D?
     ) async throws -> [PlaceSearchResult] {
         guard let configuration else { throw OpenMapServiceError.invalidConfiguration }
+        var failures: [String] = []
+        for baseURL in configuration.geocoderBaseURLs {
+            do {
+                return try await search(query: query, near: coordinate, using: baseURL)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                let endpoint = baseURL.host ?? baseURL.absoluteString
+                failures.append("\(endpoint): \(error.localizedDescription)")
+                logger.error("Geocoder endpoint \(endpoint, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        throw OpenMapServiceError.server(
+            failures.isEmpty
+                ? "Không thể kết nối dịch vụ tìm kiếm."
+                : "Không thể tìm địa điểm. \(failures.joined(separator: " · "))"
+        )
+    }
+
+    private func search(
+        query: String,
+        near coordinate: CLLocationCoordinate2D?,
+        using baseURL: URL
+    ) async throws -> [PlaceSearchResult] {
+        let preferredURL = try photonURL(
+            baseURL: baseURL,
+            query: query,
+            near: coordinate,
+            includeBoundingBox: true
+        )
+        let data: Data
+        do {
+            (data, _) = try await self.data(
+                for: preferredURL,
+                cacheLifetime: 7 * 24 * 60 * 60
+            )
+        } catch let error as OpenMapServiceError where error.isBadRequest {
+            // Some Photon deployments reject optional bias parameters. Retrying
+            // the documented minimum query avoids turning that into a dead end.
+            let compatibilityURL = try photonURL(
+                baseURL: baseURL,
+                query: query,
+                near: nil,
+                includeBoundingBox: false
+            )
+            (data, _) = try await self.data(
+                for: compatibilityURL,
+                cacheLifetime: 7 * 24 * 60 * 60
+            )
+        }
+
+        let response = try JSONDecoder().decode(PhotonResponse.self, from: data)
+        return response.features.compactMap(Self.placeSearchResult)
+    }
+
+    private func photonURL(
+        baseURL: URL,
+        query: String,
+        near coordinate: CLLocationCoordinate2D?,
+        includeBoundingBox: Bool
+    ) throws -> URL {
         var components = URLComponents(
-            url: configuration.geocoderBaseURL.appendingPathComponent("api"),
+            url: baseURL.appendingPathComponent("api"),
             resolvingAgainstBaseURL: false
         )
         var items = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "limit", value: "8"),
-            // The public Photon instance currently exposes only its configured
-            // languages. `default` preserves Vietnamese OSM names without
-            // assuming that a dedicated `vi` translation index exists.
-            URLQueryItem(name: "lang", value: "default"),
-            URLQueryItem(name: "bbox", value: "102.0,8.0,110.0,24.0")
+            URLQueryItem(name: "countrycode", value: "VN")
         ]
+        if includeBoundingBox {
+            items.append(URLQueryItem(name: "bbox", value: "102.0,8.0,110.0,24.0"))
+        }
         if let coordinate {
             items.append(URLQueryItem(name: "lat", value: String(coordinate.latitude)))
             items.append(URLQueryItem(name: "lon", value: String(coordinate.longitude)))
         }
         components?.queryItems = items
         guard let url = components?.url else { throw OpenMapServiceError.invalidConfiguration }
+        return url
+    }
 
-        let (data, _) = try await data(for: url, cacheLifetime: 7 * 24 * 60 * 60)
-        let response = try JSONDecoder().decode(PhotonResponse.self, from: data)
-        let results = response.features.compactMap { feature -> PlaceSearchResult? in
-            guard feature.geometry.coordinates.count >= 2 else { return nil }
-            let properties = feature.properties
-            let name = properties.name
-                ?? properties.street
-                ?? properties.city
-                ?? properties.district
-            guard let name, !name.isEmpty else { return nil }
-            let parts = [
-                properties.housenumber,
-                properties.street == name ? nil : properties.street,
-                properties.district,
-                properties.city,
-                properties.state,
-                properties.country
-            ]
-            .compactMap { $0 }
-            .filter { !$0.isEmpty && $0 != name }
-            let osmID = properties.osmID.map(String.init) ?? UUID().uuidString
-            return PlaceSearchResult(
-                id: "\(properties.osmType ?? "?")-\(osmID)",
-                name: name,
-                subtitle: Array(NSOrderedSet(array: parts)).compactMap { $0 as? String }
-                    .joined(separator: ", "),
-                latitude: feature.geometry.coordinates[1],
-                longitude: feature.geometry.coordinates[0]
-            )
-        }
-        return results
+    private static func placeSearchResult(from feature: PhotonFeature) -> PlaceSearchResult? {
+        guard feature.geometry.coordinates.count >= 2 else { return nil }
+        let properties = feature.properties
+        let name = properties.name
+            ?? properties.street
+            ?? properties.city
+            ?? properties.district
+        guard let name, !name.isEmpty else { return nil }
+        let parts = [
+            properties.housenumber,
+            properties.street == name ? nil : properties.street,
+            properties.district,
+            properties.city,
+            properties.state,
+            properties.country
+        ]
+        .compactMap { $0 }
+        .filter { !$0.isEmpty && $0 != name }
+        let osmID = properties.osmID.map(String.init) ?? UUID().uuidString
+        return PlaceSearchResult(
+            id: "\(properties.osmType ?? "?")-\(osmID)",
+            name: name,
+            subtitle: Array(NSOrderedSet(array: parts)).compactMap { $0 as? String }
+                .joined(separator: ", "),
+            latitude: feature.geometry.coordinates[1],
+            longitude: feature.geometry.coordinates[0]
+        )
     }
 
     func route(
@@ -124,29 +217,43 @@ final class OpenMapService {
     ) async throws -> [NavigationRoute] {
         guard let configuration else { throw OpenMapServiceError.invalidConfiguration }
         var failures: [String] = []
-        for (endpointIndex, routerBaseURL) in configuration.routerBaseURLs.enumerated() {
+        for (endpointIndex, endpoint) in configuration.routingEndpoints.enumerated() {
             do {
-                let result = try await routes(
-                    using: routerBaseURL,
-                    origin: origin,
-                    destination: destination,
-                    preferences: preferences,
-                    originBearing: originBearing,
-                    originAccuracy: originAccuracy
-                )
+                let result = switch endpoint.engine {
+                case .valhalla:
+                    try await valhallaRoutes(
+                        using: endpoint.baseURL,
+                        origin: origin,
+                        destination: destination,
+                        preferences: preferences,
+                        originBearing: originBearing,
+                        originAccuracy: originAccuracy
+                    )
+                case .osrm:
+                    try await osrmRoutes(
+                        using: endpoint.baseURL,
+                        origin: origin,
+                        destination: destination,
+                        preferences: preferences,
+                        originBearing: originBearing,
+                        originAccuracy: originAccuracy
+                    )
+                }
                 publishHealth(RoutingHealthSnapshot(
-                    endpoint: routerBaseURL.host ?? routerBaseURL.absoluteString,
+                    endpoint: endpoint.baseURL.host ?? endpoint.baseURL.absoluteString,
                     latencyMilliseconds: result.latencyMilliseconds,
                     usedFallback: endpointIndex > 0,
                     usedCache: result.routes.first?.isCached == true,
-                    status: endpointIndex > 0 ? "Đã chuyển máy chủ dự phòng" : "Định tuyến ổn định",
+                    status: endpointIndex > 0
+                        ? "Đã chuyển máy chủ dự phòng"
+                        : "Định tuyến \(endpoint.engine.rawValue.uppercased()) ổn định",
                     updatedAt: Date()
                 ))
                 return result.routes
             } catch {
-                let endpoint = routerBaseURL.host ?? routerBaseURL.absoluteString
-                failures.append("\(endpoint): \(error.localizedDescription)")
-                logger.error("Routing endpoint \(endpoint, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                let endpointName = endpoint.baseURL.host ?? endpoint.baseURL.absoluteString
+                failures.append("\(endpointName): \(error.localizedDescription)")
+                logger.error("Routing endpoint \(endpointName, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             }
         }
         let detail = failures.joined(separator: " · ")
@@ -165,7 +272,7 @@ final class OpenMapService {
         )
     }
 
-    private func routes(
+    private func osrmRoutes(
         using routerBaseURL: URL,
         origin: CLLocationCoordinate2D,
         destination: CLLocationCoordinate2D,
@@ -206,6 +313,85 @@ final class OpenMapService {
                 cacheLifetime: 6 * 60 * 60
             )
         }
+        let routes = try decodeRoutes(
+            from: data,
+            isCached: wasCached,
+            preferencesApplied: preferencesApplied,
+            strategy: preferences.strategy
+        )
+        return (routes, Int(Date().timeIntervalSince(startedAt) * 1_000))
+    }
+
+    private func valhallaRoutes(
+        using routerBaseURL: URL,
+        origin: CLLocationCoordinate2D,
+        destination: CLLocationCoordinate2D,
+        preferences: RoutePreferences,
+        originBearing: Double?,
+        originAccuracy: Double?
+    ) async throws -> (routes: [NavigationRoute], latencyMilliseconds: Int) {
+        let startedAt = Date()
+        let url = routerBaseURL.appendingPathComponent("route")
+        var originLocation: [String: Any] = [
+            "lat": origin.latitude,
+            "lon": origin.longitude,
+            "type": "break"
+        ]
+        if let originBearing {
+            originLocation["heading"] = (originBearing + 360).truncatingRemainder(dividingBy: 360)
+            originLocation["heading_tolerance"] = 55
+        }
+        if let originAccuracy {
+            originLocation["radius"] = max(20, min(100, originAccuracy * 2))
+        }
+        let body: [String: Any] = [
+            "locations": [
+                originLocation,
+                ["lat": destination.latitude, "lon": destination.longitude, "type": "break"]
+            ],
+            "costing": "auto",
+            "costing_options": [
+                "auto": [
+                    "use_tolls": preferences.avoidTolls ? 0 : 1,
+                    "use_highways": preferences.avoidMotorways ? 0 : 1,
+                    "use_ferry": preferences.avoidFerries ? 0 : 1,
+                    "shortest": preferences.strategy == .shortest
+                ]
+            ],
+            "format": "osrm",
+            "shape_format": "geojson",
+            "alternates": 2,
+            "directions_options": [
+                "language": "vi-VN",
+                "units": "kilometers"
+            ]
+        ]
+        let payload = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = payload
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let cacheKey = requestCacheKey(url: url, payload: payload)
+        let (data, wasCached) = try await self.data(
+            for: request,
+            cacheKey: cacheKey,
+            cacheLifetime: 6 * 60 * 60
+        )
+        let routes = try decodeRoutes(
+            from: data,
+            isCached: wasCached,
+            preferencesApplied: true,
+            strategy: preferences.strategy
+        )
+        return (routes, Int(Date().timeIntervalSince(startedAt) * 1_000))
+    }
+
+    private func decodeRoutes(
+        from data: Data,
+        isCached: Bool,
+        preferencesApplied: Bool,
+        strategy: RouteStrategy
+    ) throws -> [NavigationRoute] {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let response = try decoder.decode(OSRMResponse.self, from: data)
@@ -216,19 +402,16 @@ final class OpenMapService {
             throw OpenMapServiceError.noRoute
         }
         let sortedRoutes = rawRoutes.sorted {
-            preferences.strategy == .shortest
-                ? $0.distance < $1.distance
-                : $0.duration < $1.duration
+            strategy == .shortest ? $0.distance < $1.distance : $0.duration < $1.duration
         }
-        let routes = try sortedRoutes.enumerated().map { index, selected in
+        return try sortedRoutes.enumerated().map { index, selected in
             try navigationRoute(
                 from: selected,
                 index: index,
-                isCached: wasCached,
+                isCached: isCached,
                 preferencesApplied: preferencesApplied
             )
         }
-        return (routes, Int(Date().timeIntervalSince(startedAt) * 1_000))
     }
 
     private func routeURL(
@@ -333,28 +516,66 @@ final class OpenMapService {
     }
 
     private func data(for url: URL, cacheLifetime: TimeInterval) async throws -> (Data, Bool) {
-        var request = URLRequest(url: url)
+        let request = URLRequest(url: url)
+        return try await data(for: request, cacheKey: url, cacheLifetime: cacheLifetime)
+    }
+
+    private func data(
+        for request: URLRequest,
+        cacheKey: URL,
+        cacheLifetime: TimeInterval
+    ) async throws -> (Data, Bool) {
+        var request = request
         request.timeoutInterval = 10
         request.setValue("VietDrive/0.3 (iOS; contact: local-development)", forHTTPHeaderField: "User-Agent")
         request.setValue("vi,en;q=0.8", forHTTPHeaderField: "Accept-Language")
+        let data: Data
+        let response: URLResponse
         do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse else {
-                throw OpenMapServiceError.invalidResponse
-            }
-            guard (200..<300).contains(http.statusCode) else {
-                throw OpenMapServiceError.server(
-                    "HTTP \(http.statusCode) từ \(url.host ?? "máy chủ")"
-                )
-            }
-            cache.store(data, for: url)
-            return (data, false)
+            (data, response) = try await session.data(for: request)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            if let cached = cache.data(for: url, maximumAge: cacheLifetime, allowExpired: true) {
+            if let cached = cache.data(
+                for: cacheKey,
+                maximumAge: cacheLifetime,
+                allowExpired: true
+            ) {
                 return (cached, true)
             }
             throw error
         }
+        guard let http = response as? HTTPURLResponse else {
+            throw OpenMapServiceError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            // A stale route is safer than no route during a temporary outage,
+            // but never hide a malformed client request behind cached data.
+            if (http.statusCode == 429 || http.statusCode >= 500),
+               let cached = cache.data(
+                   for: cacheKey,
+                   maximumAge: cacheLifetime,
+                   allowExpired: true
+               ) {
+                return (cached, true)
+            }
+            let detail = String(data: data.prefix(240), encoding: .utf8)?
+                .replacingOccurrences(of: "\n", with: " ")
+            throw OpenMapServiceError.http(
+                status: http.statusCode,
+                host: request.url?.host ?? "máy chủ",
+                detail: detail
+            )
+        }
+        cache.store(data, for: cacheKey)
+        return (data, false)
+    }
+
+    private func requestCacheKey(url: URL, payload: Data) -> URL {
+        let digest = SHA256.hash(data: payload).map { String(format: "%02x", $0) }.joined()
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "payload", value: digest)]
+        return components?.url ?? url
     }
 
     private func publishHealth(_ snapshot: RoutingHealthSnapshot) {

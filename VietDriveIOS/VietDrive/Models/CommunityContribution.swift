@@ -150,55 +150,14 @@ struct CommunityContribution: Identifiable, Codable, Equatable {
     var anchor: CLLocationCoordinate2D? { geometry.anchor }
 
     var assetName: String? {
-        let assets = [
-            "P101": "TrafficSigns/TrafficSign_P101",
-            "P102": "TrafficSigns/TrafficSign_P102",
-            "P103c": "TrafficSigns/TrafficSign_P103c",
-            "P122": "TrafficSigns/TrafficSign_P122",
-            "P123a": "TrafficSigns/TrafficSign_P123a",
-            "P123b": "TrafficSigns/TrafficSign_P123b",
-            "P124a": "TrafficSigns/TrafficSign_P124a",
-            "P124b": "TrafficSigns/TrafficSign_P124b",
-            "P125": "TrafficSigns/TrafficSign_P125",
-            "P130": "TrafficSigns/TrafficSign_P130",
-            "P131a": "TrafficSigns/TrafficSign_P131a",
-            "P131b": "TrafficSigns/TrafficSign_P131b",
-            "P131c": "TrafficSigns/TrafficSign_P131c",
-            "R301a": "TrafficSigns/TrafficSign_R301a",
-            "R301b": "TrafficSigns/TrafficSign_R301b",
-            "R301c": "TrafficSigns/TrafficSign_R301c",
-            "R301d": "TrafficSigns/TrafficSign_R301d",
-            "R301e": "TrafficSigns/TrafficSign_R301e",
-            "R301f": "TrafficSigns/TrafficSign_R301f",
-            "R420": "TrafficSigns/TrafficSign_R420",
-            "R421": "TrafficSigns/TrafficSign_R421",
-            "DP133": "TrafficSigns/TrafficSign_DP133",
-            "W208": "TrafficSigns/TrafficSign_W208",
-            "W210": "TrafficSigns/TrafficSign_Railway",
-            "W224": "TrafficSigns/TrafficSign_W224",
-            "W225": "TrafficSigns/TrafficSign_W225",
-            "W240": "TrafficSigns/TrafficSign_Tunnel",
-            "W245a": "TrafficSigns/TrafficSign_W245a",
-            "R302a": "TrafficSigns/TrafficSign_R302a",
-            "I437": "TrafficSigns/TrafficSign_I437",
-            "CAMERA_SPEED": "TrafficSigns/TrafficSign_CameraSpeed",
-            "CAMERA_TRAFFIC": "TrafficSigns/TrafficSign_CameraTraffic",
-            "CAMERA_SECTION": "TrafficSigns/TrafficSign_CameraSection",
-            "CAMERA_DUAL": "TrafficSigns/TrafficSign_CameraDual",
-            "TOLL": "TrafficSigns/TrafficSign_Toll",
-        ]
-        if signCode.hasPrefix("P127."),
-           let speed = Int(signCode.split(separator: ".").last ?? "") {
-            return "TrafficSigns/TrafficSign_P127_\(speed)"
-        }
-        return assets[signCode]
+        TrafficSignCatalog.assetName(for: signCode)
     }
 
     var speedLimit: Int {
-        guard kind == .speedLimit || signCode.hasPrefix("P127."),
-              let value = signCode.split(separator: ".").last,
-              let speed = Int(value) else { return 0 }
-        return speed
+        guard kind == .speedLimit || TrafficSignCatalog.speedLimit(from: signCode) != nil else {
+            return 0
+        }
+        return TrafficSignCatalog.speedLimit(from: signCode) ?? 0
     }
 
     var stableAlertID: Int {

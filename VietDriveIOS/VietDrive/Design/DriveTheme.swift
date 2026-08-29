@@ -46,6 +46,7 @@ enum DriveTheme {
         case .speedLimit: amber
         case .toll: mint
         case .hazard: Color.orange
+        case .townBoundary: skyDeep
         case .roadSign: amber
         case .turnRestriction: danger
         case .parkingRestriction: pink

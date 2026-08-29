@@ -289,7 +289,7 @@ enum CommunityImportParser {
         let kind: ContributionKind
         if let declaredKind {
             kind = declaredKind
-        } else if signCode.hasPrefix("P127.") {
+        } else if TrafficSignCatalog.speedLimit(from: signCode) != nil {
             kind = .speedLimit
         } else if !signCode.isEmpty {
             kind = .roadSign

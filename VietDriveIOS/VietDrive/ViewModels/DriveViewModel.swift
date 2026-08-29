@@ -6,6 +6,12 @@ import UIKit
 
 @MainActor
 final class DriveViewModel: ObservableObject {
+    private struct NextSpeedCandidateState {
+        var match: NextSpeedMatch
+        var confirmations: Int
+        var updatedAt: Date
+    }
+
     private static let speedLogger = Logger(
         subsystem: "vn.vietdrive.ios",
         category: "SpeedLimitUI"
@@ -45,6 +51,7 @@ final class DriveViewModel: ObservableObject {
     @Published private(set) var mapMatchStatus = "Chưa bắt đầu dẫn đường"
     @Published private(set) var speedLimitDiagnosticText = "Chưa khớp đoạn đường"
     @Published private(set) var voiceDiagnosticText = "Chưa phát prompt"
+    @Published private(set) var backgroundLocationDiagnosticText = "Chưa có phiên dẫn đường nền"
     @Published private(set) var mapIssueReportCount = 0
     @Published private(set) var dataReportStatus = ""
     @Published private(set) var offlineMapStatus = "Cache tự động 150 MB đang hoạt động"
@@ -58,7 +65,7 @@ final class DriveViewModel: ObservableObject {
 
     private let alertStore = OfflineAlertStore()
     private let voice = VoiceAlertService()
-    private let openMapService = OpenMapService()
+    private let navigationBackend: any NavigationBackend
     private let mapDataUpdateService = MapDataUpdateService()
     private let communityStore = CommunityContributionStore.shared
     private let navigationSessionStore = NavigationSessionStore.shared
@@ -89,11 +96,25 @@ final class DriveViewModel: ObservableObject {
     private var traceReplay: DriveTraceReplay?
     private var traceReplayTimer: AnyCancellable?
     private var traceReplayElapsed = 0.0
+    private var nextSpeedCandidateState: NextSpeedCandidateState?
 
-    init() {
+    init(navigationBackend: any NavigationBackend = OpenMapService()) {
+        self.navigationBackend = navigationBackend
         voice.isEnabled = voiceEnabled
         voice.onDiagnostic = { [weak self] message in
             self?.voiceDiagnosticText = message
+            self?.telemetry.event(
+                "voice_service",
+                routeID: self?.navigationRoute?.id,
+                detail: message
+            )
+        }
+        locationService.onDiagnostic = { [weak self] message in
+            self?.telemetry.event(
+                "location_service",
+                routeID: self?.navigationRoute?.id,
+                detail: message
+            )
         }
         savedTraces = traceStore.traces()
         mapIssueReportCount = mapDataIssueStore.reports().count
@@ -105,9 +126,32 @@ final class DriveViewModel: ObservableObject {
             self?.offlineMapIsDownloading = isDownloading
         }
         refreshLocationRoutingAvailability()
-        openMapService.onRoutingHealthUpdate = { [weak self] health in
+        navigationBackend.onRoutingHealthUpdate = { [weak self] health in
             self?.routingHealth = health
         }
+        Publishers.CombineLatest(
+            Publishers.CombineLatest4($snapshot, $alerts, $roads, $destination),
+            Publishers.CombineLatest3(
+                $routePhase,
+                $remainingDistanceMeters,
+                $remainingDurationSeconds
+            )
+        )
+        .throttle(for: .milliseconds(350), scheduler: RunLoop.main, latest: true)
+        .sink { presentation, navigation in
+            let (snapshot, alerts, roads, destination) = presentation
+            let (phase, remainingDistance, remainingDuration) = navigation
+            PlatformDriveCoordinator.shared.publish(
+                snapshot: snapshot,
+                alerts: alerts,
+                roads: roads,
+                destination: destination,
+                isNavigating: phase == .navigating,
+                remainingDistanceMeters: remainingDistance,
+                remainingDurationSeconds: remainingDuration
+            )
+        }
+        .store(in: &cancellables)
         communityStore.$contributions
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -121,6 +165,14 @@ final class DriveViewModel: ObservableObject {
                 guard let self else { return }
                 self.refreshLocationRoutingAvailability()
                 guard !self.isTraceReplayActive else { return }
+                if self.routePhase == .navigating, let routeID = self.navigationRoute?.id {
+                    self.telemetry.rawLocation(
+                        location,
+                        resolvedHeading: self.locationService.heading,
+                        headingSource: self.locationService.headingSource,
+                        routeID: routeID
+                    )
+                }
                 self.process(
                     location: location,
                     speed: self.locationService.speedKmh,
@@ -132,6 +184,12 @@ final class DriveViewModel: ObservableObject {
             .removeDuplicates()
             .sink { [weak self] _ in self?.refreshLocationRoutingAvailability() }
             .store(in: &cancellables)
+        locationService.$backgroundSessionStatus
+            .removeDuplicates()
+            .sink { [weak self] status in
+                self?.backgroundLocationDiagnosticText = status
+            }
+            .store(in: &cancellables)
         locationService.$fixQuality
             .removeDuplicates()
             .sink { [weak self] _ in self?.refreshLocationRoutingAvailability() }
@@ -140,22 +198,40 @@ final class DriveViewModel: ObservableObject {
             .removeDuplicates()
             .sink { [weak self] quality in
                 guard let self, self.isNavigating, !self.isTraceReplayActive else { return }
-                self.voice.updateGPSAvailability(quality == .good || quality == .excellent)
+                // A weak fix is still a live GPS fix. Only “unavailable” means
+                // delivery actually stopped; announcing loss for 33–65 m
+                // accuracy created false alarms while the phone was locked.
+                self.voice.updateGPSAvailability(quality != .unavailable)
             }
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .sink { [weak self] _ in
                 guard let self, self.routePhase == .navigating else { return }
                 self.persistNavigationSession(force: true)
-                self.telemetry.event("application_background", routeID: self.navigationRoute?.id)
+                self.telemetry.event(
+                    "application_background",
+                    routeID: self.navigationRoute?.id,
+                    detail: self.locationService.diagnosticSnapshot
+                )
             }
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
                 guard let self, self.routePhase == .navigating else { return }
-                self.telemetry.event("application_foreground", routeID: self.navigationRoute?.id)
+                self.telemetry.event(
+                    "application_foreground",
+                    routeID: self.navigationRoute?.id,
+                    detail: self.locationService.diagnosticSnapshot
+                )
             }
             .store(in: &cancellables)
+
+        // Core Location may relaunch the process directly into the background.
+        // Restore an explicitly active trip here instead of waiting for the
+        // dashboard view to appear and call start().
+        if UserDefaults.standard.bool(forKey: NavigationSessionStore.activeDefaultsKey) {
+            restoreNavigationSessionIfNeeded()
+        }
     }
 
     var visibleAlerts: [DriveAlert] {
@@ -169,7 +245,7 @@ final class DriveViewModel: ObservableObject {
             }
             return switch alert.kind {
             case .camera: showCameras
-            case .roadSign, .speedLimit, .turnRestriction, .parkingRestriction: showRoadSigns
+            case .townBoundary, .roadSign, .speedLimit, .turnRestriction, .parkingRestriction: showRoadSigns
             default: true
             }
         }
@@ -183,7 +259,7 @@ final class DriveViewModel: ObservableObject {
         return indexed.values.filter { alert in
             switch alert.kind {
             case .camera: showCameras
-            case .roadSign, .speedLimit, .turnRestriction, .parkingRestriction:
+            case .townBoundary, .roadSign, .speedLimit, .turnRestriction, .parkingRestriction:
                 showRoadSigns
             default: true
             }
@@ -269,13 +345,19 @@ final class DriveViewModel: ObservableObject {
 
     func start() {
         restoreNavigationSessionIfNeeded()
+        // VietDrive's idle dashboard is also a real driving mode: speed limits,
+        // cameras and road signs must continue to work without a planned route.
+        // Keep the same explicit Core Location/audio sessions alive for free
+        // drive instead of enabling them only after Start navigation is tapped.
+        locationService.setNavigationActive(true)
+        voice.setNavigationActive(true)
         locationService.requestAuthorization()
     }
 
     func searchDestinations(query: String) async throws -> [PlaceSearchResult] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return [] }
-        return try await openMapService.search(
+        return try await navigationBackend.search(
             query: trimmed,
             near: locationService.routingLocation?.coordinate
         )
@@ -312,7 +394,7 @@ final class DriveViewModel: ObservableObject {
 
         Task {
             do {
-                let routes = try await openMapService.routes(
+                let routes = try await navigationBackend.routes(
                     from: origin,
                     to: result.coordinate,
                     preferences: routePreferences,
@@ -365,13 +447,17 @@ final class DriveViewModel: ObservableObject {
         offRouteSamples = 0
         wrongDirectionSamples = 0
         matchedRouteDistanceMeters = nil
+        nextSpeedCandidateState = nil
+        snapshot.nextSpeedLimitKmh = nil
+        snapshot.nextSpeedDistanceMeters = nil
+        telemetry.start(routeID: navigationRoute.id)
+        voice.setNavigationActive(true)
         locationService.setNavigationActive(true)
         navigationSessionStore.save(
             destination: destination,
             route: navigationRoute,
             matchedDistanceMeters: nil
         )
-        telemetry.start(routeID: navigationRoute.id)
         if UserDefaults.standard.object(forKey: "autoRecordDriveTrace") == nil
             || UserDefaults.standard.bool(forKey: "autoRecordDriveTrace") {
             startTraceRecording()
@@ -419,10 +505,13 @@ final class DriveViewModel: ObservableObject {
         wrongDirectionSamples = 0
         remainingDistanceMeters = 0
         remainingDurationSeconds = 0
-        locationService.setNavigationActive(false)
+        // Cancelling a planned route returns to free-drive mode. Do not tear
+        // down background GPS or screen-lock alerts here.
+        locationService.setNavigationActive(true)
         navigationSessionStore.clear()
-        telemetry.finish(event: "navigation_cancelled")
+        voice.setNavigationActive(true)
         voice.stopAll()
+        telemetry.finish(event: "navigation_cancelled")
         roads.removeAll { $0.isPrimaryRoute }
         snapshot.nextManeuver = "Tiếp tục đi thẳng"
         snapshot.maneuverDistanceMeters = 0
@@ -432,6 +521,9 @@ final class DriveViewModel: ObservableObject {
         clearMascotCue()
         triggerJourney(.idle)
         matchedRouteDistanceMeters = nil
+        nextSpeedCandidateState = nil
+        snapshot.nextSpeedLimitKmh = nil
+        snapshot.nextSpeedDistanceMeters = nil
     }
 
     func dismissRouteError() {
@@ -533,7 +625,9 @@ final class DriveViewModel: ObservableObject {
         snapshot.isDemo = false
         snapshot.speedKmh = 0
         roads = navigationRoute.map { [$0.overlay] } ?? []
+        locationService.setNavigationActive(true)
         locationService.start()
+        voice.setNavigationActive(true)
     }
 
     func deleteTrace(id: UUID) {
@@ -578,6 +672,7 @@ final class DriveViewModel: ObservableObject {
     func endUserSession() {
         cancelRoute()
         offlineMapDownloadService.pauseActiveDownload()
+        voice.setNavigationActive(false)
         voice.stopAll()
         locationService.shutdown()
         navigationSessionStore.clear()
@@ -737,6 +832,10 @@ final class DriveViewModel: ObservableObject {
         )
         if progress.remainingDistanceMeters <= 25 {
             invalidateReroute()
+            // Keep the route available for the arrival card, but end the live
+            // navigation lifecycle so a later background transition cannot
+            // persist and resurrect this completed trip.
+            routePhase = .preview
             remainingDistanceMeters = 0
             remainingDurationSeconds = 0
             didArrive = true
@@ -748,9 +847,12 @@ final class DriveViewModel: ObservableObject {
             clearMascotCue()
             triggerJourney(.arrived)
             voice.announceArrival(modifier: progress.nextStep?.modifier ?? "")
+            // Arrival ends turn-by-turn guidance, not VietDrive's free-drive
+            // safety alerts. Keep background location/audio continuity active.
+            voice.setNavigationActive(true)
             snapshot.roadName = destination?.name ?? "Điểm đến"
             snapshot.province = "Hành trình đã hoàn tất"
-            locationService.setNavigationActive(false)
+            locationService.setNavigationActive(true)
             navigationSessionStore.clear()
             telemetry.finish(event: "arrived")
             finishTraceRecording()
@@ -848,7 +950,7 @@ final class DriveViewModel: ObservableObject {
                 }
             }
             do {
-                let route = try await openMapService.route(
+                let route = try await navigationBackend.route(
                     from: origin.coordinate,
                     to: destination.coordinate,
                     preferences: routePreferences,
@@ -905,12 +1007,14 @@ final class DriveViewModel: ObservableObject {
         followUser = true
         offRouteSamples = 0
         wrongDirectionSamples = 0
-        locationService.setNavigationActive(true)
         telemetry.start(routeID: restored.route.id, restored: true)
+        locationService.setNavigationActive(true)
+        voice.setNavigationActive(true)
     }
 
     private func persistNavigationSession(force: Bool) {
         guard routePhase == .navigating,
+              !didArrive,
               let destination,
               let navigationRoute else { return }
         guard force || Date().timeIntervalSince(lastSessionSaveAt) >= 5 else { return }
@@ -999,10 +1103,12 @@ final class DriveViewModel: ObservableObject {
         let cameras = context.alerts.filter { $0.kind == .camera }.prefix(160)
         let speedObservations = context.alerts.filter { $0.kind == .speedLimit }.prefix(80)
         let signs = context.alerts.filter { $0.kind == .roadSign }.prefix(80)
+        let townBoundaries = context.alerts.filter { $0.kind == .townBoundary }.prefix(40)
         let restrictions = context.alerts.filter {
             $0.kind == .turnRestriction || $0.kind == .parkingRestriction
         }.prefix(24)
-        alerts = Array(cameras) + Array(speedObservations) + Array(signs) + Array(restrictions)
+        alerts = Array(cameras) + Array(speedObservations) + Array(signs)
+            + Array(townBoundaries) + Array(restrictions)
         // Add the primary route last so MapLibre paints it above nearby
         // validation overlays instead of hiding the navigation line.
         roads = context.roads + (routeOverlay.map { [$0] } ?? [])
@@ -1024,16 +1130,16 @@ final class DriveViewModel: ObservableObject {
             speedLimitDiagnosticText = "Chưa có điểm tốc độ map-data phù hợp gần vị trí hiện tại"
             Self.speedLogger.info("display limit=unknown")
         }
-        snapshot.nextSpeedLimitKmh = context.nextSpeedMatch?.limit
-        snapshot.nextSpeedDistanceMeters = context.nextSpeedMatch.map { Int($0.distanceMeters.rounded()) }
-        if let next = context.nextSpeedMatch {
+        let confirmedNextSpeed = confirmedNextSpeed(context.nextSpeedMatch)
+        snapshot.nextSpeedLimitKmh = confirmedNextSpeed?.limit
+        snapshot.nextSpeedDistanceMeters = confirmedNextSpeed.map { Int($0.distanceMeters.rounded()) }
+        if let next = confirmedNextSpeed {
             voice.announceNextSpeed(limit: next.limit, distanceMeters: next.distanceMeters)
         }
 
         // Check if passing into a section speed camera (Type 4)
         if let sectionCam = context.alerts.first(where: {
-            ($0.signCode == "IGO:4" || ($0.assetName?.contains("CameraSection") ?? false))
-            && $0.distanceMeters <= 60
+            TrafficSignCatalog.isSectionCamera($0) && $0.distanceMeters <= 60
         }) {
             let limit = sectionCam.speedLimit > 0 ? sectionCam.speedLimit : snapshot.speedLimitKmh
             if limit > 0 && sectionSpeedStartTime == nil {
@@ -1088,7 +1194,7 @@ final class DriveViewModel: ObservableObject {
         // Camera points are much denser than physical signs. Prioritise a
         // safety rule so prohibition/speed-limit banners are not starved.
         let safetyKinds: Set<AlertKind> = [
-            .roadSign, .speedLimit, .parkingRestriction
+            .townBoundary, .roadSign, .speedLimit, .parkingRestriction
         ]
         return nearby
             .filter { safetyKinds.contains($0.kind) }
@@ -1097,14 +1203,35 @@ final class DriveViewModel: ObservableObject {
     }
 
     nonisolated private static func isTurnRestrictionAlert(_ alert: DriveAlert) -> Bool {
-        if alert.kind == .turnRestriction { return true }
-        let code = (alert.signCode ?? "").lowercased()
-        return code.hasPrefix("p103")
-            || code.hasPrefix("p123")
-            || code.contains("left_turn")
-            || code.contains("right_turn")
-            || code.contains("u_turn")
-            || code.contains("straight_on")
+        // A physical P103/P123 sign is safe to show in free-drive mode. Only
+        // inferred relation/road-rule restrictions require an active route to
+        // know whether the driver is actually taking the prohibited movement.
+        alert.kind == .turnRestriction
+    }
+
+    private func confirmedNextSpeed(_ match: NextSpeedMatch?) -> NextSpeedMatch? {
+        guard let match else {
+            nextSpeedCandidateState = nil
+            return nil
+        }
+        let now = Date()
+        if var state = nextSpeedCandidateState,
+           state.match.limit == match.limit,
+           state.match.roadID == match.roadID,
+           now.timeIntervalSince(state.updatedAt) <= 4,
+           match.distanceMeters <= state.match.distanceMeters + 20 {
+            state.match = match
+            state.confirmations += 1
+            state.updatedAt = now
+            nextSpeedCandidateState = state
+            return state.confirmations >= 3 ? match : nil
+        }
+        nextSpeedCandidateState = NextSpeedCandidateState(
+            match: match,
+            confirmations: 1,
+            updatedAt: now
+        )
+        return nil
     }
 
     private func isTurnRestrictionOnActiveRoute(_ alert: DriveAlert) -> Bool {

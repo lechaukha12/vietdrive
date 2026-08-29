@@ -4,7 +4,11 @@ options:
   bundleIdPrefix: vn.vietdrive
   deploymentTarget:
     iOS: "17.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
+  # Xcode 26+ treats a modern watchOS app as a Foundation extension and
+  # requires it in PlugIns rather than the legacy Watch directory.
+  postGenCommand: /usr/bin/sed -i '' -e 's|dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";|dstPath = "";|' -e 's|dstSubfolderSpec = 16;|dstSubfolderSpec = 13;|' VietDrive.xcodeproj/project.pbxproj
 
 packages:
   MapLibre:
@@ -27,6 +31,10 @@ targets:
         excludes:
           - Services/BluetoothBridgeService.swift
           - Views/DeviceProjectionView.swift
+          # The bundled copy is identical; keep the explicit extracted source
+          # below as the single authoritative build resource.
+          - Resources/map_database_v2.sqlite
+      - path: Shared
       - path: ../extracted/map_database_v2.sqlite
         buildPhase: resources
       - path: ../extracted/data_manifest.json
@@ -34,6 +42,8 @@ targets:
     dependencies:
       - package: MapLibre
       - sdk: libsqlite3.tbd
+      - target: VietDriveWatch
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios
@@ -47,6 +57,26 @@ targets:
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@executable_path/Frameworks"
+  VietDriveWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: VietDriveWatch
+      - path: Shared
+      - path: VietDrive/Resources/Assets.xcassets
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios.watchkitapp
+        PRODUCT_NAME: VietDrive Watch
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: VietDrive
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: vn.vietdrive.ios
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.3.0
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: 4
   VietDriveTests:
     type: bundle.unit-test
     platform: iOS
@@ -69,3 +99,9 @@ schemes:
     test:
       targets:
         - VietDriveTests
+  VietDriveWatch:
+    build:
+      targets:
+        VietDriveWatch: all
+    run:
+      config: Debug

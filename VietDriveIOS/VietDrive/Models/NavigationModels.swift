@@ -13,6 +13,33 @@ struct PlaceSearchResult: Identifiable, Equatable {
     }
 }
 
+/// The navigation domain depends on this interface, not on the map renderer.
+/// MapLibre remains responsible only for drawing map tiles and overlays.
+protocol NavigationBackend: AnyObject {
+    var onRoutingHealthUpdate: ((RoutingHealthSnapshot) -> Void)? { get set }
+
+    func search(
+        query: String,
+        near coordinate: CLLocationCoordinate2D?
+    ) async throws -> [PlaceSearchResult]
+
+    func route(
+        from origin: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D,
+        preferences: RoutePreferences,
+        originBearing: Double?,
+        originAccuracy: Double?
+    ) async throws -> NavigationRoute
+
+    func routes(
+        from origin: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D,
+        preferences: RoutePreferences,
+        originBearing: Double?,
+        originAccuracy: Double?
+    ) async throws -> [NavigationRoute]
+}
+
 enum RoutePhase: Equatable {
     case idle
     case planning
@@ -166,6 +193,12 @@ enum OpenMapServiceError: LocalizedError {
     case noSearchResults
     case noRoute
     case server(String)
+    case http(status: Int, host: String, detail: String?)
+
+    var isBadRequest: Bool {
+        if case .http(let status, _, _) = self { return status == 400 }
+        return false
+    }
 
     var errorDescription: String? {
         switch self {
@@ -179,6 +212,12 @@ enum OpenMapServiceError: LocalizedError {
             "Không tìm thấy tuyến đường có thể đi bằng ô tô."
         case .server(let message):
             message
+        case .http(let status, let host, let detail):
+            if let detail, !detail.isEmpty {
+                "HTTP \(status) từ \(host): \(detail)"
+            } else {
+                "HTTP \(status) từ \(host)"
+            }
         }
     }
 }
