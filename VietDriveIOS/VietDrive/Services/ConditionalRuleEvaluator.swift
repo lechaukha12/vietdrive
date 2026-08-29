@@ -26,7 +26,17 @@ enum ConditionalRuleEvaluator {
     }
 
     private static func timeRange(in text: String) -> (start: Int, end: Int)? {
-        guard let match = text.firstMatch(of: /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/) else {
+        // Normalize Vietnamese and English separators to a simple dash,
+        // strip AM/PM suffixes, and collapse whitespace so the regex can
+        // match forms like "6:00AM đến 22:00PM" or "08:00 to 17:00".
+        let normalized = text
+            .replacingOccurrences(of: "đến", with: "-")
+            .replacingOccurrences(of: "tới", with: "-")
+            .replacingOccurrences(of: " to ", with: "-")
+            .replacingOccurrences(of: "từ ", with: "")
+            .replacingOccurrences(of: "AM", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "PM", with: "", options: .caseInsensitive)
+        guard let match = normalized.firstMatch(of: /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/) else {
             return nil
         }
         guard let startHour = Int(match.1), let startMinute = Int(match.2),

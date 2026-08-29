@@ -244,8 +244,8 @@ final class OfflineAlertStore {
                 roadRuleResults = self.queryRoadRuleAlerts(
                     database: database,
                     location: location,
-                    queryRadiusMeters: 500,
-                    maximumRuleDistanceMeters: 80
+                    queryRadiusMeters: 400,
+                    maximumRuleDistanceMeters: 25
                 )
                 turnRestrictions = self.queryTurnRestrictions(
                     database: database,
@@ -380,7 +380,8 @@ final class OfflineAlertStore {
         let query = """
             SELECT a.id, a.type, a.latitude, a.longitude, a.warning_text,
                    a.speed_kmh, a.sign_code, a.asset_name, a.source,
-                   a.source_ref, a.confidence, a.conditional, a.direction_degrees
+                   a.source_ref, a.confidence, a.conditional, a.direction_degrees,
+                   a.direction_scope
             FROM alerts_rtree r
             JOIN alerts a ON a.id = r.alert_id
             WHERE r.min_lat <= ? AND r.max_lat >= ?
@@ -436,7 +437,8 @@ final class OfflineAlertStore {
                 confidence: sqlite3_column_double(statement, 10),
                 conditional: Self.text(statement, 11),
                 directionDegrees: sqlite3_column_type(statement, 12) == SQLITE_NULL
-                    ? nil : sqlite3_column_double(statement, 12)
+                    ? nil : sqlite3_column_double(statement, 12),
+                directionScope: Self.text(statement, 13)
             ))
         }
         return alerts.sorted { $0.distanceMeters < $1.distanceMeters }
@@ -633,7 +635,7 @@ final class OfflineAlertStore {
                     confidence: sqlite3_column_double(statement, 6),
                     conditional: sign.conditional,
                     directionDegrees: nearest.bearing,
-                    directionType: 2
+                    directionType: 0
                 ))
             }
         }
@@ -686,12 +688,32 @@ final class OfflineAlertStore {
                 }
             }
             var candidate = alert
-            if let direction = alert.directionDegrees, speedKmh >= 8,
+            // OSM physical signs use direction_degrees to encode the sign's
+            // facing direction, not the vehicle's approach heading. Applying
+            // the firmware direction filter here hides signs that the driver
+            // hasn't reached yet (e.g. a P123a at a junction 200 m ahead
+            // whose face points 90° away from the current heading). Instead,
+            // these are filtered by approach bearing below and by
+            // direction_scope when a route provides travel direction.
+            let isOSMPhysicalSign = alert.source.hasPrefix("OpenStreetMap")
+            if !isOSMPhysicalSign,
+               let direction = alert.directionDegrees, speedKmh >= 8,
                !Self.directionMatches(
                     heading,
                     target: direction,
                     directionType: alert.directionType
                ) { return nil }
+            // Filter OSM signs by direction_scope when the vehicle has a
+            // clear heading, so a forward-only sign is not shown to traffic
+            // travelling in the opposite direction on the same road.
+            if isOSMPhysicalSign, speedKmh >= 8,
+               let scope = alert.directionScope, scope != "unknown",
+               let direction = alert.directionDegrees {
+                let angleDiff = Self.angleDifference(heading, direction)
+                let isFacing = angleDiff <= 90
+                if scope == "forward" && !isFacing { return nil }
+                if scope == "backward" && isFacing { return nil }
+            }
             if let route,
                let projection = RouteProgressEngine.projection(on: route, coordinate: alert.coordinate),
                let currentDistance = matchedDistanceMeters

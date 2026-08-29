@@ -368,6 +368,10 @@ struct DriveAlert: Identifiable, Equatable, Codable {
     var directionDegrees: Double? = nil
     /// iGO DIRTYPE: 0 = mọi hướng, 1 = một hướng, 2 = hai hướng đối diện.
     var directionType: Int? = nil
+    /// OSM direction scope: "forward", "backward", or "unknown".
+    /// Indicates which travel direction relative to the mapped way
+    /// the physical sign applies to.
+    var directionScope: String? = nil
     var distanceAlongRouteMeters: Double? = nil
     var lateralDistanceMeters: Double? = nil
 

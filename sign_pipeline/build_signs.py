@@ -64,6 +64,41 @@ GENERIC_CODES = {
     "NO_PARKING": "P131a",
 }
 
+# Vietnamese and English free-text patterns commonly found in OSM traffic_sign
+# values. Patterns are tried in order; the first match wins.
+FREETEXT_PATTERNS: list[tuple[re.Pattern, str]] = [
+    # Vietnamese prohibition signs
+    (re.compile(r"[Cc]ấm.*ô tô.*rẽ trái", re.IGNORECASE), "P103c"),
+    (re.compile(r"[Cc]ấm.*ô tô.*rẽ phải", re.IGNORECASE), "P103c"),  # mirror
+    (re.compile(r"[Cc]ấm.*rẽ trái", re.IGNORECASE), "P123a"),
+    (re.compile(r"[Cc]ấm.*rẽ phải", re.IGNORECASE), "P123b"),
+    (re.compile(r"[Cc]ấm.*quay đầu", re.IGNORECASE), "P124a"),
+    (re.compile(r"[Cc]ấm.*ngược chiều", re.IGNORECASE), "P102"),
+    (re.compile(r"[Cc]ấm.*đi thẳng", re.IGNORECASE), "P123c"),
+    (re.compile(r"[Cc]ấm.*dừng.*đỗ", re.IGNORECASE), "P130"),
+    (re.compile(r"[Cc]ấm.*dừng", re.IGNORECASE), "P130"),
+    (re.compile(r"[Cc]ấm.*đỗ.*ngày lẻ", re.IGNORECASE), "P131b"),
+    (re.compile(r"[Cc]ấm.*đỗ.*ngày chẵn", re.IGNORECASE), "P131c"),
+    (re.compile(r"[Cc]ấm.*đỗ", re.IGNORECASE), "P131a"),
+    (re.compile(r"[Cc]ấm.*vượt", re.IGNORECASE), "P125"),
+    (re.compile(r"[Cc]ấm.*ô tô", re.IGNORECASE), "P103a"),
+    (re.compile(r"[Dd]ừng lại", re.IGNORECASE), "P122"),
+    (re.compile(r"[Đđ]ường cấm", re.IGNORECASE), "P101"),
+    # English descriptions
+    (re.compile(r"Go straight.*Turn right", re.IGNORECASE), "R301e"),
+    (re.compile(r"Go straight.*Turn left", re.IGNORECASE), "R301d"),
+    (re.compile(r"Turn left.*Turn right", re.IGNORECASE), "R301f"),
+    (re.compile(r"No left turn", re.IGNORECASE), "P123a"),
+    (re.compile(r"No right turn", re.IGNORECASE), "P123b"),
+    (re.compile(r"No U[- ]?turn", re.IGNORECASE), "P124a"),
+    (re.compile(r"No entry", re.IGNORECASE), "P102"),
+    (re.compile(r"No overtaking", re.IGNORECASE), "P125"),
+    (re.compile(r"No stopping", re.IGNORECASE), "P130"),
+    (re.compile(r"No parking", re.IGNORECASE), "P131a"),
+    (re.compile(r"Keep right", re.IGNORECASE), "R302a"),
+    (re.compile(r"Slow down", re.IGNORECASE), "W245a"),
+]
+
 # A small set of bare numbers that OSM contributors use after the VN country
 # prefix. Only unambiguous codes backed by an app asset are accepted.
 BARE_VN_CODES = {
@@ -119,7 +154,15 @@ def direct_code(token: str) -> str | None:
 
     match = re.search(r"(?:^|\b)([PWRIS])\.?([0-9]{2,3})([A-Z]?)(?:\b|:)", normalized)
     if not match:
-        return GENERIC_CODES.get(normalized)
+        generic = GENERIC_CODES.get(normalized)
+        if generic:
+            return generic
+        # Try Vietnamese/English free-text patterns as a last resort.
+        original_lower = token.strip()
+        for pattern, code in FREETEXT_PATTERNS:
+            if pattern.search(original_lower):
+                return code
+        return None
     prefix, number, suffix = match.groups()
     candidate = f"{prefix}{int(number)}{suffix.lower()}"
     return candidate if candidate in ASSETS else None
@@ -170,6 +213,33 @@ def asset_for(code: str) -> tuple[str, str] | None:
         speed = int(code.split(".", 1)[1])
         return (f"TrafficSigns/TrafficSign_P127_{speed}", f"Giới hạn tốc độ {speed} km/h")
     return ASSETS.get(code)
+
+
+def extract_conditional(raw_text: str) -> str:
+    """Extract a time-range conditional from free-text Vietnamese or OSM syntax.
+
+    Returns an OSM-style time string (e.g. "06:00-22:00") or empty string.
+    Handles forms like:
+      - "Cấm ô tô rẽ trái từ 6:00AM đến 22:00PM"
+      - "no @ (08:00-17:00)"
+      - "Mo-Sa 06:00-21:00"
+    """
+    # Standard OSM conditional: "no @ (Mo-Fr 06:00-22:00)"
+    osm_match = re.search(r"@\s*\(([^)]+)\)", raw_text)
+    if osm_match:
+        return osm_match.group(1).strip()
+    # Vietnamese: "từ 6:00AM đến 22:00PM" or "6:00 - 22:00"
+    normalized = (
+        raw_text
+        .replace("đến", "-")
+        .replace("tới", "-")
+        .replace(" to ", "-")
+    )
+    normalized = re.sub(r"(?i)\s*[ap]m", "", normalized)
+    time_match = re.search(r"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})", normalized)
+    if time_match:
+        return f"{time_match.group(1)}-{time_match.group(2)}"
+    return ""
 
 
 class SignHandler(osmium.SimpleHandler):
@@ -246,6 +316,14 @@ def build(input_path: Path, output_path: Path) -> dict:
             continue
         asset_name, message = asset
         code_counts[code] += 1
+        # Extract conditional time range from free-text descriptions.
+        raw_sign_text = (
+            record["tags"].get("traffic_sign")
+            or record["tags"].get("traffic_sign:forward")
+            or record["tags"].get("traffic_sign:backward")
+            or ""
+        )
+        conditional = extract_conditional(raw_sign_text)
         features.append({
             "type": "Feature",
             "geometry": {
@@ -264,6 +342,7 @@ def build(input_path: Path, output_path: Path) -> dict:
                 "source": "OpenStreetMap/Geofabrik Vietnam",
                 "direction_scope": direction_scope(record["tags"]),
                 "direction": record["tags"].get("direction", ""),
+                "conditional": conditional,
                 "confidence": 0.82,
                 "review_status": "normalized",
                 "tags": record["tags"],
