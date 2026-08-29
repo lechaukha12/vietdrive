@@ -14,6 +14,7 @@ struct MapLibreMapView: UIViewRepresentable {
     let routeViewportRevision: Int
     let showGuidanceMascot: Bool
     let isNightMode: Bool
+    let displayMode: MapDisplayMode
     let onUserInteraction: () -> Void
     let onViewportChanged: (CLLocationCoordinate2D, Double) -> Void
     let onAlertSelected: (DriveAlert) -> Void
@@ -38,10 +39,12 @@ struct MapLibreMapView: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.compassView.compassVisibility = .visible
         mapView.showsScale = false
+        mapView.isPitchEnabled = true
+        mapView.maximumPitch = 60
         mapView.showsUserLocation = !snapshot.isDemo
         mapView.tintColor = UIColor(DriveTheme.cyan)
         mapView.contentInset = UIEdgeInsets(top: 112, left: 0, bottom: 132, right: 0)
-        mapView.setCenter(snapshot.coordinate, zoomLevel: 15.2, animated: false)
+        mapView.setCenter(snapshot.coordinate, zoomLevel: displayMode == .standard ? 15.2 : 16.1, animated: false)
         context.coordinator.update(
             snapshot: snapshot,
             alerts: alerts,
@@ -51,6 +54,7 @@ struct MapLibreMapView: UIViewRepresentable {
             routeViewportRevision: routeViewportRevision,
             showGuidanceMascot: showGuidanceMascot,
             isNightMode: isNightMode,
+            displayMode: displayMode,
             in: mapView,
             follow: true
         )
@@ -68,6 +72,7 @@ struct MapLibreMapView: UIViewRepresentable {
             routeViewportRevision: routeViewportRevision,
             showGuidanceMascot: showGuidanceMascot,
             isNightMode: isNightMode,
+            displayMode: displayMode,
             in: mapView,
             follow: followUser
         )
@@ -92,6 +97,9 @@ struct MapLibreMapView: UIViewRepresentable {
         private var lastCameraRevision = -1
         private var lastRouteViewportRevision = -1
         private var lastNightMode: Bool?
+        private var lastDisplayMode: MapDisplayMode?
+        private var currentDisplayMode: MapDisplayMode = .drive3D
+        private var currentNightMode = false
         private let onUserInteraction: () -> Void
         private let onViewportChanged: (CLLocationCoordinate2D, Double) -> Void
         private let onAlertSelected: (DriveAlert) -> Void
@@ -116,27 +124,35 @@ struct MapLibreMapView: UIViewRepresentable {
             routeViewportRevision: Int,
             showGuidanceMascot: Bool,
             isNightMode: Bool,
+            displayMode: MapDisplayMode,
             in mapView: MLNMapView,
             follow: Bool
         ) {
-            if lastNightMode != isNightMode {
+            if let lastNightMode, lastNightMode != isNightMode {
                 mapView.styleURL = MapLibreMapView.styleURL(isNightMode: isNightMode)
-                lastNightMode = isNightMode
+            }
+            lastNightMode = isNightMode
+            currentNightMode = isNightMode
+            currentDisplayMode = displayMode
+            let displayModeChanged = lastDisplayMode != displayMode
+            if displayModeChanged {
+                configureStyle(in: mapView)
+                lastDisplayMode = displayMode
             }
             let unclutteredAlerts = (spatiallySeparated(
                 alerts.filter { $0.kind == .camera },
-                minimumDistance: 100,
-                limit: 28,
+                minimumDistance: 130,
+                limit: 18,
                 heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             ) + spatiallySeparated(
                 alerts.filter { $0.kind == .speedLimit },
-                minimumDistance: 65,
-                limit: 24,
+                minimumDistance: 90,
+                limit: 18,
                 heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             ) + spatiallySeparated(
                 alerts.filter { $0.kind != .camera && $0.kind != .speedLimit },
-                minimumDistance: 65,
-                limit: 18,
+                minimumDistance: 110,
+                limit: 10,
                 heading: snapshot.speedKmh >= 8 ? snapshot.heading : nil
             )).sorted { $0.id < $1.id }
             let signature = unclutteredAlerts.map {
@@ -229,13 +245,18 @@ struct MapLibreMapView: UIViewRepresentable {
 
             let moved = abs(snapshot.coordinate.latitude - lastCoordinate.latitude) > 0.00001 ||
                 abs(snapshot.coordinate.longitude - lastCoordinate.longitude) > 0.00001
-            if follow, moved || cameraRevision != lastCameraRevision {
+            if displayModeChanged || (follow && (moved || cameraRevision != lastCameraRevision)) {
+                let preferredZoom = displayMode == .standard ? 15.2 : 16.1
                 mapView.setCenter(
                     snapshot.coordinate,
-                    zoomLevel: max(mapView.zoomLevel, 15.2),
-                    direction: snapshot.heading,
+                    zoomLevel: max(mapView.zoomLevel, preferredZoom),
+                    direction: displayMode == .standard ? 0 : snapshot.heading,
                     animated: lastCoordinate.latitude != 0
                 )
+                let camera = mapView.camera
+                camera.pitch = displayMode.cameraPitch
+                camera.heading = displayMode == .standard ? 0 : snapshot.heading
+                mapView.setCamera(camera, animated: lastCoordinate.latitude != 0)
                 lastCoordinate = snapshot.coordinate
                 lastCameraRevision = cameraRevision
             }
@@ -263,6 +284,10 @@ struct MapLibreMapView: UIViewRepresentable {
 
         func mapViewDidFinishLoadingMap(_ mapView: MLNMapView) {
             scheduleViewportQuery(for: mapView)
+        }
+
+        func mapView(_ mapView: MLNMapView, didFinishLoading style: MLNStyle) {
+            configureStyle(in: mapView)
         }
 
         func mapView(_ mapView: MLNMapView, didSelect annotation: MLNAnnotation) {
@@ -370,6 +395,104 @@ struct MapLibreMapView: UIViewRepresentable {
                 animated: true,
                 completionHandler: nil
             )
+        }
+
+        private func configureStyle(in mapView: MLNMapView) {
+            guard let style = mapView.style else { return }
+            configureVietDrivePalette(style)
+            configureBuildings(style)
+            configureSatellite(style)
+        }
+
+        private func configureVietDrivePalette(_ style: MLNStyle) {
+            let night = currentNightMode
+            (style.layer(withIdentifier: "background") as? MLNBackgroundStyleLayer)?.backgroundColor =
+                NSExpression(forConstantValue: night
+                    ? UIColor(red: 0.035, green: 0.075, blue: 0.13, alpha: 1)
+                    : UIColor(red: 0.93, green: 0.965, blue: 0.98, alpha: 1))
+            (style.layer(withIdentifier: "water") as? MLNFillStyleLayer)?.fillColor =
+                NSExpression(forConstantValue: night
+                    ? UIColor(red: 0.055, green: 0.20, blue: 0.31, alpha: 1)
+                    : UIColor(red: 0.53, green: 0.82, blue: 0.94, alpha: 1))
+
+            for layer in style.layers {
+                if let symbol = layer as? MLNSymbolStyleLayer,
+                   symbol.sourceLayerIdentifier == "poi" {
+                    symbol.minimumZoomLevel = max(symbol.minimumZoomLevel, 16)
+                }
+                guard let line = layer as? MLNLineStyleLayer else { continue }
+                let identifier = line.identifier
+                if identifier.contains("casing") {
+                    line.lineColor = NSExpression(forConstantValue: night
+                        ? UIColor(red: 0.08, green: 0.18, blue: 0.27, alpha: 1)
+                        : UIColor(red: 0.62, green: 0.70, blue: 0.75, alpha: 1))
+                } else if identifier.contains("motorway") || identifier.contains("trunk_primary") {
+                    line.lineColor = NSExpression(forConstantValue: night
+                        ? UIColor(red: 0.20, green: 0.55, blue: 0.85, alpha: 1)
+                        : UIColor(red: 1.0, green: 0.76, blue: 0.38, alpha: 1))
+                } else if identifier.contains("secondary_tertiary") || identifier.contains("street") {
+                    line.lineColor = NSExpression(forConstantValue: night
+                        ? UIColor(red: 0.28, green: 0.34, blue: 0.40, alpha: 1)
+                        : UIColor.white)
+                }
+            }
+        }
+
+        private func configureBuildings(_ style: MLNStyle) {
+            guard let buildings = style.layer(withIdentifier: "building-3d") as? MLNFillExtrusionStyleLayer else {
+                return
+            }
+            buildings.isVisible = currentDisplayMode == .drive3D
+            buildings.minimumZoomLevel = 14
+            buildings.fillExtrusionColor = NSExpression(forConstantValue: currentNightMode
+                ? UIColor(red: 0.17, green: 0.23, blue: 0.30, alpha: 1)
+                : UIColor(red: 0.78, green: 0.84, blue: 0.88, alpha: 1))
+            buildings.fillExtrusionOpacity = NSExpression(forConstantValue: currentNightMode ? 0.88 : 0.82)
+        }
+
+        private func configureSatellite(_ style: MLNStyle) {
+            let sourceIdentifier = "vietdrive-satellite-source"
+            let layerIdentifier = "vietdrive-satellite-layer"
+
+            if currentDisplayMode != .satellite {
+                if let layer = style.layer(withIdentifier: layerIdentifier) {
+                    style.removeLayer(layer)
+                }
+                if let source = style.source(withIdentifier: sourceIdentifier) {
+                    style.removeSource(source)
+                }
+                return
+            }
+
+            let source: MLNRasterTileSource
+            if let existing = style.source(withIdentifier: sourceIdentifier) as? MLNRasterTileSource {
+                source = existing
+            } else {
+                source = MLNRasterTileSource(
+                    identifier: sourceIdentifier,
+                    tileURLTemplates: [
+                        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    ],
+                    options: [
+                        .tileSize: 256,
+                        .maximumZoomLevel: 19,
+                        .attributionHTMLString: "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community"
+                    ]
+                )
+                style.addSource(source)
+            }
+
+            guard style.layer(withIdentifier: layerIdentifier) == nil else { return }
+            let satellite = MLNRasterStyleLayer(identifier: layerIdentifier, source: source)
+            satellite.rasterOpacity = NSExpression(forConstantValue: 1)
+            satellite.rasterContrast = NSExpression(forConstantValue: currentNightMode ? 0.08 : 0.04)
+            satellite.rasterSaturation = NSExpression(forConstantValue: -0.08)
+            satellite.maximumRasterBrightness = NSExpression(forConstantValue: currentNightMode ? 0.72 : 1)
+            if let firstLabel = style.layers.first(where: { $0 is MLNSymbolStyleLayer }) {
+                style.insertLayer(satellite, below: firstLabel)
+            } else {
+                style.addLayer(satellite)
+            }
         }
 
         private func reusableImage(

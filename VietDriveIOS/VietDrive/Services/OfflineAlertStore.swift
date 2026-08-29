@@ -172,23 +172,14 @@ final class OfflineAlertStore {
                 location: centerLocation,
                 radiusMeters: queryRadius
             ).filter(Self.isNonFirmwarePhysicalSign)
-            // Viewport signs are display-only. Include every semantic source,
-            // while capping dense line rules to the useful local map area.
-            let semanticRadius = min(queryRadius, 2_000)
-            let roadRuleSigns = self.queryRoadRuleAlerts(
-                database: database,
-                location: centerLocation,
-                queryRadiusMeters: semanticRadius,
-                maximumRuleDistanceMeters: semanticRadius
-            ).alerts
-            let turnRestrictions = self.queryTurnRestrictions(
-                database: database,
-                location: centerLocation,
-                radiusMeters: min(queryRadius, 10_000)
-            )
+            // A viewport marker must represent a real point. `road_rules`
+            // describe whole OSM ways and turn restrictions describe a legal
+            // movement through a junction; neither proves that a physical sign
+            // exists at an arbitrary point on the geometry. Those semantic
+            // sources are therefore never converted into free-map markers.
             DispatchQueue.main.async {
                 completion(
-                    (points + physicalSigns + roadRuleSigns + turnRestrictions)
+                    (points.filter { !$0.isFirmwareTownEntry } + physicalSigns)
                         .sorted { $0.distanceMeters < $1.distanceMeters }
                 )
             }
@@ -239,17 +230,29 @@ final class OfflineAlertStore {
                 route: route,
                 matchedDistanceMeters: matchedDistanceMeters
             )
-            let roadRuleResults = self.queryRoadRuleAlerts(
-                database: database,
-                location: location,
-                queryRadiusMeters: 500,
-                maximumRuleDistanceMeters: 80
-            )
-            let turnRestrictions = self.queryTurnRestrictions(
-                database: database,
-                location: location,
-                radiusMeters: route == nil ? alertRadiusMeters : 5_000
-            )
+            // In free-drive there is no intended maneuver, so an OSM access
+            // rule or turn relation cannot safely be presented as a physical
+            // sign ahead. Keep these semantic sources available only while a
+            // route exists; routeAwareAlerts will then require an intersection
+            // with the active route before exposing them.
+            let roadRuleResults: (alerts: [DriveAlert], matchedRules: [String])
+            let turnRestrictions: [DriveAlert]
+            if route == nil {
+                roadRuleResults = ([], [])
+                turnRestrictions = []
+            } else {
+                roadRuleResults = self.queryRoadRuleAlerts(
+                    database: database,
+                    location: location,
+                    queryRadiusMeters: 500,
+                    maximumRuleDistanceMeters: 80
+                )
+                turnRestrictions = self.queryTurnRestrictions(
+                    database: database,
+                    location: location,
+                    radiusMeters: 5_000
+                )
+            }
             // Physical OSM sign nodes are a separate audited table. They were
             // previously loaded by queryAlerts() but never joined into either
             // the driving context or viewport, which made every non-firmware
@@ -649,9 +652,38 @@ final class OfflineAlertStore {
         matchedDistanceMeters: Double?,
         radiusMeters: Double
     ) -> [DriveAlert] {
-        alerts.compactMap { alert in
+        let confirmedTownEntryIDs = Self.confirmedFirmwareTownEntryIDs(in: alerts)
+        let filtered: [DriveAlert] = alerts.compactMap { alert -> DriveAlert? in
             guard ConditionalRuleEvaluator.isPotentiallyActive(alert.conditional ?? "") else {
                 return nil
+            }
+            // Firmware type 10 is directional navigation data. Showing every
+            // point around a stationary car made valid boundaries look like
+            // permanent signs scattered throughout a city. Expose it only as
+            // a short-range approach alert while the vehicle is moving in the
+            // encoded direction. A valid firmware boundary must also have an
+            // opposite-direction peer nearby; isolated type-10 points are the
+            // false urban markers observed in the source. Physical R.420/R.421
+            // nodes are unaffected.
+            if alert.isFirmwareTownEntry {
+                guard confirmedTownEntryIDs.contains(alert.id),
+                      speedKmh >= 8,
+                      alert.distanceMeters <= min(radiusMeters, 1_000),
+                      let direction = alert.directionDegrees,
+                      Self.directionDifference(
+                          heading,
+                          target: direction,
+                          directionType: alert.directionType
+                      ) <= 55 else { return nil }
+                if alert.distanceMeters > 25 {
+                    let approachBearing = Self.bearing(
+                        from: location.coordinate,
+                        to: alert.coordinate
+                    )
+                    guard Self.angleDifference(heading, approachBearing) <= 55 else {
+                        return nil
+                    }
+                }
             }
             var candidate = alert
             if let direction = alert.directionDegrees, speedKmh >= 8,
@@ -688,7 +720,41 @@ final class OfflineAlertStore {
             }
             return candidate
         }
-        .sorted { $0.distanceMeters < $1.distanceMeters }
+        return filtered.sorted { $0.distanceMeters < $1.distanceMeters }
+    }
+
+    /// The firmware commonly records a town boundary once for each travel
+    /// direction. Requiring that reciprocal evidence removes isolated type-10
+    /// observations without inventing a boundary from OSM or administrative
+    /// city polygons. The 350 m tolerance covers divided carriageways and
+    /// staggered signs while remaining local to one boundary.
+    private static func confirmedFirmwareTownEntryIDs(
+        in alerts: [DriveAlert]
+    ) -> Set<Int> {
+        let entries = alerts.filter(\.isFirmwareTownEntry)
+        var confirmed: Set<Int> = []
+        for index in entries.indices {
+            let entry = entries[index]
+            guard let entryDirection = entry.directionDegrees else { continue }
+            let entryLocation = CLLocation(
+                latitude: entry.latitude,
+                longitude: entry.longitude
+            )
+            for peer in entries[entries.index(after: index)...] {
+                guard let peerDirection = peer.directionDegrees,
+                      angleDifference(entryDirection, peerDirection) >= 140 else {
+                    continue
+                }
+                let distance = entryLocation.distance(from: CLLocation(
+                    latitude: peer.latitude,
+                    longitude: peer.longitude
+                ))
+                guard distance <= 350 else { continue }
+                confirmed.insert(entry.id)
+                confirmed.insert(peer.id)
+            }
+        }
+        return confirmed
     }
 
     /// map-data type 1 stores the enforced speed together with camera position
