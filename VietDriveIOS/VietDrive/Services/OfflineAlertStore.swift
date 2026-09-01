@@ -172,22 +172,15 @@ final class OfflineAlertStore {
                 location: centerLocation,
                 radiusMeters: queryRadius
             ).filter(Self.isNonFirmwarePhysicalSign)
-            // Turn restrictions and access rules describe maneuvers, not
-            // physical sign locations. Parking/stopping restrictions however
-            // mark a concrete road segment where stopping is prohibited —
-            // they are useful as free-map markers. Query them with the
-            // nearest-point geometry so each has a real coordinate.
-            let parkingMarkers = self.queryRoadRuleAlerts(
-                database: database,
-                location: centerLocation,
-                queryRadiusMeters: min(queryRadius, 2_000),
-                maximumRuleDistanceMeters: queryRadius,
-                parkingOnly: true
-            ).alerts
+            // Parking restrictions and town boundaries are disabled.
+            // OSM parking data covers < 2.5 k roads nationwide with extreme
+            // geographic bias (283 in Hanoi, 0 in Phan Thiết) — showing them
+            // implies "no marker = parking OK" which is dangerously wrong.
+            // Firmware town-boundary (type 10) markers are scattered inside
+            // dense urban areas where they have no real-world meaning.
             DispatchQueue.main.async {
                 completion(
-                    (points.filter { !$0.isFirmwareTownEntry }
-                        + physicalSigns + parkingMarkers)
+                    (points.filter { !$0.isFirmwareTownEntry } + physicalSigns)
                         .sorted { $0.distanceMeters < $1.distanceMeters }
                 )
             }
@@ -238,21 +231,15 @@ final class OfflineAlertStore {
                 route: route,
                 matchedDistanceMeters: matchedDistanceMeters
             )
-            // In free-drive there is no intended maneuver, so OSM access
-            // rules and turn relations cannot safely be presented as a
-            // physical sign ahead. However parking/stopping restrictions
-            // are road-level (not maneuver-dependent) and are useful even
-            // without a route, so they are always queried.
+            // In free-drive there is no intended maneuver, so an OSM access
+            // rule or turn relation cannot safely be presented as a physical
+            // sign ahead. Parking restrictions are also disabled: the OSM
+            // dataset covers < 2.5 k roads with extreme geographic bias
+            // (283 Hanoi, 60 HCM, 0 Phan Thiết) making them misleading.
             let roadRuleResults: (alerts: [DriveAlert], matchedRules: [String])
             let turnRestrictions: [DriveAlert]
             if route == nil {
-                roadRuleResults = self.queryRoadRuleAlerts(
-                    database: database,
-                    location: location,
-                    queryRadiusMeters: 400,
-                    maximumRuleDistanceMeters: 25,
-                    parkingOnly: true
-                )
+                roadRuleResults = ([], [])
                 turnRestrictions = []
             } else {
                 roadRuleResults = self.queryRoadRuleAlerts(
@@ -289,16 +276,11 @@ final class OfflineAlertStore {
                 matchedDistanceMeters: matchedDistanceMeters,
                 radiusMeters: alertRadiusMeters
             )
-            // Suppress town-boundary alerts in obvious urban environments.
-            // Firmware type-10 markers are scattered inside dense city areas
-            // where the "entering a residential zone" warning is meaningless.
-            // When the matched road carries a speed limit ≤ 50 km/h the
-            // vehicle is clearly on a city street — not an inter-city highway
-            // crossing a boundary — so the alert is hidden.
-            let alerts = rawAlerts.filter { alert in
-                guard alert.kind == .townBoundary else { return true }
-                return matchedLimit == 0 || matchedLimit > 50
-            }
+            // Suppress ALL town-boundary alerts. Firmware type-10 markers
+            // are scattered inside dense city areas where they have no
+            // real-world meaning. Until a reliable boundary data source is
+            // available, these alerts do more harm than good.
+            let alerts = rawAlerts.filter { $0.kind != .townBoundary }
             let nextSpeed = self.lookaheadNextSpeedMatch(
                 currentRoadID: matchedSpeed != nil ? retainedRoadID : nil,
                 currentSpeedLimit: matchedSpeed?.limit ?? 0,
