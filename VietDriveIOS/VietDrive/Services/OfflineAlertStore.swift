@@ -230,15 +230,21 @@ final class OfflineAlertStore {
                 route: route,
                 matchedDistanceMeters: matchedDistanceMeters
             )
-            // In free-drive there is no intended maneuver, so an OSM access
-            // rule or turn relation cannot safely be presented as a physical
-            // sign ahead. Keep these semantic sources available only while a
-            // route exists; routeAwareAlerts will then require an intersection
-            // with the active route before exposing them.
+            // In free-drive there is no intended maneuver, so OSM access
+            // rules and turn relations cannot safely be presented as a
+            // physical sign ahead. However parking/stopping restrictions
+            // are road-level (not maneuver-dependent) and are useful even
+            // without a route, so they are always queried.
             let roadRuleResults: (alerts: [DriveAlert], matchedRules: [String])
             let turnRestrictions: [DriveAlert]
             if route == nil {
-                roadRuleResults = ([], [])
+                roadRuleResults = self.queryRoadRuleAlerts(
+                    database: database,
+                    location: location,
+                    queryRadiusMeters: 400,
+                    maximumRuleDistanceMeters: 25,
+                    parkingOnly: true
+                )
                 turnRestrictions = []
             } else {
                 roadRuleResults = self.queryRoadRuleAlerts(
@@ -265,7 +271,8 @@ final class OfflineAlertStore {
             ).filter(Self.isNonFirmwarePhysicalSign)
             let allCandidates = mapDataAlerts + physicalSigns
                 + roadRuleResults.alerts + turnRestrictions
-            let alerts = self.routeAwareAlerts(
+            let matchedLimit = matchedSpeed?.limit ?? 0
+            let rawAlerts = self.routeAwareAlerts(
                 allCandidates,
                 location: location,
                 heading: heading,
@@ -274,6 +281,16 @@ final class OfflineAlertStore {
                 matchedDistanceMeters: matchedDistanceMeters,
                 radiusMeters: alertRadiusMeters
             )
+            // Suppress town-boundary alerts in obvious urban environments.
+            // Firmware type-10 markers are scattered inside dense city areas
+            // where the "entering a residential zone" warning is meaningless.
+            // When the matched road carries a speed limit ≤ 50 km/h the
+            // vehicle is clearly on a city street — not an inter-city highway
+            // crossing a boundary — so the alert is hidden.
+            let alerts = rawAlerts.filter { alert in
+                guard alert.kind == .townBoundary else { return true }
+                return matchedLimit == 0 || matchedLimit > 50
+            }
             let nextSpeed = self.lookaheadNextSpeedMatch(
                 currentRoadID: matchedSpeed != nil ? retainedRoadID : nil,
                 currentSpeedLimit: matchedSpeed?.limit ?? 0,
@@ -558,7 +575,8 @@ final class OfflineAlertStore {
         database: OpaquePointer,
         location: CLLocation,
         queryRadiusMeters: Double,
-        maximumRuleDistanceMeters: Double
+        maximumRuleDistanceMeters: Double,
+        parkingOnly: Bool = false
     ) -> (alerts: [DriveAlert], matchedRules: [String]) {
         // Query a compact spatial window before applying LIMIT. The previous
         // 2 km window could contain thousands of R-tree rows; SQLite then
@@ -581,7 +599,8 @@ final class OfflineAlertStore {
                   WHERE (
                       rule.key LIKE 'parking:%'
                       AND lower(rule.value) LIKE 'no%'
-                  ) OR (
+                  )\(parkingOnly ? "" : """
+                   OR (
                       rule.key IN (
                           'access', 'access:conditional',
                           'motor_vehicle', 'motor_vehicle:conditional',
@@ -589,6 +608,7 @@ final class OfflineAlertStore {
                       )
                       AND lower(rule.value) LIKE 'no%'
                   )
+                  """)
               )
             LIMIT 5_000;
             """
