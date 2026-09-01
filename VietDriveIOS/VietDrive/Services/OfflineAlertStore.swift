@@ -172,14 +172,22 @@ final class OfflineAlertStore {
                 location: centerLocation,
                 radiusMeters: queryRadius
             ).filter(Self.isNonFirmwarePhysicalSign)
-            // A viewport marker must represent a real point. `road_rules`
-            // describe whole OSM ways and turn restrictions describe a legal
-            // movement through a junction; neither proves that a physical sign
-            // exists at an arbitrary point on the geometry. Those semantic
-            // sources are therefore never converted into free-map markers.
+            // Turn restrictions and access rules describe maneuvers, not
+            // physical sign locations. Parking/stopping restrictions however
+            // mark a concrete road segment where stopping is prohibited —
+            // they are useful as free-map markers. Query them with the
+            // nearest-point geometry so each has a real coordinate.
+            let parkingMarkers = self.queryRoadRuleAlerts(
+                database: database,
+                location: centerLocation,
+                queryRadiusMeters: min(queryRadius, 2_000),
+                maximumRuleDistanceMeters: queryRadius,
+                parkingOnly: true
+            ).alerts
             DispatchQueue.main.async {
                 completion(
-                    (points.filter { !$0.isFirmwareTownEntry } + physicalSigns)
+                    (points.filter { !$0.isFirmwareTownEntry }
+                        + physicalSigns + parkingMarkers)
                         .sorted { $0.distanceMeters < $1.distanceMeters }
                 )
             }
