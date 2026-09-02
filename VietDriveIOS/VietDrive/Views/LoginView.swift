@@ -2,8 +2,8 @@ import SwiftUI
 
 struct LoginView: View {
     let onLogin: (String, String) -> Bool
-    @State private var username = ""
-    @State private var password = ""
+    @State private var username = "admin"
+    @State private var password = "admin"
     @State private var errorMessage: String?
     @State private var shake = false
     @FocusState private var focusedField: Field?

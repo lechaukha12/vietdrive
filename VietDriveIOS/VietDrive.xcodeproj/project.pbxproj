@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */; };
 		01FBBAE066C6CB77E4376B9F /* gps_signal_lost.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */; };
 		02B692456DFBB6D1B7519980 /* gps_signal_found.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */; };
+		03586EB5F4A6C34A6946A220 /* VietDriveLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5135D4AE245184C679EF557C /* VietDriveLiveActivityBundle.swift */; };
 		056318DA9E39B2AE1174D085 /* ConditionalRuleEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6EEF36BA745BB3F4DA4E57 /* ConditionalRuleEvaluator.swift */; };
 		05C307DBCF38BADB8BD1D0D9 /* turn_sharp_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D7264F433197FD11C04936BC /* turn_sharp_right.mp3 */; };
 		0670C5BB86AB460043FC3FC0 /* 300_roundabout_9_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */; };
@@ -40,6 +42,7 @@
 		3106DDEF10CA5E58B8B7E06B /* 300_turn_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AC71249DF1FF0E9C1F906344 /* 300_turn_right.mp3 */; };
 		31CC29EBAB4361C8DB1EE2D8 /* VietDriveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE9626899B71BE33105846B9 /* VietDriveApp.swift */; };
 		321E10E9E5355FAD8AF879B6 /* current_speed_60.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8A4DA032094C6EDFACC47CC9 /* current_speed_60.mp3 */; };
+		32FE75AF6A4B48AF5259F9CA /* VietDriveLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9703EFFF053071035A7486B0 /* VietDriveLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3442D41CF5F45AB2EA80BF05 /* 300_roundabout_1_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */; };
 		3761FC99A273E895BA877344 /* roundabout_4_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 74DE014F859EDD4D06ECF585 /* roundabout_4_exit.mp3 */; };
 		3ABCA2B9BFD2E9384D524B78 /* map_database_v2.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = B9743AEDC89DF38902A65031 /* map_database_v2.sqlite */; };
@@ -50,12 +53,14 @@
 		4BA8D51547AF6D187F07A0A2 /* next_speed_40.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DA84870A4D7331840C62DFA4 /* next_speed_40.mp3 */; };
 		4CC141156B254F1E243EF42F /* OpenMapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88A455388EBD8EA48C02C0B /* OpenMapService.swift */; };
 		4FF2440929916CB75B321CF6 /* current_speed_100.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 52876583CCC56135DFAAD4A6 /* current_speed_100.mp3 */; };
+		51CF1D9ED468EAB7D0740CC1 /* LiveActivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706DCC6598D034A679764C86 /* LiveActivityCoordinator.swift */; };
 		52398727FCD7D5566E08842F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */; };
 		53D5908C405A8FAD8E42C09A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */; };
 		55551F479CE912DA4F4B8271 /* MapDataIssueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */; };
 		566460781F07231B87FAC06E /* current_speed_120.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E7C093D86C236D702018990C /* current_speed_120.mp3 */; };
 		5A39AE21A1E3E3D0DA2380D6 /* turn_uturn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 039A7DB72BE1757A37B0A969 /* turn_uturn.mp3 */; };
 		5C7043D0F226DCF078A88689 /* roundabout_8_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 403F61888A827751BF8A0DF2 /* roundabout_8_exit.mp3 */; };
+		5D079EA8DD9D5E980EE26B58 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37ADD807797FD0CD4E811F37 /* Assets.xcassets */; };
 		5EC11F63F8143BD276638103 /* next_speed_50.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */; };
 		5EF174C6EE2EEC7BAD9412D7 /* reroute_warning.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A2A17B291C781AF8C962324C /* reroute_warning.mp3 */; };
 		601117A727BB0E263109A832 /* turn_sharp_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 967DC79A62818FFA2C5BC173 /* turn_sharp_left.mp3 */; };
@@ -67,6 +72,7 @@
 		6CA873D43C2DB4E9E2F6F050 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 1FE3A8D2C4171622E4DAE0E4 /* manifest.json */; };
 		6D48FD0A20143569F54D7A8A /* 300_turn_sharp_right.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 487BA93720BEFA1E49C5E944 /* 300_turn_sharp_right.mp3 */; };
 		703596EC96F7B87875308C31 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1C8A032C6C84C8A2A635E /* LocationService.swift */; };
+		72E165C6EC587CFC8121710B /* VietDriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984B51FAD3B9CC5C21E5BE27 /* VietDriveActivityAttributes.swift */; };
 		7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCAAC75F8A45D2197B261487 /* LoginView.swift */; };
 		76B0ED6928CFA2888FFE120D /* DriveTraceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4175472EEF8F66B2E9A650 /* DriveTraceStoreTests.swift */; };
 		7796417A4C230D30AE29E040 /* VoiceAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D5DB0398FE92B60556D17F2 /* VoiceAlertService.swift */; };
@@ -84,6 +90,7 @@
 		8C60CEA8F1F4E6EA21BCB40D /* 300_roundabout_5_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 12F27D2B122F30A8612AC2A6 /* 300_roundabout_5_exit.mp3 */; };
 		8C800796C758C02B5A5A8E79 /* 300_turn_straight.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 66F374D9F9F8A6818428C668 /* 300_turn_straight.mp3 */; };
 		8F7D4FD0EA3DA6FEF9D607F5 /* next_speed_60.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 005232845C943AE36B4B6A6F /* next_speed_60.mp3 */; };
+		91FD081FBF47F2CE28792D39 /* VietDriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984B51FAD3B9CC5C21E5BE27 /* VietDriveActivityAttributes.swift */; };
 		946F1D6DAE74C1D0FE126CEA /* current_speed_80.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6996A8EACAFF5C257A8D5CE4 /* current_speed_80.mp3 */; };
 		95194B893F70520EEC915422 /* 300_roundabout_8_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6634E8C27DBA30F112A7AA73 /* 300_roundabout_8_exit.mp3 */; };
 		97F1B3B63BCF6761CFDFE3A8 /* roundabout_5_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = ADF2DB81A7534D7F30C1C5CF /* roundabout_5_exit.mp3 */; };
@@ -99,10 +106,11 @@
 		AA2AAC3D3D188E43DE52B82A /* MapDataIssueStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CA24E19E3053E0CB3F3697 /* MapDataIssueStoreTests.swift */; };
 		ADD837C905F62EB160D895B1 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = BEB695E4D317736BB92B56F5 /* MapLibre */; };
 		AE6F175BA85228A02D1384F2 /* vao_duong_ham.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FA6C43C2202DD455619929CB /* vao_duong_ham.mp3 */; };
+		AF51A394657CB1D9F31DA8C6 /* VietDriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984B51FAD3B9CC5C21E5BE27 /* VietDriveActivityAttributes.swift */; };
 		AF9687343C039FB2E4ED9A5C /* 300_turn_sharp_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 563F20055180729E60C4FAE9 /* 300_turn_sharp_left.mp3 */; };
 		B0490BADFB3783F2B16BF671 /* DriveDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */; };
 		BC5C89FD659E64F0E6A18505 /* OfflineMapDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED353CE5044CA33BC4C1C1F8 /* OfflineMapDownloadService.swift */; };
-		BD1619FAC70452C585022A96 /* VietDrive Watch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 65A0A8F13C275FFF714F65A1 /* VietDrive Watch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BD1619FAC70452C585022A96 /* VietDriveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 65A0A8F13C275FFF714F65A1 /* VietDriveWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BD6313388521070470DF435E /* CommunityContribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD997E12F042C0E2ED831526 /* CommunityContribution.swift */; };
 		BD76DB2F04CA346A18FDF47D /* CartoonBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6E1017441077FB642EAAC4 /* CartoonBackground.swift */; };
 		BDB143EB1A151C04D9CF3959 /* turn_left.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */; };
@@ -132,6 +140,7 @@
 		F0D39C1B7ECDEC5147A08895 /* 300_roundabout_3_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */; };
 		F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */; };
 		F6BDE8997ED9122C9CB6EDB4 /* current_speed_50.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D76256E1179B32B3ABDAAFF3 /* current_speed_50.mp3 */; };
+		F9E4D71277CCCD5107A7603D /* DrivingModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3994AD2596984C2944DE0329 /* DrivingModeView.swift */; };
 		FABE366CD63509E242F57B65 /* vao_cam_vuot.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */; };
 		FBC9379D06F018EAF741CF26 /* NavigationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */; };
 		FC7BC3EBB128012B9BA9FFBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */; };
@@ -155,6 +164,13 @@
 			remoteGlobalIDString = 6F0560B2EB873D72FB799D3B;
 			remoteInfo = VietDrive;
 		};
+		C702D68E9F40372890EDEA4D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FBBE9D548DA84D42518E1A78 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 244116B256558545F41E395F;
+			remoteInfo = VietDriveLiveActivity;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -164,14 +180,26 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				BD1619FAC70452C585022A96 /* VietDrive Watch.app in Embed Watch Content */,
+				BD1619FAC70452C585022A96 /* VietDriveWatch.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A611DCDD17B6445DCD88D696 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				32FE75AF6A4B48AF5259F9CA /* VietDriveLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingRoadsidePresentationTests.swift; sourceTree = "<group>"; };
 		005232845C943AE36B4B6A6F /* next_speed_60.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_60.mp3; sourceTree = "<group>"; };
 		01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_120.mp3; sourceTree = "<group>"; };
 		021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_50.mp3; sourceTree = "<group>"; };
@@ -197,7 +225,9 @@
 		3119761D74686B55C2D3B5E3 /* MascotMayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotMayView.swift; sourceTree = "<group>"; };
 		32B69CA623729ECCF2B215CA /* 300_turn_slight_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_slight_right.mp3; sourceTree = "<group>"; };
 		34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = gps_signal_lost.mp3; sourceTree = "<group>"; };
+		37ADD807797FD0CD4E811F37 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		37C541CC8BB9D7898F953872 /* next_speed_80.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_80.mp3; sourceTree = "<group>"; };
+		3994AD2596984C2944DE0329 /* DrivingModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingModeView.swift; sourceTree = "<group>"; };
 		3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_left.mp3; sourceTree = "<group>"; };
 		3F1678484B12D70D862AC5EC /* arriver.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = arriver.mp3; sourceTree = "<group>"; };
 		3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_9_exit.mp3; sourceTree = "<group>"; };
@@ -208,21 +238,23 @@
 		45004A54AF6DC7BD1275CFB2 /* 300_roundabout_2_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_2_exit.mp3; sourceTree = "<group>"; };
 		4730EFAE19FD71564C2D1981 /* current_speed_40.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_40.mp3; sourceTree = "<group>"; };
 		487BA93720BEFA1E49C5E944 /* 300_turn_sharp_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_sharp_right.mp3; sourceTree = "<group>"; };
-		4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VietDriveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VietDriveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		50505B13873D24876F43D006 /* roundabout_6_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_6_exit.mp3; sourceTree = "<group>"; };
+		5135D4AE245184C679EF557C /* VietDriveLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietDriveLiveActivityBundle.swift; sourceTree = "<group>"; };
 		5164DB194CCD4E5D1FD07751 /* next_speed_70.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_70.mp3; sourceTree = "<group>"; };
 		52876583CCC56135DFAAD4A6 /* current_speed_100.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_100.mp3; sourceTree = "<group>"; };
 		531B98E431655712CE17EEE2 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
 		563F20055180729E60C4FAE9 /* 300_turn_sharp_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_sharp_left.mp3; sourceTree = "<group>"; };
 		56A8B1E5C3911A525E29EA52 /* AppSessionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSessionModelTests.swift; sourceTree = "<group>"; };
 		58CA24E19E3053E0CB3F3697 /* MapDataIssueStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDataIssueStoreTests.swift; sourceTree = "<group>"; };
+		5977266864357563272969F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5AC14D4C0C7A930920A11A8D /* NavigationSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationSessionStore.swift; sourceTree = "<group>"; };
 		5CF560F3DDD02E42F1526098 /* PlatformDriveCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformDriveCoordinatorTests.swift; sourceTree = "<group>"; };
 		5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAlertServiceTests.swift; sourceTree = "<group>"; };
 		618B6C80C6D45CC262C7BF74 /* camera_ai.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera_ai.mp3; sourceTree = "<group>"; };
 		63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_3_exit.mp3; sourceTree = "<group>"; };
 		63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMapServiceTests.swift; sourceTree = "<group>"; };
-		65A0A8F13C275FFF714F65A1 /* VietDrive Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "VietDrive Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		65A0A8F13C275FFF714F65A1 /* VietDriveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VietDriveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6634E8C27DBA30F112A7AA73 /* 300_roundabout_8_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_8_exit.mp3; sourceTree = "<group>"; };
 		665EF9810DD5F8898A74B82B /* DriveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveModels.swift; sourceTree = "<group>"; };
 		66F374D9F9F8A6818428C668 /* 300_turn_straight.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_straight.mp3; sourceTree = "<group>"; };
@@ -234,6 +266,7 @@
 		69CAA30364223461585D5467 /* OfflineAlertStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAlertStore.swift; sourceTree = "<group>"; };
 		6A0AA75142AD3FB4E86D2F48 /* roundabout_1_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_1_exit.mp3; sourceTree = "<group>"; };
 		6BC9B3028623FBD213A465EE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		706DCC6598D034A679764C86 /* LiveActivityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityCoordinator.swift; sourceTree = "<group>"; };
 		7225606A3CB9A1563CF39A61 /* turn_slight_right.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_slight_right.mp3; sourceTree = "<group>"; };
 		72B41277E0D182011867F6E7 /* giao_duong_sat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = giao_duong_sat.mp3; sourceTree = "<group>"; };
 		74DE014F859EDD4D06ECF585 /* roundabout_4_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_4_exit.mp3; sourceTree = "<group>"; };
@@ -246,8 +279,10 @@
 		8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDataIssueStore.swift; sourceTree = "<group>"; };
 		967DC79A62818FFA2C5BC173 /* turn_sharp_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_sharp_left.mp3; sourceTree = "<group>"; };
 		96E57D9D0DB147FD62DC7B25 /* 300_roundabout_6_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_6_exit.mp3; sourceTree = "<group>"; };
+		9703EFFF053071035A7486B0 /* VietDriveLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VietDriveLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		984B51FAD3B9CC5C21E5BE27 /* VietDriveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietDriveActivityAttributes.swift; sourceTree = "<group>"; };
 		9F3C35DE163CFDD58029E836 /* 300_turn_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_turn_left.mp3; sourceTree = "<group>"; };
-		9F4C61464CA9138E80E34CAB /* VietDrive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VietDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F4C61464CA9138E80E34CAB /* VietDrive.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VietDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F8E603C571267343DFDD391 /* current_speed_90.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_90.mp3; sourceTree = "<group>"; };
 		A2A17B291C781AF8C962324C /* reroute_warning.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = reroute_warning.mp3; sourceTree = "<group>"; };
 		A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationSearchView.swift; sourceTree = "<group>"; };
@@ -293,7 +328,7 @@
 		E7C093D86C236D702018990C /* current_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = current_speed_120.mp3; sourceTree = "<group>"; };
 		E81CD9C93DD0A8D394A3CC4F /* RouteProgressEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteProgressEngine.swift; sourceTree = "<group>"; };
 		ED353CE5044CA33BC4C1C1F8 /* OfflineMapDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMapDownloadService.swift; sourceTree = "<group>"; };
-		EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = vao_cam_vuot.mp3; sourceTree = "<group>"; };
 		F0B46BE91EF43F8C68F72DF2 /* roundabout_3_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = roundabout_3_exit.mp3; sourceTree = "<group>"; };
 		F2CE834464D421999678060F /* kiem_tra_toc_do.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = kiem_tra_toc_do.mp3; sourceTree = "<group>"; };
@@ -342,6 +377,7 @@
 			isa = PBXGroup;
 			children = (
 				D125C9A75306485384155381 /* CarPlaySceneDelegate.swift */,
+				706DCC6598D034A679764C86 /* LiveActivityCoordinator.swift */,
 				BAE2ED248ACF52A1D3143A6B /* PlatformDriveCoordinator.swift */,
 			);
 			path = Platform;
@@ -368,6 +404,7 @@
 			isa = PBXGroup;
 			children = (
 				D3A76BDD41F7DBE7E812F36B /* PlatformDriveState.swift */,
+				984B51FAD3B9CC5C21E5BE27 /* VietDriveActivityAttributes.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -397,6 +434,7 @@
 				4A4081440140D3565E4760D7 /* Shared */,
 				34BF9761486DA3E9F34ED54E /* VietDrive */,
 				830D3B912C7FBDBCFA097F08 /* vietdrive */,
+				7FE3BCB406A028BD412A9795 /* VietDriveLiveActivity */,
 				E25B4C10777ECBBFE22A109F /* VietDriveTests */,
 				C70629C1125C5ABAA1CAC22C /* VietDriveWatch */,
 				C5D5D0D2782367EAF2731CB2 /* Frameworks */,
@@ -422,6 +460,16 @@
 				69508DA54CD280AEFB01F962 /* README.md */,
 			);
 			path = VoicePrompts;
+			sourceTree = "<group>";
+		};
+		7FE3BCB406A028BD412A9795 /* VietDriveLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				5977266864357563272969F7 /* Info.plist */,
+				5135D4AE245184C679EF557C /* VietDriveLiveActivityBundle.swift */,
+				E4A3A82E88730E879CE34E41 /* Resources */,
+			);
+			path = VietDriveLiveActivity;
 			sourceTree = "<group>";
 		};
 		830D3B912C7FBDBCFA097F08 /* vietdrive */ = {
@@ -474,6 +522,7 @@
 				A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */,
 				FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */,
 				C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */,
+				3994AD2596984C2944DE0329 /* DrivingModeView.swift */,
 				DCAAC75F8A45D2197B261487 /* LoginView.swift */,
 				3119761D74686B55C2D3B5E3 /* MascotMayView.swift */,
 				E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */,
@@ -525,6 +574,7 @@
 				B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */,
 				63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */,
 				5CF560F3DDD02E42F1526098 /* PlatformDriveCoordinatorTests.swift */,
+				DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */,
 				68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */,
 				5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */,
 			);
@@ -535,10 +585,19 @@
 			isa = PBXGroup;
 			children = (
 				9F4C61464CA9138E80E34CAB /* VietDrive.app */,
+				9703EFFF053071035A7486B0 /* VietDriveLiveActivity.appex */,
 				4E3A2E3C22A8E4A1D2E2429C /* VietDriveTests.xctest */,
-				65A0A8F13C275FFF714F65A1 /* VietDrive Watch.app */,
+				65A0A8F13C275FFF714F65A1 /* VietDriveWatch.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E4A3A82E88730E879CE34E41 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				37ADD807797FD0CD4E811F37 /* Assets.xcassets */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		EA44C10C7F2315CBCB509353 /* south_female_1 */ = {
@@ -627,6 +686,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		244116B256558545F41E395F /* VietDriveLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BA486AF3B5647DAA0B82A78C /* Build configuration list for PBXNativeTarget "VietDriveLiveActivity" */;
+			buildPhases = (
+				0B9A5E01C9F3A6F21010FAD3 /* Sources */,
+				CC00F10BAF9BB1D3A3D5A512 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VietDriveLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = VietDriveLiveActivity;
+			productReference = 9703EFFF053071035A7486B0 /* VietDriveLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		6F0560B2EB873D72FB799D3B /* VietDrive */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 70F4C20141D520C048A8417D /* Build configuration list for PBXNativeTarget "VietDrive" */;
@@ -634,12 +711,14 @@
 				4A0DDC4781E2529424E87272 /* Sources */,
 				0E463726945B42753CC6CDAB /* Resources */,
 				3BFA267B871B1663A0599AA0 /* Frameworks */,
+				A611DCDD17B6445DCD88D696 /* Embed Foundation Extensions */,
 				32F9044F3229EE6D91196B2D /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				59BDD8F07BAF5745AD9E6B6A /* PBXTargetDependency */,
+				D5C61D016D211E1A9757DCBF /* PBXTargetDependency */,
 			);
 			name = VietDrive;
 			packageProductDependencies = (
@@ -682,7 +761,7 @@
 			packageProductDependencies = (
 			);
 			productName = VietDriveWatch;
-			productReference = 65A0A8F13C275FFF714F65A1 /* VietDrive Watch.app */;
+			productReference = 65A0A8F13C275FFF714F65A1 /* VietDriveWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -692,8 +771,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					244116B256558545F41E395F = {
+						DevelopmentTeam = Y22YY8X6F4;
+						ProvisioningStyle = Automatic;
+					};
 					6F0560B2EB873D72FB799D3B = {
 						DevelopmentTeam = Y22YY8X6F4;
 						ProvisioningStyle = Automatic;
@@ -726,6 +809,7 @@
 			projectRoot = "";
 			targets = (
 				6F0560B2EB873D72FB799D3B /* VietDrive */,
+				244116B256558545F41E395F /* VietDriveLiveActivity */,
 				9533C7C4CF431879A6CBDE1B /* VietDriveTests */,
 				AC7EF7133FCAB3DCA9F93C3B /* VietDriveWatch */,
 			);
@@ -830,9 +914,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC00F10BAF9BB1D3A3D5A512 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D079EA8DD9D5E980EE26B58 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0B9A5E01C9F3A6F21010FAD3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91FD081FBF47F2CE28792D39 /* VietDriveActivityAttributes.swift in Sources */,
+				03586EB5F4A6C34A6946A220 /* VietDriveLiveActivityBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2B57AC3D0B264C50CC082B5E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -845,6 +946,7 @@
 				F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */,
 				E60C21A307596BBC85667E4C /* OpenMapServiceTests.swift in Sources */,
 				070EA3397108B138AF548A7E /* PlatformDriveCoordinatorTests.swift in Sources */,
+				DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */,
 				2F08E3640F8777386A9186BF /* RouteProgressEngineTests.swift in Sources */,
 				157AE3111F9365CA37142B4E /* VoiceAlertServiceTests.swift in Sources */,
 			);
@@ -869,6 +971,8 @@
 				260DA569525DF4C0F8AA3AED /* DriveTheme.swift in Sources */,
 				129AFBCEE7A72A1A65AE7F50 /* DriveTraceStore.swift in Sources */,
 				C2317119A635150450A063D1 /* DriveViewModel.swift in Sources */,
+				F9E4D71277CCCD5107A7603D /* DrivingModeView.swift in Sources */,
+				51CF1D9ED468EAB7D0740CC1 /* LiveActivityCoordinator.swift in Sources */,
 				703596EC96F7B87875308C31 /* LocationService.swift in Sources */,
 				7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */,
 				55551F479CE912DA4F4B8271 /* MapDataIssueStore.swift in Sources */,
@@ -885,6 +989,7 @@
 				A92FF72860D04201A033A488 /* PlatformDriveState.swift in Sources */,
 				17FBD38D6024A051531ADB31 /* RouteProgressEngine.swift in Sources */,
 				80D48A64D1E4DE0E0614A38D /* SettingsView.swift in Sources */,
+				AF51A394657CB1D9F31DA8C6 /* VietDriveActivityAttributes.swift in Sources */,
 				31CC29EBAB4361C8DB1EE2D8 /* VietDriveApp.swift in Sources */,
 				7796417A4C230D30AE29E040 /* VoiceAlertService.swift in Sources */,
 			);
@@ -895,6 +1000,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				21306CDAE388A907B73662E0 /* PlatformDriveState.swift in Sources */,
+				72E165C6EC587CFC8121710B /* VietDriveActivityAttributes.swift in Sources */,
 				111A47D1E784959038D82D47 /* VietDriveWatchApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -912,14 +1018,39 @@
 			target = 6F0560B2EB873D72FB799D3B /* VietDrive */;
 			targetProxy = 97E2C3975FA76E2DF6381B64 /* PBXContainerItemProxy */;
 		};
+		D5C61D016D211E1A9757DCBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 244116B256558545F41E395F /* VietDriveLiveActivity */;
+			targetProxy = C702D68E9F40372890EDEA4D /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		103AAE143F916DF8C2E752D4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = VietDriveLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.liveactivity;
+				PRODUCT_NAME = "VietDrive Live Activity";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		129FEBDADB73301BC7A9CFFC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -951,7 +1082,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = Y22YY8X6F4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -975,7 +1105,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -988,19 +1117,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = VietDrive;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = vn.vietdrive.ios;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.watchkitapp;
 				PRODUCT_NAME = "VietDrive Watch";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
 		};
@@ -1008,7 +1135,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1040,7 +1166,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Y22YY8X6F4;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1057,7 +1182,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -1127,19 +1251,38 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = VietDrive;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = vn.vietdrive.ios;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.watchkitapp;
 				PRODUCT_NAME = "VietDrive Watch";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		EC6CF6C825D838B676124CB5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = VietDriveLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.vietdrive.ios.liveactivity;
+				PRODUCT_NAME = "VietDrive Live Activity";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1195,6 +1338,15 @@
 			buildConfigurations = (
 				FEBD138215E508F3FFD3CE7D /* Debug */,
 				739FCC8D90F004B48A7F4C9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BA486AF3B5647DAA0B82A78C /* Build configuration list for PBXNativeTarget "VietDriveLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				103AAE143F916DF8C2E752D4 /* Debug */,
+				EC6CF6C825D838B676124CB5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -172,11 +172,12 @@ final class OfflineAlertStore {
                 location: centerLocation,
                 radiusMeters: queryRadius
             ).filter(Self.isNonFirmwarePhysicalSign)
-            // A viewport marker must represent a real point. `road_rules`
-            // describe whole OSM ways and turn restrictions describe a legal
-            // movement through a junction; neither proves that a physical sign
-            // exists at an arbitrary point on the geometry. Those semantic
-            // sources are therefore never converted into free-map markers.
+            // Parking restrictions and town boundaries are disabled.
+            // OSM parking data covers < 2.5 k roads nationwide with extreme
+            // geographic bias (283 in Hanoi, 0 in Phan Thiết) — showing them
+            // implies "no marker = parking OK" which is dangerously wrong.
+            // Firmware town-boundary (type 10) markers are scattered inside
+            // dense urban areas where they have no real-world meaning.
             DispatchQueue.main.async {
                 completion(
                     (points.filter { !$0.isFirmwareTownEntry } + physicalSigns)
@@ -232,9 +233,9 @@ final class OfflineAlertStore {
             )
             // In free-drive there is no intended maneuver, so an OSM access
             // rule or turn relation cannot safely be presented as a physical
-            // sign ahead. Keep these semantic sources available only while a
-            // route exists; routeAwareAlerts will then require an intersection
-            // with the active route before exposing them.
+            // sign ahead. Parking restrictions are also disabled: the OSM
+            // dataset covers < 2.5 k roads with extreme geographic bias
+            // (283 Hanoi, 60 HCM, 0 Phan Thiết) making them misleading.
             let roadRuleResults: (alerts: [DriveAlert], matchedRules: [String])
             let turnRestrictions: [DriveAlert]
             if route == nil {
@@ -244,8 +245,8 @@ final class OfflineAlertStore {
                 roadRuleResults = self.queryRoadRuleAlerts(
                     database: database,
                     location: location,
-                    queryRadiusMeters: 500,
-                    maximumRuleDistanceMeters: 80
+                    queryRadiusMeters: 400,
+                    maximumRuleDistanceMeters: 25
                 )
                 turnRestrictions = self.queryTurnRestrictions(
                     database: database,
@@ -265,7 +266,8 @@ final class OfflineAlertStore {
             ).filter(Self.isNonFirmwarePhysicalSign)
             let allCandidates = mapDataAlerts + physicalSigns
                 + roadRuleResults.alerts + turnRestrictions
-            let alerts = self.routeAwareAlerts(
+            let matchedLimit = matchedSpeed?.limit ?? 0
+            let rawAlerts = self.routeAwareAlerts(
                 allCandidates,
                 location: location,
                 heading: heading,
@@ -274,6 +276,11 @@ final class OfflineAlertStore {
                 matchedDistanceMeters: matchedDistanceMeters,
                 radiusMeters: alertRadiusMeters
             )
+            // Suppress ALL town-boundary alerts. Firmware type-10 markers
+            // are scattered inside dense city areas where they have no
+            // real-world meaning. Until a reliable boundary data source is
+            // available, these alerts do more harm than good.
+            let alerts = rawAlerts.filter { $0.kind != .townBoundary }
             let nextSpeed = self.lookaheadNextSpeedMatch(
                 currentRoadID: matchedSpeed != nil ? retainedRoadID : nil,
                 currentSpeedLimit: matchedSpeed?.limit ?? 0,
@@ -380,7 +387,8 @@ final class OfflineAlertStore {
         let query = """
             SELECT a.id, a.type, a.latitude, a.longitude, a.warning_text,
                    a.speed_kmh, a.sign_code, a.asset_name, a.source,
-                   a.source_ref, a.confidence, a.conditional, a.direction_degrees
+                   a.source_ref, a.confidence, a.conditional, a.direction_degrees,
+                   a.direction_scope
             FROM alerts_rtree r
             JOIN alerts a ON a.id = r.alert_id
             WHERE r.min_lat <= ? AND r.max_lat >= ?
@@ -436,7 +444,8 @@ final class OfflineAlertStore {
                 confidence: sqlite3_column_double(statement, 10),
                 conditional: Self.text(statement, 11),
                 directionDegrees: sqlite3_column_type(statement, 12) == SQLITE_NULL
-                    ? nil : sqlite3_column_double(statement, 12)
+                    ? nil : sqlite3_column_double(statement, 12),
+                directionScope: Self.text(statement, 13)
             ))
         }
         return alerts.sorted { $0.distanceMeters < $1.distanceMeters }
@@ -556,7 +565,8 @@ final class OfflineAlertStore {
         database: OpaquePointer,
         location: CLLocation,
         queryRadiusMeters: Double,
-        maximumRuleDistanceMeters: Double
+        maximumRuleDistanceMeters: Double,
+        parkingOnly: Bool = false
     ) -> (alerts: [DriveAlert], matchedRules: [String]) {
         // Query a compact spatial window before applying LIMIT. The previous
         // 2 km window could contain thousands of R-tree rows; SQLite then
@@ -579,7 +589,8 @@ final class OfflineAlertStore {
                   WHERE (
                       rule.key LIKE 'parking:%'
                       AND lower(rule.value) LIKE 'no%'
-                  ) OR (
+                  )\(parkingOnly ? "" : """
+                   OR (
                       rule.key IN (
                           'access', 'access:conditional',
                           'motor_vehicle', 'motor_vehicle:conditional',
@@ -587,6 +598,7 @@ final class OfflineAlertStore {
                       )
                       AND lower(rule.value) LIKE 'no%'
                   )
+                  """)
               )
             LIMIT 5_000;
             """
@@ -633,7 +645,7 @@ final class OfflineAlertStore {
                     confidence: sqlite3_column_double(statement, 6),
                     conditional: sign.conditional,
                     directionDegrees: nearest.bearing,
-                    directionType: 2
+                    directionType: 0
                 ))
             }
         }
@@ -686,12 +698,32 @@ final class OfflineAlertStore {
                 }
             }
             var candidate = alert
-            if let direction = alert.directionDegrees, speedKmh >= 8,
+            // OSM physical signs use direction_degrees to encode the sign's
+            // facing direction, not the vehicle's approach heading. Applying
+            // the firmware direction filter here hides signs that the driver
+            // hasn't reached yet (e.g. a P123a at a junction 200 m ahead
+            // whose face points 90° away from the current heading). Instead,
+            // these are filtered by approach bearing below and by
+            // direction_scope when a route provides travel direction.
+            let isOSMPhysicalSign = alert.source.hasPrefix("OpenStreetMap")
+            if !isOSMPhysicalSign,
+               let direction = alert.directionDegrees, speedKmh >= 8,
                !Self.directionMatches(
                     heading,
                     target: direction,
                     directionType: alert.directionType
                ) { return nil }
+            // Filter OSM signs by direction_scope when the vehicle has a
+            // clear heading, so a forward-only sign is not shown to traffic
+            // travelling in the opposite direction on the same road.
+            if isOSMPhysicalSign, speedKmh >= 8,
+               let scope = alert.directionScope, scope != "unknown",
+               let direction = alert.directionDegrees {
+                let angleDiff = Self.angleDifference(heading, direction)
+                let isFacing = angleDiff <= 90
+                if scope == "forward" && !isFacing { return nil }
+                if scope == "backward" && isFacing { return nil }
+            }
             if let route,
                let projection = RouteProgressEngine.projection(on: route, coordinate: alert.coordinate),
                let currentDistance = matchedDistanceMeters

@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum MascotMood: Equatable {
+enum MascotMood: Hashable {
     case neutral
     case ready
     case searching
@@ -23,6 +23,7 @@ enum MascotMood: Equatable {
 struct MascotMayView: View {
     let mood: MascotMood
     var size: CGFloat = 120
+    var isAnimationEnabled = true
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @AppStorage("reduceMascotMotion") private var userReduceMotion = false
     @State private var moving = false
@@ -112,12 +113,15 @@ struct MascotMayView: View {
             }
         }
         .frame(width: size, height: size)
-        .onAppear {
+        .id(AnimationState(mood: mood, enabled: !reduceMotion))
+        .task(id: AnimationState(mood: mood, enabled: !reduceMotion)) {
+            var reset = Transaction(animation: nil)
+            reset.disablesAnimations = true
+            withTransaction(reset) { moving = false }
+            guard !reduceMotion else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             startAnimation()
-        }
-        .onChange(of: mood) { _, _ in
-            moving = false
-            DispatchQueue.main.async { startAnimation() }
         }
         .accessibilityHidden(true)
     }
@@ -137,7 +141,12 @@ struct MascotMayView: View {
         mood == .turnRight || mood == .curveRight
     }
 
-    private var reduceMotion: Bool { systemReduceMotion || userReduceMotion }
+    private struct AnimationState: Hashable {
+        let mood: MascotMood
+        let enabled: Bool
+    }
+
+    private var reduceMotion: Bool { systemReduceMotion || userReduceMotion || !isAnimationEnabled }
 
     private var animationDuration: Double {
         return switch mood {
