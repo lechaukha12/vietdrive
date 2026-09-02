@@ -1,12 +1,15 @@
+import AVFoundation
+import CryptoKit
 import XCTest
 @testable import VietDrive
 
 final class VoiceAlertServiceTests: XCTestCase {
-    func testBorrowedVietMapCatalogAndPromptAreBundled() throws {
+    func testAdamCatalogAndPromptsAreBundled() throws {
         let catalog = try XCTUnwrap(RecordedVoiceCatalog())
 
         XCTAssertEqual(catalog.manifest.schemaVersion, 2)
-        XCTAssertEqual(catalog.manifest.voiceName, "Nữ miền Nam · dùng tạm nội bộ")
+        XCTAssertEqual(catalog.manifest.voiceName, "Adam · Nam miền Nam")
+        XCTAssertEqual(catalog.manifest.baseDirectory, "VoicePacks/south_male_adam")
         XCTAssertEqual(
             try XCTUnwrap(catalog.url(for: "maneuver.now.left")).lastPathComponent,
             "turn_left.mp3"
@@ -30,7 +33,50 @@ final class VoiceAlertServiceTests: XCTestCase {
         XCTAssertNil(catalog.manifest.prompts["alert.turn_restriction"])
     }
 
-    func testLeftAndRightManeuversResolveToVietMapPromptKeys() {
+    func testEveryMappedPromptMatchesAdamChecksumAndDecodes() throws {
+        let catalog = try XCTUnwrap(RecordedVoiceCatalog())
+        let checksumURL = try XCTUnwrap(
+            Bundle.main.url(forResource: "checksums", withExtension: "json",
+                            subdirectory: catalog.manifest.baseDirectory)
+                ?? Bundle.main.url(forResource: "checksums", withExtension: "json",
+                                   subdirectory: "south_male_adam")
+                ?? Bundle.main.url(forResource: "checksums", withExtension: "json")
+        )
+        let checksums = try JSONDecoder().decode(
+            [String: AudioChecksum].self, from: Data(contentsOf: checksumURL)
+        )
+        XCTAssertEqual(checksums.count, 75)
+        XCTAssertEqual(catalog.manifest.prompts.count, 73)
+        XCTAssertEqual(Set(catalog.manifest.prompts.values).count, 72)
+
+        for (key, filename) in catalog.manifest.prompts.sorted(by: { $0.key < $1.key }) {
+            let url = try XCTUnwrap(catalog.url(for: key), "Missing audio for \(key)")
+            let expected = try XCTUnwrap(checksums[filename], "Missing checksum for \(filename)")
+            let data = try Data(contentsOf: url)
+            let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            XCTAssertEqual(data.count, expected.bytes, filename)
+            XCTAssertEqual(hash, expected.sha256, filename)
+            let player = try AVAudioPlayer(contentsOf: url)
+            XCTAssertGreaterThan(player.duration, 0, filename)
+            XCTAssertEqual(player.numberOfChannels, 1, filename)
+        }
+    }
+
+    func testSectionCameraDoesNotPlayDualCameraRecording() throws {
+        let catalog = try XCTUnwrap(RecordedVoiceCatalog())
+        let announcement = try XCTUnwrap(TrafficSignCatalog.voiceAnnouncement(
+            for: alert(kind: .camera, signCode: "CAMERA_SECTION"),
+            distanceText: "khoảng 300 mét"
+        ))
+        XCTAssertEqual(announcement.promptKey, "alert.camera.section")
+        XCTAssertTrue(announcement.message.contains("camera đo tốc độ theo đoạn"))
+        // Adam's camera_ai.mp3 describes speed + traffic lights, not a section camera.
+        // Leave this key unmapped so the existing accurate TTS fallback is used.
+        XCTAssertNil(catalog.url(for: "alert.camera.section"))
+        XCTAssertEqual(catalog.url(for: "alert.camera.dual")?.lastPathComponent, "camera_ai.mp3")
+    }
+
+    func testLeftAndRightManeuversResolveToRecordedPromptKeys() {
         let left = step(id: 1, modifier: "left")
         let right = step(id: 2, modifier: "right")
 
@@ -62,6 +108,11 @@ final class VoiceAlertServiceTests: XCTestCase {
         XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(physicalNoRightTurnSign))
         XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(physicalNoLeftTurnSign))
         XCTAssertFalse(VoiceAlertService.isSilentTurnRestriction(camera))
+    }
+
+    private struct AudioChecksum: Decodable {
+        let bytes: Int
+        let sha256: String
     }
 
     private func alert(kind: AlertKind, signCode: String?) -> DriveAlert {

@@ -108,7 +108,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
 
     var voiceDescription: String {
         if let recordedCatalog {
-            return "\(recordedCatalog.manifest.voiceName) · MP3 VietMap tạm"
+            return "\(recordedCatalog.manifest.voiceName) · MP3"
         }
         guard let voice else { return "Giọng tiếng Việt mặc định" }
         switch voice.quality {
@@ -490,7 +490,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
             player.prepareToPlay()
             audioPlayer = player
             if player.play() {
-                diagnose("MP3 VietMap · \(key) · \(url.lastPathComponent)")
+                diagnose("MP3 \(recordedCatalog?.manifest.voiceName ?? "VietDrive") · \(key) · \(url.lastPathComponent)")
                 return
             }
             audioPlayer = nil
