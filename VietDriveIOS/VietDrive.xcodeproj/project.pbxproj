@@ -139,6 +139,7 @@
 		F0D39C1B7ECDEC5147A08895 /* 300_roundabout_3_exit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */; };
 		F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */; };
 		F6BDE8997ED9122C9CB6EDB4 /* current_speed_50.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D76256E1179B32B3ABDAAFF3 /* current_speed_50.mp3 */; };
+		F9E4D71277CCCD5107A7603D /* DrivingModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3994AD2596984C2944DE0329 /* DrivingModeView.swift */; };
 		FABE366CD63509E242F57B65 /* vao_cam_vuot.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F03A78632861EAE1381EAFB8 /* vao_cam_vuot.mp3 */; };
 		FBC9379D06F018EAF741CF26 /* NavigationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */; };
 		FC7BC3EBB128012B9BA9FFBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */; };
@@ -224,6 +225,7 @@
 		34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = gps_signal_lost.mp3; sourceTree = "<group>"; };
 		37ADD807797FD0CD4E811F37 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		37C541CC8BB9D7898F953872 /* next_speed_80.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_80.mp3; sourceTree = "<group>"; };
+		3994AD2596984C2944DE0329 /* DrivingModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingModeView.swift; sourceTree = "<group>"; };
 		3A9EE9B05095B75AAC14A89E /* turn_left.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = turn_left.mp3; sourceTree = "<group>"; };
 		3F1678484B12D70D862AC5EC /* arriver.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = arriver.mp3; sourceTree = "<group>"; };
 		3F6DA827179E574A4E4FA0CB /* 300_roundabout_9_exit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 300_roundabout_9_exit.mp3; sourceTree = "<group>"; };
@@ -518,6 +520,7 @@
 				A3B1464CB224E6591976F1D9 /* DestinationSearchView.swift */,
 				FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */,
 				C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */,
+				3994AD2596984C2944DE0329 /* DrivingModeView.swift */,
 				DCAAC75F8A45D2197B261487 /* LoginView.swift */,
 				3119761D74686B55C2D3B5E3 /* MascotMayView.swift */,
 				E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */,
@@ -964,6 +967,7 @@
 				260DA569525DF4C0F8AA3AED /* DriveTheme.swift in Sources */,
 				129AFBCEE7A72A1A65AE7F50 /* DriveTraceStore.swift in Sources */,
 				C2317119A635150450A063D1 /* DriveViewModel.swift in Sources */,
+				F9E4D71277CCCD5107A7603D /* DrivingModeView.swift in Sources */,
 				51CF1D9ED468EAB7D0740CC1 /* LiveActivityCoordinator.swift in Sources */,
 				703596EC96F7B87875308C31 /* LocationService.swift in Sources */,
 				7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */,

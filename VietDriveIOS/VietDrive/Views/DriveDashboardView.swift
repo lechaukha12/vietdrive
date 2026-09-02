@@ -11,97 +11,108 @@ struct DriveDashboardView: View {
     @AppStorage("showMascotOnMap") private var showMascotOnMap = true
     @AppStorage("mapAppearance") private var mapAppearanceRaw = MapAppearance.automatic.rawValue
     @AppStorage("mapDisplayMode") private var mapDisplayModeRaw = MapDisplayMode.drive3D.rawValue
+    @AppStorage("drivingModeEnabled") private var drivingModeEnabled = false
 
     var body: some View {
-        ZStack {
-            MapLibreMapView(
-                snapshot: model.snapshot,
-                alerts: model.mapDisplayAlerts,
-                roads: model.visibleRoads,
-                followUser: model.followUser,
-                cameraRevision: model.cameraRevision,
-                destination: model.destination?.coordinate,
-                routeViewportRevision: model.routeViewportRevision,
-                showGuidanceMascot: showMascotOnMap && model.shouldShowGuidanceMascot,
-                isNightMode: mapAppearance.isNight(systemScheme: colorScheme),
-                displayMode: mapDisplayMode,
-                onUserInteraction: { model.followUser = false },
-                onViewportChanged: { center, radius in
-                    model.updateMapViewport(center: center, radiusMeters: radius)
-                },
-                onAlertSelected: { selectedAlert = $0 }
-            )
-            .ignoresSafeArea()
+        Group {
+            if drivingModeEnabled {
+                DrivingModeView(
+                    onSearch: { showSearch = true },
+                    onSettings: { showSettings = true }
+                )
+                .environmentObject(model)
+            } else {
+                ZStack {
+                    MapLibreMapView(
+                        snapshot: model.snapshot,
+                        alerts: model.mapDisplayAlerts,
+                        roads: model.visibleRoads,
+                        followUser: model.followUser,
+                        cameraRevision: model.cameraRevision,
+                        destination: model.destination?.coordinate,
+                        routeViewportRevision: model.routeViewportRevision,
+                        showGuidanceMascot: showMascotOnMap && model.shouldShowGuidanceMascot,
+                        isNightMode: mapAppearance.isNight(systemScheme: colorScheme),
+                        displayMode: mapDisplayMode,
+                        onUserInteraction: { model.followUser = false },
+                        onViewportChanged: { center, radius in
+                            model.updateMapViewport(center: center, radiusMeters: radius)
+                        },
+                        onAlertSelected: { selectedAlert = $0 }
+                    )
+                    .ignoresSafeArea()
 
-            LinearGradient(
-                colors: mapOverlayColors,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            if showMascotOnMap,
-               model.snapshot.journeyEvent != .idle,
-               model.snapshot.journeyEvent != .driving {
-                JourneyMascotOverlay(event: model.snapshot.journeyEvent)
-                    .id(model.snapshot.journeyEventRevision)
-                    .offset(y: 28)
+                    LinearGradient(
+                        colors: mapOverlayColors,
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
                     .allowsHitTesting(false)
-                    .zIndex(3)
-            }
 
-            VStack(spacing: 10) {
-                topOverlay
-                    .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                Spacer(minLength: isCompactLandscape ? 34 : 80)
-                if let section = model.snapshot.activeSectionSpeed {
-                    SectionSpeedBanner(section: section)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-                if let alert = model.countdownBannerAlert, model.isGuidanceActive {
-                    CompactAlertBanner(alert: alert)
-                        .frame(maxWidth: 340)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                if model.didArrive {
-                    ArrivalCard()
-                        .environmentObject(model)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                        .transition(.scale(scale: 0.88).combined(with: .opacity))
-                } else if model.isRoutePreview {
-                    RoutePreviewCard()
-                        .environmentObject(model)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else if model.isPlanningRoute {
-                    RoutePlanningCard(destinationName: model.destination?.name ?? "điểm đến")
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                } else if model.isGuidanceActive {
-                    NavigationBottomBar()
-                        .environmentObject(model)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                } else {
-                    FreeDriveHUD(alert: model.countdownBannerAlert)
-                        .environmentObject(model)
-                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.top, 6)
-            .padding(.bottom, 8)
+                    if showMascotOnMap,
+                       model.snapshot.journeyEvent != .idle,
+                       model.snapshot.journeyEvent != .driving {
+                        JourneyMascotOverlay(event: model.snapshot.journeyEvent)
+                            .id(model.snapshot.journeyEventRevision)
+                            .offset(y: 28)
+                            .allowsHitTesting(false)
+                            .zIndex(3)
+                    }
 
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    mapControls
+                    VStack(spacing: 10) {
+                        topOverlay
+                            .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                        Spacer(minLength: isCompactLandscape ? 34 : 80)
+                        if let section = model.snapshot.activeSectionSpeed {
+                            SectionSpeedBanner(section: section)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        if let alert = model.countdownBannerAlert, model.isGuidanceActive {
+                            CompactAlertBanner(alert: alert)
+                                .frame(maxWidth: 340)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        if model.didArrive {
+                            ArrivalCard()
+                                .environmentObject(model)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                                .transition(.scale(scale: 0.88).combined(with: .opacity))
+                        } else if model.isRoutePreview {
+                            RoutePreviewCard()
+                                .environmentObject(model)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else if model.isPlanningRoute {
+                            RoutePlanningCard(destinationName: model.destination?.name ?? "điểm đến")
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                        } else if model.isGuidanceActive {
+                            NavigationBottomBar()
+                                .environmentObject(model)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                        } else {
+                            FreeDriveHUD(alert: model.countdownBannerAlert)
+                                .environmentObject(model)
+                                .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .padding(.bottom, 8)
+
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            mapControls
+                        }
+                        .padding(.trailing, 12)
+                        .padding(.bottom, controlClearance)
+                    }
                 }
-                .padding(.trailing, 12)
-                .padding(.bottom, controlClearance)
             }
         }
         .animation(.snappy(duration: 0.35), value: model.countdownBannerAlert?.id)

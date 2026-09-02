@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("autoRecordDriveTrace") private var autoRecordDriveTrace = true
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
+    @AppStorage("drivingModeEnabled") private var drivingModeEnabled = false
     @AppStorage("mapAppearance") private var mapAppearanceRaw = MapAppearance.automatic.rawValue
     @State private var confirmOfflineMapRemoval = false
     @State private var showAdvanced = false
@@ -85,6 +86,13 @@ struct SettingsView: View {
                 icon: "platter.filled.top.iphone",
                 tint: DriveTheme.skyDeep,
                 isOn: $liveActivitiesEnabled
+            )
+            SettingsToggle(
+                title: "Chế độ lái xe",
+                subtitle: "Tắt bản đồ, tập trung vào xe, tốc độ và biển báo sắp tới",
+                icon: "car.side.fill",
+                tint: DriveTheme.cyan,
+                isOn: $drivingModeEnabled
             )
             SettingsToggle(
                 title: "Thông báo bằng giọng nói",
