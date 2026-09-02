@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "voiceName": "Nữ miền Nam · dùng tạm nội bộ",
-  "baseDirectory": "VoicePacks/south_female_1",
+  "voiceName": "Adam · Nam miền Nam",
+  "baseDirectory": "VoicePacks/south_male_adam",
   "prompts": {
     "preview": "gps_signal_found.mp3",
     "gps.found": "gps_signal_found.mp3",
@@ -58,7 +58,6 @@
     "maneuver.now.roundabout.9": "roundabout_9_exit.mp3",
     "alert.camera.speed": "camera_speed.mp3",
     "alert.camera.traffic": "camera_traffic.mp3",
-    "alert.camera.section": "camera_ai.mp3",
     "alert.camera.dual": "camera_ai.mp3",
     "alert.town.in": "vao_kdc.mp3",
     "alert.town.out": "ra_kdc.mp3",

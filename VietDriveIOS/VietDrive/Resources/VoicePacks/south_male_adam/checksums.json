@@ -1,0 +1,377 @@
+{
+  "300_roundabout_1_exit.mp3": {
+    "bytes": 44564,
+    "md5": "7044f3bfff97293cf3ac301cae2b89d9",
+    "sha256": "38d6857134ac7de5b3e14b20c0d544c7ead4d8d927111787a29042fa78a71eb5"
+  },
+  "300_roundabout_2_exit.mp3": {
+    "bytes": 42716,
+    "md5": "90f009e01e293fc5908f9bd2eaebdfcd",
+    "sha256": "0cafcfff953699e0adac4a7a2833538e9c9684d7964bb8f614e3f6b8229827fe"
+  },
+  "300_roundabout_3_exit.mp3": {
+    "bytes": 40868,
+    "md5": "03831aec41a4643f8be054c86908ac38",
+    "sha256": "9945a16253af9c0e1cfe84483f8fee4fdc7068b6c4f753efe2891b4be85f8bdc"
+  },
+  "300_roundabout_4_exit.mp3": {
+    "bytes": 43124,
+    "md5": "b84519ab6b299d1605be51878a1c6d0d",
+    "sha256": "27b42d72c8d747b88edefacb49018de742fb12dd1998eee7290ae5578f4e624c"
+  },
+  "300_roundabout_5_exit.mp3": {
+    "bytes": 42356,
+    "md5": "cf9094de8d5427e54be5a69704fb3396",
+    "sha256": "cd83c09066e4c1421f2bcbbfc671288ad36b6378ca1a20e774c7f0cea8cbcd5a"
+  },
+  "300_roundabout_6_exit.mp3": {
+    "bytes": 45116,
+    "md5": "07dd49b1e428b0fc4904b0970909d979",
+    "sha256": "a5ac40828aaf81e35703b8cce1f5d6d55613a8c426dadaf1f781352ba9b5a7ac"
+  },
+  "300_roundabout_7_exit.mp3": {
+    "bytes": 43868,
+    "md5": "4a3dd53fbd09c64f49e9eaeaadbd9053",
+    "sha256": "ee9cbfa35814b78f9397078c7643b466592cdd315365997c592968aa69e20b45"
+  },
+  "300_roundabout_8_exit.mp3": {
+    "bytes": 41228,
+    "md5": "1e47dba88448c3fea4e7682974f6e401",
+    "sha256": "3ece812c02d31f2d12114195498989fb554bb9d6e7daa9067ba3966c8b2e1d72"
+  },
+  "300_roundabout_9_exit.mp3": {
+    "bytes": 44708,
+    "md5": "fe206c959c1866e5fef3be99b4197f18",
+    "sha256": "74ebea0e96288cbe8d742e67f04af741209bfb1264e418341287ec159cd95d45"
+  },
+  "300_turn_left.mp3": {
+    "bytes": 27092,
+    "md5": "35ddd1039af543a62825b1d0b38b6fed",
+    "sha256": "309bd8f6a3dd4155c47c8fd0a87ba3c824280225f0731f55168f2e63b6cf25df"
+  },
+  "300_turn_right.mp3": {
+    "bytes": 24692,
+    "md5": "328c17ccd31f3a5eaf4da47601ccef66",
+    "sha256": "18d85ae88b5c51a19eb538dd01bfd428469a772ca5a15c6ef43424d158c325fd"
+  },
+  "300_turn_sharp_left.mp3": {
+    "bytes": 31532,
+    "md5": "507dfc97c4329a05e938c14bd2c278e3",
+    "sha256": "53890f8790d81421c02c84208bc06f07aee82e0cea3e2067e32baa0f798cd3d5"
+  },
+  "300_turn_sharp_right.mp3": {
+    "bytes": 33236,
+    "md5": "118081cc1066203145304f349dd80aac",
+    "sha256": "fc1ca2d2a6470bfa2a51b220cb3ad25aa104d4843016fa1688e531b56b103a35"
+  },
+  "300_turn_slight_left.mp3": {
+    "bytes": 33716,
+    "md5": "b1a1211cb8e03d85fc3fc4cd51e5b349",
+    "sha256": "1264e108b7e0ec67e5405655483c5481f0ebf53f7910b7a35dbf6aca22e4494c"
+  },
+  "300_turn_slight_right.mp3": {
+    "bytes": 31796,
+    "md5": "e867bcb686f68adedab74a78b9fa286c",
+    "sha256": "5ce22fcb9e4e8ef49448cd7a2d27af20b053259c10d63ceea4f97d157410373e"
+  },
+  "300_turn_straight.mp3": {
+    "bytes": 25052,
+    "md5": "724c28b2679a99fc668ce61724d1c821",
+    "sha256": "6cc73dcab032fc58b9faa70444fc2b4fa62e051e867d0ed6821b034596c7fbe5"
+  },
+  "300_turn_uturn.mp3": {
+    "bytes": 24404,
+    "md5": "3b5c3dd494d70f5f1b53b03101612d33",
+    "sha256": "a34e256d60ae0b9a94dc43368084e13c9d5cfa9ebcd5bea2a04dac4ee0756468"
+  },
+  "arriver.mp3": {
+    "bytes": 21068,
+    "md5": "ddd188ddc23c2ce1c132df53b09a3f89",
+    "sha256": "55b98b672ee1feb6abd289d409da384e763e546a0b063deb567fe6fde0364d46"
+  },
+  "arriver_left.mp3": {
+    "bytes": 21164,
+    "md5": "9c8d93597a0de9e6dfae6c7297c34fde",
+    "sha256": "241bde386700884bc0f764ec9da9807b62284ec73f05e996218befe5249bd0b8"
+  },
+  "arriver_right.mp3": {
+    "bytes": 16868,
+    "md5": "39e47bfb076ad1619be1bbc422d8c386",
+    "sha256": "16bf8f3f7652347fa71ed085a5d7a4562382fe275c47dd1484b7f32089944485"
+  },
+  "camera.mp3": {
+    "bytes": 28004,
+    "md5": "d0cb3a8357abea95e4a80db20f10aa96",
+    "sha256": "b4b70f792789ebef129b80e61cad2aed02b3832979e20c9e450ea5fbad3f1201"
+  },
+  "camera_ai.mp3": {
+    "bytes": 43796,
+    "md5": "20471eae54442229520a77f54d2ad86f",
+    "sha256": "5ac0c619724411b1a12feefda0ed168cc83c8f029704a7fb14a67e79f6d80c29"
+  },
+  "camera_speed.mp3": {
+    "bytes": 30788,
+    "md5": "4d73dd3076256834d675feddfa0b336d",
+    "sha256": "361abb0fe9629005b1aa92200facf5d25cead53cdddde9a420eb33f13cf1f661"
+  },
+  "camera_traffic.mp3": {
+    "bytes": 42092,
+    "md5": "f1e0b16db38e2e2da068f2859bcd03bf",
+    "sha256": "2ab3fa0ffd4a457f92aa17289a6195a9b2f620b62e8f4db602e7a040428ddbce"
+  },
+  "current_speed_100.mp3": {
+    "bytes": 37604,
+    "md5": "b1f2b8d567ea92bde478f6a645868602",
+    "sha256": "bea90124127ed216b48e519dd1b1ccfbf6d4a2e06127f4e084cd97be7000e2e6"
+  },
+  "current_speed_120.mp3": {
+    "bytes": 47948,
+    "md5": "33c3e63c6be4bdfc13a87d2e6c7ce8b7",
+    "sha256": "c7b9d24d955371d090168ac0441f08a8b64374ece2cc3c73fc5a070807d7111e"
+  },
+  "current_speed_30.mp3": {
+    "bytes": 43940,
+    "md5": "2123e63d2327c8ffdaa90f5d5cb76cc2",
+    "sha256": "c231d03e11142395db4ba7f9c90c266ea78c9ef2479c963c64e00dfa350f59b9"
+  },
+  "current_speed_40.mp3": {
+    "bytes": 40748,
+    "md5": "3b990e50cb1cb60a79c57401669f3f68",
+    "sha256": "21ae471d5540f5d52b918a04846b9f767c58c9bca21fcf78baf23c07d8c91658"
+  },
+  "current_speed_50.mp3": {
+    "bytes": 45380,
+    "md5": "a62549611b5374f8608fb0106cf0dd0c",
+    "sha256": "379ac40769ac8363f136ec6b7e5876a8bf11a911a30ff4ee38ee65d96ff6a782"
+  },
+  "current_speed_60.mp3": {
+    "bytes": 44036,
+    "md5": "c306d099d71ea1356ddd1036a98e571b",
+    "sha256": "7b71540f3fcad9a031613a01386e8eba260d337acd9ecfa021f15b0527e9ef53"
+  },
+  "current_speed_70.mp3": {
+    "bytes": 41636,
+    "md5": "4301c43d220c0931827b4d3d58d90925",
+    "sha256": "2b1b3387abe13afa7238353fbad9a2a6e86ebbf52e70157850c8c307b63ae579"
+  },
+  "current_speed_80.mp3": {
+    "bytes": 43268,
+    "md5": "2977d77e0f106f23b2fa73fa80d6bed9",
+    "sha256": "59ad9130ad25023c696f95f2511ad68eba7bc575735d351b7064b22ded1e9084"
+  },
+  "current_speed_90.mp3": {
+    "bytes": 38804,
+    "md5": "0b83cc8c04e457f5c3fbc11e7bd326c3",
+    "sha256": "2219d6c2d9690e20b339577f06ff590f621058c3732669caef92b85d07d2f74c"
+  },
+  "giao_duong_sat.mp3": {
+    "bytes": 21956,
+    "md5": "92946ef7c6ceb8e6d2ec3307e5b60d82",
+    "sha256": "dfcf5f4e75baed618385030a9d661523f25a5d6e8072d413d58cf3d4827ad7ef"
+  },
+  "gps_signal_found.mp3": {
+    "bytes": 29972,
+    "md5": "7d24c5c376bb724dcf2ad1b86e294454",
+    "sha256": "93fdce4b7e8ff303a2ce2352aa39bc239aedcd6897e748e6a1a49244412e4df6"
+  },
+  "gps_signal_lost.mp3": {
+    "bytes": 23204,
+    "md5": "f04cc61531a036a9b0824b5dea06b38b",
+    "sha256": "f790f1abb9bb69e9e18f371a5a14d9448b4d70e74649eed74fecbe5f353398d1"
+  },
+  "kiem_tra_toc_do.mp3": {
+    "bytes": 25940,
+    "md5": "486392a5dd970fe9ce0a79cd13712a44",
+    "sha256": "18afb4dfd332c010204e7892afce27f3044489e9d5c80e7601dfdc0678a4c93a"
+  },
+  "next_speed_100.mp3": {
+    "bytes": 48332,
+    "md5": "fbe0e3900dd3bbafd78fc6d9681a7f39",
+    "sha256": "737f0972d0a6f91021f8ec8f955b20e4d6dbd73666b7572e3e434e51a51d999c"
+  },
+  "next_speed_120.mp3": {
+    "bytes": 49484,
+    "md5": "228444d57f67d2b3ba412b7af7a4c84a",
+    "sha256": "965f5e35300934699b6b41d4dbac4e0c8d9c2094c98574c050727afc037f6dbe"
+  },
+  "next_speed_30.mp3": {
+    "bytes": 43820,
+    "md5": "d7babce68beefbd910d0257bb34f1aab",
+    "sha256": "5837458d261fbae1c790d9ddd8698ada9d2b76531564b6aeac4d499ab5aead23"
+  },
+  "next_speed_40.mp3": {
+    "bytes": 43292,
+    "md5": "9cde7e12d585c2ace918526607985d16",
+    "sha256": "51c0f42772f40eff581cc626ee90515fc48cd42d43619f652dbc5aa0f3480571"
+  },
+  "next_speed_50.mp3": {
+    "bytes": 48116,
+    "md5": "e29fbb929964813287a17259b4815df3",
+    "sha256": "8493bcf48ca77e83ab0f2282f923a19a8b0056a0518fcde7b8d044f6bfc4ab57"
+  },
+  "next_speed_60.mp3": {
+    "bytes": 44252,
+    "md5": "ce7cf08aad3429c3f734a5015d99e450",
+    "sha256": "049b71d58602d88e1bb1f0eb36253be4a257b53258824e488bff4749ca1bddc3"
+  },
+  "next_speed_70.mp3": {
+    "bytes": 45836,
+    "md5": "5c09b6b3ba3260ad10ad1b1c8e092f14",
+    "sha256": "41bdb120315897bb43d88d7dab6074d7ea70a593154d291eec9a6d7d10e4703c"
+  },
+  "next_speed_80.mp3": {
+    "bytes": 47348,
+    "md5": "8e67ed1da10fa8115a7d20cc85d9e3f7",
+    "sha256": "ec5023ae7b5e9266935a0c31d3378cd9ecbe7e326387883f577288b5e1e90985"
+  },
+  "next_speed_90.mp3": {
+    "bytes": 50564,
+    "md5": "bfcc78a607e60de0ec1c7fae1c0490a9",
+    "sha256": "fd3a46457ac52124f0c3bde0f51b6879bc79c83bfcc69c17be56f53f46b9284f"
+  },
+  "over_speed_limit.mp3": {
+    "bytes": 41252,
+    "md5": "198048f6d8f92b8799a7fb3e73e691c3",
+    "sha256": "3e6754a00c0a59d983a3ff49decc2bb2816987b61d3136c68dfd5e6fe7bdfd13"
+  },
+  "ra_cam_vuot.mp3": {
+    "bytes": 16076,
+    "md5": "bdf64c5d90ce6f950f0876d498a9f14e",
+    "sha256": "6eea0b7b67c9cff9b2c98fce830c86ac46499bf9bbf7ebe13cf9b8804cbce989"
+  },
+  "ra_kdc.mp3": {
+    "bytes": 19772,
+    "md5": "423e848526b09ca8dd75e5905fa99d98",
+    "sha256": "1451b038654c68145ce0193053f7ce2334b8e6458e97989b94544ffa4a93b615"
+  },
+  "reroute_warning.mp3": {
+    "bytes": 37940,
+    "md5": "526757a8e91c5cf188bbd294fd5e5bea",
+    "sha256": "fbc6f08f121005e453cf07ec459de8019983b6d1af0db8583c27ca539875004f"
+  },
+  "roundabout_1_exit.mp3": {
+    "bytes": 30092,
+    "md5": "0f2c5ee9e260d06553e5cce747ce882a",
+    "sha256": "4e88c011873ea1a3ce97072a32c04f1c7b4edbe5f1ef243a6b832ce26221b5b2"
+  },
+  "roundabout_2_exit.mp3": {
+    "bytes": 31724,
+    "md5": "700dee64aaab35cb5f96cc71c45b0297",
+    "sha256": "431bd086b45b5459ea7390cb06c5f5a9d8743182a10344ce92fc0a516d0ab2de"
+  },
+  "roundabout_3_exit.mp3": {
+    "bytes": 29324,
+    "md5": "b30d3f651462eaf187745f6945eb0075",
+    "sha256": "9170decf0f437e0a65e062d0610bba3b548e75c9c4705a245fd50b239baf3139"
+  },
+  "roundabout_4_exit.mp3": {
+    "bytes": 35444,
+    "md5": "451280891bacd5068f691c29f0e8eb59",
+    "sha256": "730514c689247a4fc7e6dc61539ddc6d8b0ec46e4a551c598514e05b30028e3b"
+  },
+  "roundabout_5_exit.mp3": {
+    "bytes": 33332,
+    "md5": "dcb0e8b964667dfc9faa4b91d41ce034",
+    "sha256": "b9466575a3b6842eb5ad1acb36dd054db2e631be6e19b587f8ca2688ded784d3"
+  },
+  "roundabout_6_exit.mp3": {
+    "bytes": 34172,
+    "md5": "76cc5afcfec511faa254cf6d1e27b04f",
+    "sha256": "839cc4f47d0ba15f88979fd2796e14cc367588441f1e94d1bbe028020b5443d0"
+  },
+  "roundabout_7_exit.mp3": {
+    "bytes": 30884,
+    "md5": "36d7e4bb41f4b2aed9a34a4cb8e942ef",
+    "sha256": "0a8b81df5aa47cf17f2b109ed25ca2d78ed5eed23ddb5bb0e3848237193be7f9"
+  },
+  "roundabout_8_exit.mp3": {
+    "bytes": 30548,
+    "md5": "e72828453ab0492fe6b133d55744a1a8",
+    "sha256": "c30bd27f5509386a30be1f22652f48ab8edf50075be6a7fba5b56fc9e4125356"
+  },
+  "roundabout_9_exit.mp3": {
+    "bytes": 29324,
+    "md5": "1e8e550264fc3bf6a9b03194e137c909",
+    "sha256": "2ccd71ba2c8bc2faee626615507c1a152993d0deeb2974df82f7788a2a984c35"
+  },
+  "tpms_error.mp3": {
+    "bytes": 36524,
+    "md5": "5fa7efc76f9ecd5f209f52ae810bda82",
+    "sha256": "89223792ff84936d6ed7b3c906a6f51879cc020537d659e10a65557aa25981d3"
+  },
+  "tram_dung.mp3": {
+    "bytes": 18092,
+    "md5": "9031e77001af352ccf2980e074bf8fa6",
+    "sha256": "e5324999ea6f0139a8470efe187d1c6dba3832696f837c91b70c2b603144dc77"
+  },
+  "tram_dung_cao_toc.mp3": {
+    "bytes": 32732,
+    "md5": "16aeca1bddc5bc9bbaafa3bc48e03aba",
+    "sha256": "61d12e2ad95a3ee181fa6bda9014677231831c31f000c3b489ae1d708beaa62a"
+  },
+  "tram_thu_phi.mp3": {
+    "bytes": 19172,
+    "md5": "b00fd7bd3f89e9adf9a3a81e837a9c66",
+    "sha256": "e3d1b6c909645d840015387641e59954ba64085cea310438ec1e3ef259941509"
+  },
+  "turn_left.mp3": {
+    "bytes": 20612,
+    "md5": "3a244ac2468f4bbbcc4c737d27756d28",
+    "sha256": "b080a1b928f30e8a69785ccc7ba32c1a047794ca0be4225dd74ed4836df91010"
+  },
+  "turn_right.mp3": {
+    "bytes": 22028,
+    "md5": "a68ec95120174a0ad3c984202de50afd",
+    "sha256": "14c2dfa8a232ff15e1f1ec2b71302d5c2ff4a153d43b5815f0db44fecca0d444"
+  },
+  "turn_sharp_left.mp3": {
+    "bytes": 25892,
+    "md5": "6d20070555023b16ead6e86ab5c05071",
+    "sha256": "239658e1a9456e6a5e6ce54d5b9926b37f511062dbbba9184aa75cfca5132b94"
+  },
+  "turn_sharp_right.mp3": {
+    "bytes": 27308,
+    "md5": "3fe4a13176223bd24ebe22fbf9487d2a",
+    "sha256": "f7281dc648d94ff8442539d890f334d8931c76b4ee50c46658fc8f54f7c12369"
+  },
+  "turn_slight_left.mp3": {
+    "bytes": 30188,
+    "md5": "40c6bf07d344ac58fd77f7ce05ec8e07",
+    "sha256": "f560984dbef07b0382fa4740c784aacaf076a2654ca16cc2ab38601fa8ae12f9"
+  },
+  "turn_slight_right.mp3": {
+    "bytes": 33140,
+    "md5": "1ee1b409f6383d7e7b5a2eacd49dad32",
+    "sha256": "a6c9b592a6040f243b45edef613449571b1e47beeae2b4b76ed5e45cf306b9b6"
+  },
+  "turn_straight.mp3": {
+    "bytes": 26324,
+    "md5": "83bbc9d55c8f2cff80e0b4372b227a0a",
+    "sha256": "8645da6d74b9eebae4dd93371e261dde10e4807a0aee47a4d77989c871b50fc1"
+  },
+  "turn_uturn.mp3": {
+    "bytes": 24188,
+    "md5": "6bfcda174463ded17fa1407208628588",
+    "sha256": "28d438ccf45141b80a8b004f1bc439ae2539eb47548bc5bf428cf02fe5f4621e"
+  },
+  "under_min_speed.mp3": {
+    "bytes": 41444,
+    "md5": "7310de93c2ba5a66f96482b0b9bbe25d",
+    "sha256": "f197a4db7789a36f03408b017f3aa7593a7b82418ec8153fc9000166af263a0b"
+  },
+  "vao_cam_vuot.mp3": {
+    "bytes": 20324,
+    "md5": "169b0ba794f9293b634a53023ba111bb",
+    "sha256": "5efc30bad80b1ffc868a231b998977b6924d7cf1c4aab5ca6e74ad0406d8883c"
+  },
+  "vao_duong_ham.mp3": {
+    "bytes": 14684,
+    "md5": "7e4eaeb27abd0920023fd932b77f7a97",
+    "sha256": "f327274c2a7daa94dc772a88513ee61857cc3c5a2fb55944841f81f10a463a95"
+  },
+  "vao_kdc.mp3": {
+    "bytes": 23420,
+    "md5": "96e4d635fa439f03c142d2a4eed87778",
+    "sha256": "10c56db0a8346c9ac8f5774b70e41d8666db621a3525104838082b0514a2ae21"
+  }
+}

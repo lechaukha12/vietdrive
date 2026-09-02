@@ -484,7 +484,7 @@
 		A137781CB8785A6DFA327F2B /* VoicePacks */ = {
 			isa = PBXGroup;
 			children = (
-				EA44C10C7F2315CBCB509353 /* south_female_1 */,
+				EA44C10C7F2315CBCB509353 /* south_male_adam */,
 			);
 			path = VoicePacks;
 			sourceTree = "<group>";
@@ -600,7 +600,7 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		EA44C10C7F2315CBCB509353 /* south_female_1 */ = {
+		EA44C10C7F2315CBCB509353 /* south_male_adam */ = {
 			isa = PBXGroup;
 			children = (
 				1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */,
@@ -680,7 +680,7 @@
 				FA6C43C2202DD455619929CB /* vao_duong_ham.mp3 */,
 				80850E3065CF43CDFD21C8C8 /* vao_kdc.mp3 */,
 			);
-			path = south_female_1;
+			path = south_male_adam;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

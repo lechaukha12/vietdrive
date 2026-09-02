@@ -95,11 +95,16 @@ chờ kiểm duyệt, không tự động xóa dữ liệu đang phát hành.
 
 ## Voice
 
-Bản development giữ tạm bộ MP3 nữ miền Nam lấy từ thư mục VietMap đã cung cấp
-trong `VietDrive/Resources/VoicePacks/south_female_1`. App ưu tiên bộ này cho
-chỉ đường, camera, tốc độ và đổi tuyến; câu chưa có mới fallback sang giọng tiếng
-Việt của iOS. Biển cấm rẽ chỉ hiển thị trực quan trên tuyến đường, không phát
-voice. Không dùng bộ tạm này để phát hành trước khi xác nhận quyền phân phối.
+App dùng bộ **Adam · Nam miền Nam** do chủ dự án cung cấp, gồm 75 MP3 tại
+`VietDrive/Resources/VoicePacks/south_male_adam`. Bộ này thay thế toàn bộ bộ nữ
+miền Nam cũ. `VoicePrompts/manifest.json` ánh xạ các câu chỉ đường, camera,
+tốc độ và đổi tuyến; câu chưa có file được đọc bằng TTS tiếng Việt của iOS.
+Camera đo tốc độ theo đoạn dùng TTS vì `camera_ai.mp3` của bộ Adam nói về
+camera tốc độ và đèn tín hiệu, chỉ phù hợp với `alert.camera.dual`.
+Quy tắc cấm rẽ suy luận (`turnRestriction`) không phát voice; biển vật lý hợp lệ
+vẫn đi qua luồng cảnh báo. Chi tiết file, checksum và mapping ở
+`VietDrive/Resources/VoicePrompts/README.md`. Xác nhận quyền sử dụng/phân phối
+của bộ giọng mới trước khi phát hành.
 
 ## Cập nhật dữ liệu
 
