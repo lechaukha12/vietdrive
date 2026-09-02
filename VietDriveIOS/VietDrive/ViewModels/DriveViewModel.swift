@@ -230,10 +230,21 @@ final class DriveViewModel: ObservableObject {
             .store(in: &cancellables)
 
         // Core Location may relaunch the process directly into the background.
-        // Restore an explicitly active trip here instead of waiting for the
-        // dashboard view to appear and call start().
+        // Only restore an active trip when iOS relaunched us in the background
+        // (e.g. after memory-pressure termination while CLBackgroundActivitySession
+        // was still valid). A foreground launch with a stale session flag means
+        // the user force-quit the app — clean up instead of restoring so GPS,
+        // Live Activity, and navigation don't keep running as zombies.
         if UserDefaults.standard.bool(forKey: NavigationSessionStore.activeDefaultsKey) {
-            restoreNavigationSessionIfNeeded()
+            if UIApplication.shared.applicationState == .background {
+                restoreNavigationSessionIfNeeded()
+            } else {
+                // Defer cleanup so AppSessionModel.init() can still read the
+                // flag and skip the login screen (the user was authenticated).
+                DispatchQueue.main.async { [weak self] in
+                    self?.cleanupStaleNavigationSession()
+                }
+            }
         }
     }
 
@@ -697,6 +708,19 @@ final class DriveViewModel: ObservableObject {
         locationService.shutdown()
         PlatformDriveCoordinator.shared.setDriveSessionActive(false)
         navigationSessionStore.clear()
+    }
+
+    /// Cleans up a navigation session left behind by a force-quit. Unlike
+    /// `terminateApplicationSession` (which tears down a live session during
+    /// the current process), this runs at the *start* of a new process when
+    /// we detect that the previous one exited without proper cleanup.
+    private func cleanupStaleNavigationSession() {
+        navigationSessionStore.clear()
+        // End any Live Activities that survived the force-quit. ActivityKit
+        // activities live outside the app process and must be explicitly ended.
+        Task {
+            await LiveActivityCoordinator.shared.endAllActivities()
+        }
     }
 
     func checkForDataUpdate() {

@@ -21,9 +21,17 @@ final class LiveActivityCoordinator {
             object: nil,
             queue: .main
         ) { _ in
-            Task { @MainActor in
-                await LiveActivityCoordinator.shared.endAll(dismissImmediately: true)
+            // Must end Live Activities synchronously during termination.
+            // A fire-and-forget Task won't complete before the process exits.
+            let group = DispatchGroup()
+            group.enter()
+            Task.detached {
+                for activity in Activity<VietDriveActivityAttributes>.activities {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+                group.leave()
             }
+            _ = group.wait(timeout: .now() + 2)
         }
     }
 
@@ -38,7 +46,16 @@ final class LiveActivityCoordinator {
         if active {
             if let lastState { synchronize(lastState, force: true) }
         } else {
-            Task { await endAll(dismissImmediately: true) }
+            // Block briefly so Live Activities are ended before the caller
+            // returns. This is critical when called from terminateApplicationSession()
+            // during willTerminate — a fire-and-forget Task would never finish.
+            let group = DispatchGroup()
+            group.enter()
+            Task.detached { [weak self] in
+                await self?.endAll(dismissImmediately: true)
+                group.leave()
+            }
+            _ = group.wait(timeout: .now() + 2)
         }
     }
 
@@ -87,7 +104,7 @@ final class LiveActivityCoordinator {
         lastUpdateAt = now
         let content = ActivityContent(
             state: state,
-            staleDate: now.addingTimeInterval(90),
+            staleDate: now.addingTimeInterval(12),
             relevanceScore: state.isOverSpeed || state.alertText != nil ? 1 : 0.75
         )
         if let activity = Activity<VietDriveActivityAttributes>.activities.first {
@@ -103,6 +120,12 @@ final class LiveActivityCoordinator {
         } catch {
             // ActivityKit can reject requests when the user disabled Live Activities.
         }
+    }
+
+    /// Ends all VietDrive Live Activities. Called externally when the
+    /// ViewModel detects a stale session after a force-quit.
+    func endAllActivities() async {
+        await endAll(dismissImmediately: true)
     }
 
     private func endAll(dismissImmediately: Bool) async {
