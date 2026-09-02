@@ -53,8 +53,18 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     deinit {
         lifecycleObservers.forEach(NotificationCenter.default.removeObserver)
+        manager.stopUpdatingLocation()
+        manager.stopUpdatingHeading()
+        manager.allowsBackgroundLocationUpdates = false
+        manager.showsBackgroundLocationIndicator = false
+        manager.delegate = nil
+        staleFixTimer?.invalidate()
         serviceDiagnosticsTask?.cancel()
         backgroundDiagnosticsTask?.cancel()
+        if #available(iOS 18.0, *) {
+            (serviceSessionStorage as? CLServiceSession)?.invalidate()
+        }
+        backgroundSession?.invalidate()
     }
 
     func requestAuthorization() {
@@ -113,6 +123,12 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     func shutdown() {
         setNavigationActive(false)
         stop()
+        location = nil
+        speedKmh = 0
+        fixQuality = .unavailable
+        lastFixAt = .distantPast
+        lastLocationCallbackAt = .distantPast
+        publishDiagnostic("Core Location đã dừng hoàn toàn")
     }
 
     func setNavigationActive(_ active: Bool) {
@@ -335,6 +351,15 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
             queue: .main
         ) { [weak self] _ in
             self?.ensureNavigationContinuity(reason: "did_become_active")
+        })
+        lifecycleObservers.append(center.addObserver(
+            forName: UIApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // A force-quit must end the explicit iOS 18 service/background
+            // sessions as well as the classic CLLocationManager updates.
+            self?.shutdown()
         })
     }
 

@@ -19,6 +19,7 @@ final class PlatformDriveCoordinator: ObservableObject {
     @Published private(set) var companionState = PlatformDriveState.idle
 
     private let watchSender = WatchContextSender()
+    private let liveActivity = LiveActivityCoordinator.shared
 
     private init() {}
 
@@ -46,6 +47,15 @@ final class PlatformDriveCoordinator: ObservableObject {
         )
         companionState = state
         watchSender.send(state)
+        liveActivity.publish(snapshot: snapshot, isNavigating: isNavigating)
+    }
+
+    func setDriveSessionActive(_ active: Bool) {
+        liveActivity.setDriveSessionActive(active)
+    }
+
+    func refreshLiveActivityPreference() {
+        liveActivity.refreshPreference()
     }
 
     static func makeCompanionState(

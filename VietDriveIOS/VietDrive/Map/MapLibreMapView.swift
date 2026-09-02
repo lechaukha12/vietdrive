@@ -43,7 +43,9 @@ struct MapLibreMapView: UIViewRepresentable {
         mapView.maximumPitch = 60
         mapView.showsUserLocation = !snapshot.isDemo
         mapView.tintColor = UIColor(DriveTheme.cyan)
-        mapView.contentInset = UIEdgeInsets(top: 112, left: 0, bottom: 132, right: 0)
+        // Keep the vehicle below the visual centre so drivers see more of the
+        // road ahead. The coordinator recalculates this for landscape layouts.
+        mapView.contentInset = UIEdgeInsets(top: 92, left: 0, bottom: 148, right: 0)
         mapView.setCenter(snapshot.coordinate, zoomLevel: displayMode == .standard ? 15.2 : 16.1, animated: false)
         context.coordinator.update(
             snapshot: snapshot,
@@ -128,6 +130,7 @@ struct MapLibreMapView: UIViewRepresentable {
             in mapView: MLNMapView,
             follow: Bool
         ) {
+            updateContentInset(for: mapView)
             if let lastNightMode, lastNightMode != isNightMode {
                 mapView.styleURL = MapLibreMapView.styleURL(isNightMode: isNightMode)
             }
@@ -265,6 +268,16 @@ struct MapLibreMapView: UIViewRepresentable {
                 mapDirection: mapView.direction,
                 moving: snapshot.speedKmh > 3
             )
+        }
+
+        private func updateContentInset(for mapView: MLNMapView) {
+            let isLandscape = mapView.bounds.width > mapView.bounds.height
+            let inset = isLandscape
+                ? UIEdgeInsets(top: 42, left: 0, bottom: 74, right: 0)
+                : UIEdgeInsets(top: 92, left: 0, bottom: 148, right: 0)
+            if mapView.contentInset != inset {
+                mapView.contentInset = inset
+            }
         }
 
         func mapView(_ mapView: MLNMapView, regionWillChangeAnimated animated: Bool) {
@@ -416,9 +429,21 @@ struct MapLibreMapView: UIViewRepresentable {
                     : UIColor(red: 0.53, green: 0.82, blue: 0.94, alpha: 1))
 
             for layer in style.layers {
-                if let symbol = layer as? MLNSymbolStyleLayer,
-                   symbol.sourceLayerIdentifier == "poi" {
-                    symbol.minimumZoomLevel = max(symbol.minimumZoomLevel, 16)
+                if let symbol = layer as? MLNSymbolStyleLayer {
+                    if symbol.sourceLayerIdentifier == "poi" {
+                        let minimumPOIZoom: Float = currentDisplayMode == .standard ? 16 : 17.2
+                        symbol.minimumZoomLevel = max(symbol.minimumZoomLevel, minimumPOIZoom)
+                    }
+                    let identifier = symbol.identifier.lowercased()
+                    if identifier.contains("road") || identifier.contains("transportation") {
+                        symbol.textColor = NSExpression(forConstantValue: night
+                            ? UIColor(red: 0.88, green: 0.93, blue: 0.97, alpha: 1)
+                            : UIColor(red: 0.11, green: 0.18, blue: 0.25, alpha: 1))
+                        symbol.textHaloColor = NSExpression(forConstantValue: night
+                            ? UIColor(red: 0.03, green: 0.07, blue: 0.12, alpha: 0.92)
+                            : UIColor.white.withAlphaComponent(0.92))
+                        symbol.textHaloWidth = NSExpression(forConstantValue: 1.25)
+                    }
                 }
                 guard let line = layer as? MLNLineStyleLayer else { continue }
                 let identifier = line.identifier
@@ -445,9 +470,9 @@ struct MapLibreMapView: UIViewRepresentable {
             buildings.isVisible = currentDisplayMode == .drive3D
             buildings.minimumZoomLevel = 14
             buildings.fillExtrusionColor = NSExpression(forConstantValue: currentNightMode
-                ? UIColor(red: 0.17, green: 0.23, blue: 0.30, alpha: 1)
-                : UIColor(red: 0.78, green: 0.84, blue: 0.88, alpha: 1))
-            buildings.fillExtrusionOpacity = NSExpression(forConstantValue: currentNightMode ? 0.88 : 0.82)
+                ? UIColor(red: 0.13, green: 0.18, blue: 0.24, alpha: 1)
+                : UIColor(red: 0.75, green: 0.81, blue: 0.84, alpha: 1))
+            buildings.fillExtrusionOpacity = NSExpression(forConstantValue: currentNightMode ? 0.66 : 0.58)
         }
 
         private func configureSatellite(_ style: MLNStyle) {

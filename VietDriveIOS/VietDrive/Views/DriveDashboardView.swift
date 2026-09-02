@@ -3,6 +3,7 @@ import SwiftUI
 struct DriveDashboardView: View {
     @EnvironmentObject private var model: DriveViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var showLayers = false
     @State private var showSearch = false
     @State private var showSettings = ProcessInfo.processInfo.arguments.contains("--settings-screen")
@@ -52,41 +53,43 @@ struct DriveDashboardView: View {
 
             VStack(spacing: 10) {
                 topOverlay
-                Spacer(minLength: 80)
+                    .frame(maxWidth: overlayMaxWidth, alignment: .leading)
+                Spacer(minLength: isCompactLandscape ? 34 : 80)
                 if let section = model.snapshot.activeSectionSpeed {
                     SectionSpeedBanner(section: section)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
-                if let alert = model.countdownBannerAlert {
-                    Group {
-                        if model.isGuidanceActive {
-                            CompactAlertBanner(alert: alert)
-                                .frame(maxWidth: 340)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            FreeDriveAlertBanner(alert: alert)
-                        }
-                    }
+                if let alert = model.countdownBannerAlert, model.isGuidanceActive {
+                    CompactAlertBanner(alert: alert)
+                        .frame(maxWidth: 340)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 if model.didArrive {
                     ArrivalCard()
                         .environmentObject(model)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                         .transition(.scale(scale: 0.88).combined(with: .opacity))
                 } else if model.isRoutePreview {
                     RoutePreviewCard()
                         .environmentObject(model)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else if model.isPlanningRoute {
                     RoutePlanningCard(destinationName: model.destination?.name ?? "điểm đến")
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                 } else if model.isGuidanceActive {
                     NavigationBottomBar()
                         .environmentObject(model)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                 } else {
-                    FreeDriveHUD()
+                    FreeDriveHUD(alert: model.countdownBannerAlert)
                         .environmentObject(model)
+                        .frame(maxWidth: overlayMaxWidth, alignment: .leading)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.top, 6)
             .padding(.bottom, 8)
@@ -102,6 +105,7 @@ struct DriveDashboardView: View {
             }
         }
         .animation(.snappy(duration: 0.35), value: model.countdownBannerAlert?.id)
+        .preferredColorScheme(dashboardColorScheme)
         .task {
             model.start()
         }
@@ -148,9 +152,9 @@ struct DriveDashboardView: View {
 
     private var mapOverlayColors: [Color] {
         if mapDisplayMode == .satellite {
-            return [Color.black.opacity(0.10), .clear, Color.black.opacity(0.06)]
+            return [Color.black.opacity(0.06), .clear, Color.black.opacity(0.04)]
         }
-        return [DriveTheme.skySoft.opacity(0.18), .clear, DriveTheme.pinkSoft.opacity(0.08)]
+        return [DriveTheme.skySoft.opacity(0.07), .clear, DriveTheme.pinkSoft.opacity(0.025)]
     }
 
     @ViewBuilder
@@ -173,7 +177,7 @@ struct DriveDashboardView: View {
             FreeDriveTopBar(
                 snapshot: model.snapshot,
                 mascotMood: idleMascotMood,
-                showsMascot: showMascotOnMap,
+                showsMascot: showMascotOnMap && model.snapshot.speedKmh <= 3,
                 onSearch: { showSearch = true },
                 onSettings: { showSettings = true }
             )
@@ -192,10 +196,21 @@ struct DriveDashboardView: View {
     }
 
     private var controlClearance: CGFloat {
+        if isCompactLandscape { return 18 }
         if model.isRoutePreview || model.isPlanningRoute || model.isGuidanceActive || model.didArrive {
             return 224
         }
-        return 184
+        return 132
+    }
+
+    private var isCompactLandscape: Bool { verticalSizeClass == .compact }
+
+    private var overlayMaxWidth: CGFloat {
+        isCompactLandscape ? 560 : .infinity
+    }
+
+    private var dashboardColorScheme: ColorScheme {
+        mapAppearance.isNight(systemScheme: colorScheme) ? .dark : .light
     }
 
     private var idleMascotMood: MascotMood {
@@ -238,14 +253,14 @@ private struct FreeDriveTopBar: View {
                                 .opacity(pulse ? 0 : 0.65)
                         }
                     Text(snapshot.speedKmh > 3 ? "ĐANG LÁI TỰ DO" : "SẴN SÀNG LÁI TỰ DO")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
-                        .foregroundStyle(DriveTheme.ink)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.primary)
                 }
                 Text(snapshot.primaryAlert == nil
                      ? "Camera · biển báo · tốc độ"
                      : "Mây đang theo dõi cảnh báo phía trước")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(DriveTheme.ink.opacity(0.52))
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -266,8 +281,9 @@ private struct FreeDriveTopBar: View {
         .padding(.leading, showsMascot ? 3 : 15)
         .padding(.trailing, 7)
         .frame(minHeight: 58)
-        .background(.white.opacity(0.93), in: Capsule())
-        .overlay(Capsule().stroke(DriveTheme.sky.opacity(0.28), lineWidth: 1.5))
+        .background(.regularMaterial, in: Capsule())
+        .background(DriveTheme.surfaceStrong.opacity(0.72), in: Capsule())
+        .overlay(Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 1.2))
         .shadow(color: DriveTheme.skyDeep.opacity(0.14), radius: 13, y: 5)
         .onAppear {
             guard !reduceMotion else { return }
@@ -291,7 +307,7 @@ private struct RouteSearchTopBar: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(DriveTheme.skyDeep)
                     Text(destinationName)
-                        .foregroundStyle(DriveTheme.ink.opacity(0.82))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                 }
@@ -300,7 +316,7 @@ private struct RouteSearchTopBar: View {
 
             TopCircleActionButton(
                 icon: "xmark",
-                tint: DriveTheme.textMuted,
+                tint: DriveTheme.secondaryLabel,
                 accessibilityLabel: "Hủy tuyến",
                 action: onCancel
             )
@@ -315,8 +331,9 @@ private struct RouteSearchTopBar: View {
         .padding(.leading, 15)
         .padding(.trailing, 7)
         .frame(height: 52)
-        .background(.white.opacity(0.93), in: Capsule())
-        .overlay(Capsule().stroke(DriveTheme.sky.opacity(0.28), lineWidth: 1.5))
+        .background(.regularMaterial, in: Capsule())
+        .background(DriveTheme.surfaceStrong.opacity(0.72), in: Capsule())
+        .overlay(Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 1.2))
         .shadow(color: DriveTheme.skyDeep.opacity(0.14), radius: 13, y: 5)
     }
 }
@@ -378,15 +395,16 @@ private struct NavigationInstructionBanner: View {
                 Image(systemName: "xmark")
                     .font(.caption.bold())
                     .frame(width: 34, height: 34)
-                    .foregroundStyle(DriveTheme.ink.opacity(0.55))
-                    .background(DriveTheme.skySoft, in: Circle())
+                    .foregroundStyle(.secondary)
+                    .background(Color.primary.opacity(0.07), in: Circle())
             }
             .accessibilityLabel("Kết thúc dẫn đường")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(DriveTheme.sky.opacity(0.30), lineWidth: 1.5))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(DriveTheme.surfaceStrong.opacity(0.74), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.primary.opacity(0.12), lineWidth: 1.2))
         .shadow(color: DriveTheme.skyDeep.opacity(0.15), radius: 15, y: 6)
     }
 
@@ -589,36 +607,24 @@ private struct NavigationBottomBar: View {
 
 private struct FreeDriveHUD: View {
     @EnvironmentObject private var model: DriveViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let alert: DriveAlert?
+    @State private var alertPulse = false
 
     var body: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: 11) {
             FreeDriveSpeedGauge(snapshot: model.snapshot)
 
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 5) {
-                    Image(systemName: model.locationFixQuality.symbol)
-                    Text(model.locationFixQuality.title.uppercased())
-                }
-                .font(.system(size: 8, weight: .black))
-                .foregroundStyle(locationTint)
-
-                Text(roadTitle)
-                    .font(.system(size: 17, weight: .black, design: .rounded))
-                    .foregroundStyle(DriveTheme.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-
-                Text(areaText)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(DriveTheme.ink.opacity(0.56))
-                    .lineLimit(1)
+            if let alert {
+                alertContent(alert)
+            } else {
+                drivingContext
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(spacing: 2) {
                 Text("GIỚI HẠN")
-                    .font(.system(size: 7, weight: .black))
-                    .foregroundStyle(DriveTheme.ink.opacity(0.46))
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(DriveTheme.secondaryLabel)
                 SpeedLimitSign(
                     limit: model.snapshot.speedLimitKmh,
                     isOverSpeedCritical: model.snapshot.isOverSpeedCritical,
@@ -628,30 +634,102 @@ private struct FreeDriveHUD: View {
                 )
             }
         }
-        .padding(.horizontal, 13)
-        .padding(.vertical, 11)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .background(
-            LinearGradient(
-                colors: [.white.opacity(0.82), DriveTheme.skySoft.opacity(0.58)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+            DriveTheme.surfaceStrong.opacity(0.76),
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(
-                    model.snapshot.isOverSpeed ? DriveTheme.danger.opacity(0.68) : DriveTheme.sky.opacity(0.36),
+                    panelTint.opacity(model.snapshot.isOverSpeed || alert != nil ? 0.66 : 0.30),
                     lineWidth: model.snapshot.isOverSpeed ? 2.5 : 1.5
                 )
         }
         .shadow(
-            color: (model.snapshot.isOverSpeed ? DriveTheme.danger : DriveTheme.skyDeep).opacity(0.20),
-            radius: 17,
-            y: 7
+            color: panelTint.opacity(0.18),
+            radius: 14,
+            y: 6
         )
         .animation(.snappy(duration: 0.32), value: model.snapshot.isOverSpeed)
+        .animation(.snappy(duration: 0.30), value: alert?.id)
+        .onAppear { updateAlertPulse() }
+        .onChange(of: alert?.id) { _, _ in updateAlertPulse() }
+    }
+
+    private var drivingContext: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 5) {
+                Image(systemName: model.locationFixQuality.symbol)
+                Text(model.locationFixQuality.title.uppercased())
+            }
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(locationTint)
+
+            Text(roadTitle)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            Text(areaText)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func alertContent(_ alert: DriveAlert) -> some View {
+        HStack(spacing: 9) {
+            if showsDistinctIcon(for: alert) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(alertTint.opacity(0.13))
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(alertTint.opacity(0.52), lineWidth: 1.5)
+                        .scaleEffect(alertPulse ? 1.14 : 0.94)
+                        .opacity(alertPulse ? 0 : 0.72)
+                    Group {
+                        if let assetName = alert.assetName {
+                            Image(assetName).resizable().scaledToFit().padding(6)
+                        } else {
+                            Image(systemName: alert.kind.iconName)
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(alertTint)
+                        }
+                    }
+                }
+                .frame(width: 44, height: 44)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Image(systemName: "location.north.line.fill")
+                    Text("PHÍA TRƯỚC")
+                    Spacer(minLength: 4)
+                    Text(distanceText(alert))
+                        .monospacedDigit()
+                }
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(alertTint)
+
+                Text(alert.message)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+
+                Text(alert.signCode ?? alert.kind.title)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var areaText: String {
@@ -669,6 +747,33 @@ private struct FreeDriveHUD: View {
         switch model.locationFixQuality {
         case .unavailable, .weak: DriveTheme.amber
         case .good, .excellent: DriveTheme.mint
+        }
+    }
+
+    private var alertTint: Color {
+        alert.map { DriveTheme.alertColor($0.kind) } ?? DriveTheme.skyDeep
+    }
+
+    private var panelTint: Color {
+        model.snapshot.isOverSpeed ? DriveTheme.danger : (alert == nil ? DriveTheme.skyDeep : alertTint)
+    }
+
+    private func showsDistinctIcon(for alert: DriveAlert) -> Bool {
+        guard let code = alert.signCode else { return true }
+        return TrafficSignCatalog.speedLimit(from: code) == nil
+    }
+
+    private func distanceText(_ alert: DriveAlert) -> String {
+        alert.distanceMeters >= 1_000
+            ? String(format: "%.1f KM", alert.distanceMeters / 1_000)
+            : "\(Int(alert.distanceMeters.rounded())) M"
+    }
+
+    private func updateAlertPulse() {
+        alertPulse = false
+        guard alert != nil, !reduceMotion else { return }
+        withAnimation(.easeOut(duration: 0.92).repeatForever(autoreverses: false)) {
+            alertPulse = true
         }
     }
 }
@@ -703,7 +808,7 @@ private struct FreeDriveSpeedGauge: View {
             }
             VStack(spacing: -3) {
                 Text("\(snapshot.speedKmh)")
-                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .font(.system(size: 30, weight: .black, design: .rounded))
                     .foregroundStyle(snapshot.isOverSpeed ? DriveTheme.danger : .white)
                     .contentTransition(.numericText())
                 Text("KM/H")
@@ -712,7 +817,7 @@ private struct FreeDriveSpeedGauge: View {
                     .foregroundStyle(.white.opacity(0.58))
             }
         }
-        .frame(width: 82, height: 82)
+        .frame(width: 74, height: 74)
         .onAppear { updateWarningAnimation() }
         .onChange(of: snapshot.isOverSpeed) { _, _ in updateWarningAnimation() }
     }
@@ -766,7 +871,7 @@ private struct CompactAlertBanner: View {
                     .lineLimit(1)
                 Text(alert.signCode ?? alert.kind.title)
                     .font(.caption2)
-                    .foregroundStyle(DriveTheme.textMuted)
+                    .foregroundStyle(.secondary)
             }
             Spacer()
             Text(alert.distanceMeters >= 1_000
@@ -780,101 +885,6 @@ private struct CompactAlertBanner: View {
         .background(.regularMaterial, in: Capsule())
         .overlay(Capsule().stroke(DriveTheme.alertColor(alert.kind).opacity(0.35)))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
-    }
-}
-
-private struct FreeDriveAlertBanner: View {
-    let alert: DriveAlert
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(alertTint.opacity(0.14))
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(alertTint.opacity(0.42), lineWidth: 2)
-                    .scaleEffect(pulse ? 1.15 : 0.94)
-                    .opacity(pulse ? 0 : 0.70)
-                Group {
-                    if let assetName = alert.assetName {
-                        Image(assetName)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(7)
-                    } else {
-                        Image(systemName: alert.kind.iconName)
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(alertTint)
-                    }
-                }
-            }
-            .frame(width: 54, height: 54)
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: "location.north.line.fill")
-                    Text("PHÍA TRƯỚC")
-                }
-                .font(.system(size: 8, weight: .black))
-                .foregroundStyle(alertTint)
-
-                Text(alert.message)
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(DriveTheme.ink)
-                    .lineLimit(1)
-
-                Text(alert.signCode ?? alert.kind.title)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(DriveTheme.ink.opacity(0.48))
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            VStack(alignment: .trailing, spacing: -1) {
-                Text(distanceValue)
-                    .font(.system(size: 23, weight: .black, design: .rounded))
-                    .foregroundStyle(alertTint)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(distanceUnit)
-                    .font(.system(size: 8, weight: .black))
-                    .foregroundStyle(DriveTheme.ink.opacity(0.46))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 23, style: .continuous))
-        .background(
-            Color.white.opacity(0.80),
-            in: RoundedRectangle(cornerRadius: 23, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .stroke(alertTint.opacity(0.42), lineWidth: 1.5)
-        }
-        .shadow(color: alertTint.opacity(0.20), radius: 13, y: 5)
-        .onAppear { startPulse() }
-        .onChange(of: alert.id) { _, _ in startPulse() }
-    }
-
-    private var alertTint: Color { DriveTheme.alertColor(alert.kind) }
-
-    private var distanceValue: String {
-        alert.distanceMeters >= 1_000
-            ? String(format: "%.1f", alert.distanceMeters / 1_000)
-            : "\(Int(alert.distanceMeters.rounded()))"
-    }
-
-    private var distanceUnit: String { alert.distanceMeters >= 1_000 ? "KM" : "MÉT" }
-
-    private func startPulse() {
-        pulse = false
-        guard !reduceMotion else { return }
-        withAnimation(.easeOut(duration: 1.0).repeatForever(autoreverses: false)) {
-            pulse = true
-        }
     }
 }
 
@@ -899,14 +909,15 @@ private struct SectionSpeedBanner: View {
                         .foregroundStyle(section.averageSpeedKmh > section.speedLimit ? DriveTheme.danger : DriveTheme.mint)
                     Text("· Giới hạn: \(section.speedLimit) km/h")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(DriveTheme.ink.opacity(0.65))
+                        .foregroundStyle(.secondary)
                 }
             }
             Spacer()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(DriveTheme.surfaceStrong.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(DriveTheme.pink.opacity(0.35)))
         .shadow(color: DriveTheme.pink.opacity(0.15), radius: 8, y: 3)
     }

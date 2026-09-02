@@ -1,7 +1,7 @@
 import CoreLocation
 import Foundation
 
-struct PlaceSearchResult: Identifiable, Equatable {
+struct PlaceSearchResult: Identifiable, Equatable, Codable {
     let id: String
     let name: String
     let subtitle: String

@@ -26,7 +26,6 @@ struct VietDriveApp: App {
                 }
                 .environmentObject(model)
                 .environmentObject(session)
-                .preferredColorScheme(.light)
                 .animation(.snappy(duration: 0.42), value: session.stage)
             }
         }

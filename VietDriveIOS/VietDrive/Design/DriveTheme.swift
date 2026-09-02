@@ -23,6 +23,14 @@ enum MapAppearance: String, CaseIterable, Identifiable {
         case .night: return true
         }
     }
+
+    var preferredColorScheme: ColorScheme? {
+        switch self {
+        case .automatic: nil
+        case .day: .light
+        case .night: .dark
+        }
+    }
 }
 
 enum MapDisplayMode: String, CaseIterable, Identifiable {
@@ -58,9 +66,9 @@ enum MapDisplayMode: String, CaseIterable, Identifiable {
 
     var cameraPitch: CGFloat {
         switch self {
-        case .drive3D: 54
+        case .drive3D: 48
         case .standard: 0
-        case .satellite: 42
+        case .satellite: 38
         }
     }
 }
@@ -79,6 +87,10 @@ enum DriveTheme {
     static let amber = Color(red: 1.00, green: 0.67, blue: 0.19)
     static let danger = Color(red: 0.98, green: 0.27, blue: 0.42)
     static let textMuted = ink.opacity(0.55)
+    static let label = Color(uiColor: .label)
+    static let secondaryLabel = Color(uiColor: .secondaryLabel)
+    static let surface = Color(uiColor: .secondarySystemBackground)
+    static let surfaceStrong = Color(uiColor: .systemBackground)
 
     static func alertColor(_ kind: AlertKind) -> Color {
         switch kind {
@@ -100,10 +112,13 @@ struct GlassPanel: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(Color.white.opacity(0.90), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .background(
+                DriveTheme.surfaceStrong.opacity(0.92),
+                in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            )
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(DriveTheme.sky.opacity(max(0.18, strokeOpacity)), lineWidth: 1.5)
+                    .stroke(Color.primary.opacity(max(0.10, strokeOpacity)), lineWidth: 1.2)
             }
             .shadow(color: DriveTheme.skyDeep.opacity(0.14), radius: 18, y: 8)
     }

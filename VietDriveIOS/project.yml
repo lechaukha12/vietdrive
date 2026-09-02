@@ -44,6 +44,8 @@ targets:
       - sdk: libsqlite3.tbd
       - target: VietDriveWatch
         embed: true
+      - target: VietDriveLiveActivity
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios
@@ -57,6 +59,23 @@ targets:
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@executable_path/Frameworks"
+  VietDriveLiveActivity:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: VietDriveLiveActivity
+      - path: Shared/VietDriveActivityAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietdrive.ios.liveactivity
+        PRODUCT_NAME: VietDrive Live Activity
+        INFOPLIST_FILE: VietDriveLiveActivity/Info.plist
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.3.0
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        APPLICATION_EXTENSION_API_ONLY: YES
   VietDriveWatch:
     type: application
     platform: watchOS
@@ -82,6 +101,8 @@ targets:
     platform: iOS
     sources:
       - path: VietDriveTests
+        excludes:
+          - "PlatformDriveCoordinatorTests 2.swift"
     dependencies:
       - target: VietDrive
     settings:

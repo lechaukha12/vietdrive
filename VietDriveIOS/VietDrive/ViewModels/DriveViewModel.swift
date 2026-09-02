@@ -225,6 +225,9 @@ final class DriveViewModel: ObservableObject {
                 )
             }
             .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
+            .sink { [weak self] _ in self?.terminateApplicationSession() }
+            .store(in: &cancellables)
 
         // Core Location may relaunch the process directly into the background.
         // Restore an explicitly active trip here instead of waiting for the
@@ -351,6 +354,7 @@ final class DriveViewModel: ObservableObject {
         // drive instead of enabling them only after Start navigation is tapped.
         locationService.setNavigationActive(true)
         voice.setNavigationActive(true)
+        PlatformDriveCoordinator.shared.setDriveSessionActive(true)
         locationService.requestAuthorization()
     }
 
@@ -675,6 +679,23 @@ final class DriveViewModel: ObservableObject {
         voice.setNavigationActive(false)
         voice.stopAll()
         locationService.shutdown()
+        PlatformDriveCoordinator.shared.setDriveSessionActive(false)
+        navigationSessionStore.clear()
+    }
+
+    func refreshLiveActivityPreference() {
+        PlatformDriveCoordinator.shared.refreshLiveActivityPreference()
+    }
+
+    private func terminateApplicationSession() {
+        invalidateReroute()
+        journeyTask?.cancel()
+        traceReplayTimer?.cancel()
+        finishTraceRecording()
+        voice.setNavigationActive(false)
+        voice.stopAll()
+        locationService.shutdown()
+        PlatformDriveCoordinator.shared.setDriveSessionActive(false)
         navigationSessionStore.clear()
     }
 
