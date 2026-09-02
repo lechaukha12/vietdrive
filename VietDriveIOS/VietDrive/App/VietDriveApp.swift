@@ -1,7 +1,10 @@
 import SwiftUI
+import UIKit
 
 @main
 struct VietDriveApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("drivingModeEnabled") private var drivingModeEnabled = false
     @StateObject private var model = DriveViewModel()
     @StateObject private var session = AppSessionModel()
     private let isRunningTests = ProcessInfo.processInfo.environment[
@@ -27,8 +30,17 @@ struct VietDriveApp: App {
                 .environmentObject(model)
                 .environmentObject(session)
                 .animation(.snappy(duration: 0.42), value: session.stage)
+                .onChange(of: keepsDrivingScreenAwake, initial: true) { _, keepAwake in
+                    UIApplication.shared.isIdleTimerDisabled = keepAwake
+                }
             }
         }
+    }
+
+    /// Only suppress automatic sleep while the signed-in driving screen is in the foreground.
+    /// App-level scenePhase also handles multiple windows without competing view callbacks.
+    private var keepsDrivingScreenAwake: Bool {
+        !isRunningTests && scenePhase == .active && session.stage == .drive && drivingModeEnabled
     }
 
     @ViewBuilder

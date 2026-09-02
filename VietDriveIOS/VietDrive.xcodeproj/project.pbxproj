@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */; };
 		01FBBAE066C6CB77E4376B9F /* gps_signal_lost.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */; };
 		02B692456DFBB6D1B7519980 /* gps_signal_found.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */; };
 		03586EB5F4A6C34A6946A220 /* VietDriveLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5135D4AE245184C679EF557C /* VietDriveLiveActivityBundle.swift */; };
@@ -198,6 +199,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingRoadsidePresentationTests.swift; sourceTree = "<group>"; };
 		005232845C943AE36B4B6A6F /* next_speed_60.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_60.mp3; sourceTree = "<group>"; };
 		01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_120.mp3; sourceTree = "<group>"; };
 		021EEE5BA9F1691DA12710C6 /* next_speed_50.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_50.mp3; sourceTree = "<group>"; };
@@ -572,6 +574,7 @@
 				B8C34B0253763FBAC2C17A1D /* OfflineAlertStoreTests.swift */,
 				63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */,
 				5CF560F3DDD02E42F1526098 /* PlatformDriveCoordinatorTests.swift */,
+				DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */,
 				68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */,
 				5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */,
 			);
@@ -943,6 +946,7 @@
 				F21C7A897DC75F7F0035E6B7 /* OfflineAlertStoreTests.swift in Sources */,
 				E60C21A307596BBC85667E4C /* OpenMapServiceTests.swift in Sources */,
 				070EA3397108B138AF548A7E /* PlatformDriveCoordinatorTests.swift in Sources */,
+				DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */,
 				2F08E3640F8777386A9186BF /* RouteProgressEngineTests.swift in Sources */,
 				157AE3111F9365CA37142B4E /* VoiceAlertServiceTests.swift in Sources */,
 			);

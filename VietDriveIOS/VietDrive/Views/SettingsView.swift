@@ -67,8 +67,8 @@ struct SettingsView: View {
             tint: DriveTheme.pink
         ) {
             SettingsToggle(
-                title: "Hiện Mây trên bản đồ",
-                subtitle: "Mascot phản ứng theo tốc độ và cảnh báo",
+                title: "Hiển thị Mây",
+                subtitle: "Đồng hành trên bản đồ và trong Chế độ lái xe",
                 icon: "face.smiling.inverse",
                 tint: DriveTheme.pink,
                 isOn: $showMascotOnMap
@@ -89,7 +89,7 @@ struct SettingsView: View {
             )
             SettingsToggle(
                 title: "Chế độ lái xe",
-                subtitle: "Tắt bản đồ, tập trung vào xe, tốc độ và biển báo sắp tới",
+                subtitle: "Giữ màn hình sáng, hiện tốc độ và biển báo theo thời gian thực",
                 icon: "car.side.fill",
                 tint: DriveTheme.cyan,
                 isOn: $drivingModeEnabled
