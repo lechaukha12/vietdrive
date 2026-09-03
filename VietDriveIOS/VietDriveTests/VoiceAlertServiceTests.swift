@@ -30,6 +30,10 @@ final class VoiceAlertServiceTests: XCTestCase {
             try XCTUnwrap(catalog.url(for: "alert.town.in")).lastPathComponent,
             "vao_kdc.mp3"
         )
+        XCTAssertEqual(
+            try XCTUnwrap(catalog.url(for: "preview")).lastPathComponent,
+            "preview.mp3"
+        )
         XCTAssertNil(catalog.manifest.prompts["alert.turn_restriction"])
     }
 
@@ -45,9 +49,9 @@ final class VoiceAlertServiceTests: XCTestCase {
         let checksums = try JSONDecoder().decode(
             [String: AudioChecksum].self, from: Data(contentsOf: checksumURL)
         )
-        XCTAssertEqual(checksums.count, 75)
-        XCTAssertEqual(catalog.manifest.prompts.count, 73)
-        XCTAssertEqual(Set(catalog.manifest.prompts.values).count, 72)
+        XCTAssertEqual(checksums.count, 107)
+        XCTAssertEqual(catalog.manifest.prompts.count, 104)
+        XCTAssertEqual(Set(catalog.manifest.prompts.values).count, 104)
 
         for (key, filename) in catalog.manifest.prompts.sorted(by: { $0.key < $1.key }) {
             let url = try XCTUnwrap(catalog.url(for: key), "Missing audio for \(key)")
@@ -70,10 +74,45 @@ final class VoiceAlertServiceTests: XCTestCase {
         ))
         XCTAssertEqual(announcement.promptKey, "alert.camera.section")
         XCTAssertTrue(announcement.message.contains("camera đo tốc độ theo đoạn"))
-        // Adam's camera_ai.mp3 describes speed + traffic lights, not a section camera.
-        // Leave this key unmapped so the existing accurate TTS fallback is used.
-        XCTAssertNil(catalog.url(for: "alert.camera.section"))
+        XCTAssertEqual(
+            catalog.url(for: "alert.camera.section")?.lastPathComponent,
+            "camera_section.mp3"
+        )
         XCTAssertEqual(catalog.url(for: "alert.camera.dual")?.lastPathComponent, "camera_ai.mp3")
+    }
+
+    func testEveryCatalogSignUsesBundledAdamRecording() throws {
+        let catalog = try XCTUnwrap(RecordedVoiceCatalog())
+
+        for definition in TrafficSignCatalog.definitions.values {
+            let announcement = try XCTUnwrap(TrafficSignCatalog.voiceAnnouncement(
+                for: alert(kind: .roadSign, signCode: definition.code),
+                distanceText: "khoảng 300 mét"
+            ), definition.code)
+            XCTAssertNotNil(catalog.url(for: announcement.promptKey), definition.code)
+        }
+    }
+
+    func testUnsupportedDynamicPromptsUseRecordedAdamFallbacks() throws {
+        let catalog = try XCTUnwrap(RecordedVoiceCatalog())
+        XCTAssertEqual(VoiceAlertService.speedPromptKey(limit: 110), "speed.generic")
+        XCTAssertNotNil(catalog.url(for: "speed.generic"))
+
+        let unknownManeuver = NavigationStep(
+            id: 9,
+            instruction: "Đi theo chỉ dẫn",
+            roadName: "Đường thử nghiệm",
+            type: "fork",
+            modifier: "unknown",
+            coordinate: .init(latitude: 10.77, longitude: 106.70),
+            distanceAlongRouteMeters: 1_000
+        )
+        XCTAssertEqual(
+            VoiceAlertService.maneuverPromptKey(step: unknownManeuver, stage: 2),
+            "maneuver.generic"
+        )
+        XCTAssertNotNil(catalog.url(for: "maneuver.generic"))
+        XCTAssertNotNil(catalog.url(for: "alert.generic"))
     }
 
     func testLeftAndRightManeuversResolveToRecordedPromptKeys() {

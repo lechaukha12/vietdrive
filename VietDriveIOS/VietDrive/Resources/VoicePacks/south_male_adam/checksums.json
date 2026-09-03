@@ -109,6 +109,11 @@
     "md5": "20471eae54442229520a77f54d2ad86f",
     "sha256": "5ac0c619724411b1a12feefda0ed168cc83c8f029704a7fb14a67e79f6d80c29"
   },
+  "camera_section.mp3": {
+    "bytes": 36788,
+    "md5": "7f518eda00ce5612259bdf054659e3ac",
+    "sha256": "c97b2e72dff0c2857ed48c063a345aae69effe78795368a7455616fe2ac7dc9c"
+  },
   "camera_speed.mp3": {
     "bytes": 30788,
     "md5": "4d73dd3076256834d675feddfa0b336d",
@@ -163,6 +168,21 @@
     "bytes": 38804,
     "md5": "0b83cc8c04e457f5c3fbc11e7bd326c3",
     "sha256": "2219d6c2d9690e20b339577f06ff590f621058c3732669caef92b85d07d2f74c"
+  },
+  "generic_alert.mp3": {
+    "bytes": 25676,
+    "md5": "1da4c39d1db362766015491c82f85e5d",
+    "sha256": "daddbf6e8044e858c76970396d1f91116d10b80cf391b9e8abc189962fa4ebfc"
+  },
+  "generic_navigation.mp3": {
+    "bytes": 31316,
+    "md5": "e27503602504a5a888b832d591fb26e2",
+    "sha256": "1c68958bfe4ec688e52657562f8829b749020276f55da40017bda5e01987b3dd"
+  },
+  "generic_speed_limit.mp3": {
+    "bytes": 25796,
+    "md5": "86986310d8409994dcf4b179dc5d02c0",
+    "sha256": "f12c95a45b6c63522cbefe7f951233dff89565b20857550bf511832b938f5677"
   },
   "giao_duong_sat.mp3": {
     "bytes": 21956,
@@ -234,6 +254,11 @@
     "md5": "198048f6d8f92b8799a7fb3e73e691c3",
     "sha256": "3e6754a00c0a59d983a3ff49decc2bb2816987b61d3136c68dfd5e6fe7bdfd13"
   },
+  "preview.mp3": {
+    "bytes": 51932,
+    "md5": "d41b53b4fabcd8cacd9f802fc2477452",
+    "sha256": "4cca4b17c228166569867be30cfae463d35b80c84b0e727a762d082a49559647"
+  },
   "ra_cam_vuot.mp3": {
     "bytes": 16076,
     "md5": "bdf64c5d90ce6f950f0876d498a9f14e",
@@ -293,6 +318,141 @@
     "bytes": 29324,
     "md5": "1e8e550264fc3bf6a9b03194e137c909",
     "sha256": "2ccd71ba2c8bc2faee626615507c1a152993d0deeb2974df82f7788a2a984c35"
+  },
+  "sign_I437.mp3": {
+    "bytes": 21428,
+    "md5": "fa6e0a31f8d18dd990d7e8558be9099d",
+    "sha256": "d5de0faa72ee207f72a15906a94fe34be75736c8edb21c243bbefc87e34ab9e8"
+  },
+  "sign_P101.mp3": {
+    "bytes": 20540,
+    "md5": "168ffe9de93a0ffd1c3c706e0777acfe",
+    "sha256": "149e27b6155c5b32bd8ce9ca29b103a549c17b7591459da2a14d1f2b0d827a0e"
+  },
+  "sign_P102.mp3": {
+    "bytes": 26204,
+    "md5": "d4537911d381842d84a6aa58584ca5d1",
+    "sha256": "a5f501cd87890a375f841e20d17a1f19d88f11bc30dd8081ee8aecc80459911f"
+  },
+  "sign_P103a.mp3": {
+    "bytes": 25508,
+    "md5": "aac1d570e9ad21ed92cb54ab57bfe187",
+    "sha256": "90a83e2f8856de20565b239c4c27dd31de666c8c3d820d2dab2f3b73644d37c5"
+  },
+  "sign_P103c.mp3": {
+    "bytes": 29756,
+    "md5": "ed8ad0066fccf9237589714b51c9c321",
+    "sha256": "c7b8b65783bf9d7ad2496baa9e4bd2a59f36051ba5dd7b6202deeea192370878"
+  },
+  "sign_P105.mp3": {
+    "bytes": 31028,
+    "md5": "cd0548d904ca8a9ee7a6195be12e10ab",
+    "sha256": "019315b37f2ec4cf18852e4b5aa985a34cf5788598a6916be31fca37180011f5"
+  },
+  "sign_P122.mp3": {
+    "bytes": 21740,
+    "md5": "05536b0afd1d26dac5cbb69847699cc6",
+    "sha256": "007f809a7200895b0321343c15ad5fa2ec27a62ac44494d99caa45d1fcf2b345"
+  },
+  "sign_P123a.mp3": {
+    "bytes": 27764,
+    "md5": "f0ba6faa806ee84fa2810d5b76f8c8d1",
+    "sha256": "37460976b0d13e280c054d466d6671f1244676be7322f7a122185ec57cff5ada"
+  },
+  "sign_P123b.mp3": {
+    "bytes": 22004,
+    "md5": "8273596b858b41bdf2c89c25ced848f9",
+    "sha256": "ad79df64136c51ae4fddfff49d9b111f790b8e7e52b0a0a5f3c511339f56a556"
+  },
+  "sign_P123c.mp3": {
+    "bytes": 27020,
+    "md5": "62e08588d24be6d58c1ed89f35c8ef2c",
+    "sha256": "4efa9399b0d7ff975491b1aa2a7057399eb5c324d03b3fabde94ba38e1775cc2"
+  },
+  "sign_P124a.mp3": {
+    "bytes": 32876,
+    "md5": "9a0fadb0b62a6da6100c3d9533c49715",
+    "sha256": "d01a1cbba105d01bec4b435e9a1ef046ca6a837d3d2cd09bf979cc34fbc33666"
+  },
+  "sign_P124b.mp3": {
+    "bytes": 32708,
+    "md5": "2f3bd8b573232b087fd9d171c8fe41e6",
+    "sha256": "07e9cc0dca222e4baf8ceb778a3b15aa51611adadafb461671292e3d9281e0bc"
+  },
+  "sign_P130.mp3": {
+    "bytes": 28004,
+    "md5": "14fbd6d38ac33eccad99ad488d596a9b",
+    "sha256": "2ffa38f976aca65efd3d784c17638f1fb69fade5be6f043d18da5bac8ddfc441"
+  },
+  "sign_P131a.mp3": {
+    "bytes": 22892,
+    "md5": "4bb51b9e176457c613ce166ee991a2a1",
+    "sha256": "106d12255bccb382ad3e68e849c2e8db40dc0a639616cbac5c204b55015360a2"
+  },
+  "sign_P131b.mp3": {
+    "bytes": 32036,
+    "md5": "8fc37bef515a9a510b54ea6d3810caf3",
+    "sha256": "c9adef79be458b2adc608df227c770c84cb7f38a19c171d4df14abada35c1e5b"
+  },
+  "sign_P131c.mp3": {
+    "bytes": 31772,
+    "md5": "bc812eeb9c02680e2dd200f104db7646",
+    "sha256": "48230f212132fc814c26c2cd3e1ced4bca86a7f7f41d1c580ec686821fb79d18"
+  },
+  "sign_R301a.mp3": {
+    "bytes": 26276,
+    "md5": "5118c4da9019181b266287a5a2954301",
+    "sha256": "60fea1e55218cb586d520d67a4768aaa8e8fd837e0a804c284832d1c689dfd0b"
+  },
+  "sign_R301b.mp3": {
+    "bytes": 27932,
+    "md5": "e4dba71233f8353f2b5ca17459aeec06",
+    "sha256": "1cd3cb06fa2d2fadb06e6209f7a9446cc075fff9d13636191779c2fae9cde384"
+  },
+  "sign_R301c.mp3": {
+    "bytes": 27932,
+    "md5": "c208e9b89a4e5b134b832cc211c2a4a4",
+    "sha256": "0acdfd5500ad5a83a404838a651ef4c1cc937964105c42d42a7474fadcb07278"
+  },
+  "sign_R301d.mp3": {
+    "bytes": 35828,
+    "md5": "67f5fa5e427b4d2849f4925c40304272",
+    "sha256": "3887c813a009063f50b4dcd687836396c5487e8d530464dbce9db76842c13a0a"
+  },
+  "sign_R301e.mp3": {
+    "bytes": 36932,
+    "md5": "6e20a9fe0cd6af68652760b91c34e1a3",
+    "sha256": "c45b6117d66dbc64e51e207df863a2ebd2f373002c62de68ebf9e04adbedd7d1"
+  },
+  "sign_R301f.mp3": {
+    "bytes": 34772,
+    "md5": "de299576637490b6ac301433544b29fa",
+    "sha256": "e517bc516f96fbebd3e2e6f409b542913d2d2ac4205fb3c78710ed63537b2710"
+  },
+  "sign_R302a.mp3": {
+    "bytes": 31364,
+    "md5": "f7b84c3afd95ab0306aa1e2df403a022",
+    "sha256": "5ed5bbae6b110f62a8b941bf9f835ca4d893cba87dffbff5d34383cef6ba5e83"
+  },
+  "sign_W208.mp3": {
+    "bytes": 23276,
+    "md5": "984e083e31d8040988cd27bf84a2a4cd",
+    "sha256": "b48f56f1658935fef8012307af8d724e654987c6f6a9fb866b9ee0822584822c"
+  },
+  "sign_W224.mp3": {
+    "bytes": 30020,
+    "md5": "07b10d8c08e85f58010e8d99b3009773",
+    "sha256": "a4f3e35baac87e1b19fefbc4af044fa7eb255f7c1edd18688deb6982fe36ea46"
+  },
+  "sign_W225.mp3": {
+    "bytes": 28196,
+    "md5": "74f5edd7a55957280caeb99dd0455bf3",
+    "sha256": "00b891b7bfa1d878cbf7f0e81e2775f3ff06e9a43fa4dd3fb0024bbada853ce3"
+  },
+  "sign_W245a.mp3": {
+    "bytes": 19940,
+    "md5": "5838c90e39ba4fa5cc3f9c36df73d206",
+    "sha256": "27c839f2d3733873c63ec75650b5de0c9de032e0c7d7ffd1c229b7a2e3c7fd77"
   },
   "tpms_error.mp3": {
     "bytes": 36524,

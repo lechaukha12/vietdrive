@@ -150,7 +150,11 @@ enum TrafficSignCatalog {
                 voicePromptKey: "alert.rest_area",
                 voicePhrase: "có trạm dừng nghỉ"
             ),
-            TrafficSignDefinition("CAMERA_SPEED", "TrafficSign_CameraSpeed", "Camera giám sát tốc độ"),
+            TrafficSignDefinition(
+                "CAMERA_SPEED", "TrafficSign_CameraSpeed", "Camera giám sát tốc độ",
+                voicePromptKey: "alert.camera.speed",
+                voicePhrase: "có camera giám sát tốc độ"
+            ),
             TrafficSignDefinition(
                 "CAMERA_TRAFFIC", "TrafficSign_CameraTraffic", "Camera đèn tín hiệu giao thông",
                 voicePromptKey: "alert.camera.traffic",
@@ -329,14 +333,15 @@ enum TrafficSignCatalog {
     static func voiceAnnouncement(
         for alert: DriveAlert,
         distanceText: String
-    ) -> (promptKey: String?, message: String)? {
+    ) -> (promptKey: String, message: String)? {
         guard let definition = definition(
             for: alert.signCode,
             speedLimit: alert.speedLimit,
             assetName: alert.assetName
-        ), let phrase = definition.voicePhrase else { return nil }
+        ) else { return nil }
+        let phrase = definition.voicePhrase ?? definition.defaultMessage.lowercased()
         return (
-            definition.voicePromptKey,
+            definition.voicePromptKey ?? "alert.sign.\(definition.code)",
             "Phía trước \(distanceText) \(phrase)."
         )
     }

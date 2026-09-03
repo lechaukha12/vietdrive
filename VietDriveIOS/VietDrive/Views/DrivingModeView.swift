@@ -6,16 +6,19 @@ struct DrivingModeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @AppStorage("showMascotOnMap") private var showMascot = true
+    @StateObject private var sceneStore = DrivingSceneStore()
 
     let onSearch: () -> Void
     let onSettings: () -> Void
+    let onDemo: () -> Void
 
     var body: some View {
         DrivingCockpit(
             snapshot: model.snapshot,
+            preparedScene: sceneStore.scene,
             alerts: upcomingAlerts,
             gpsQuality: model.locationFixQuality,
-            accuracyMeters: model.isTraceReplayActive ? nil : model.locationService.horizontalAccuracy,
+            accuracyMeters: model.isSimulatedLocationActive ? nil : model.locationService.horizontalAccuracy,
             isGuiding: model.isGuidanceActive,
             isReplay: model.isTraceReplayActive,
             voiceEnabled: model.voiceEnabled,
@@ -23,9 +26,21 @@ struct DrivingModeView: View {
             animateRoad: scenePhase == .active && !systemReduceMotion,
             onSearch: onSearch,
             onSettings: onSettings,
+            onDemo: onDemo,
             onToggleVoice: { model.updateVoiceEnabled(!model.voiceEnabled) }
         )
         .preferredColorScheme(.light)
+        .task(id: sceneRequest) {
+            guard scenePhase == .active, model.locationFixQuality != .unavailable else { return }
+            await sceneStore.refresh(near: model.snapshot.coordinate, heading: model.snapshot.heading)
+        }
+    }
+
+    private var sceneRequest: String {
+        // Reproject every fix/heading, while the store independently caches the SQLite window.
+        let coordinate = model.snapshot.coordinate
+        guard coordinate.latitude.isFinite, coordinate.longitude.isFinite else { return "invalid" }
+        return "\(coordinate.latitude)/\(coordinate.longitude)/\(model.snapshot.heading)/\(scenePhase == .active)/\(model.locationFixQuality)"
     }
 
     private var upcomingAlerts: [DriveAlert] {
@@ -39,6 +54,7 @@ struct DrivingModeView: View {
 private struct DrivingCockpit: View {
     @State private var passage = DrivingSignPassage()
     let snapshot: DriveSnapshot
+    let preparedScene: DrivingScene
     let alerts: [DriveAlert]
     let gpsQuality: LocationFixQuality
     let accuracyMeters: Double?
@@ -49,6 +65,7 @@ private struct DrivingCockpit: View {
     let animateRoad: Bool
     let onSearch: () -> Void
     let onSettings: () -> Void
+    let onDemo: () -> Void
     let onToggleVoice: () -> Void
 
     private var hasGPS: Bool { gpsQuality != .unavailable }
@@ -62,7 +79,7 @@ private struct DrivingCockpit: View {
               heading: snapshot.heading, speed: snapshot.speedKmh, hasGPS: hasGPS, accuracy: accuracyMeters)
     }
     private var statusTint: Color {
-        if !hasGPS { return DriveTheme.amber }
+        if !hasGPS || gpsQuality == .weak { return DriveTheme.amber }
         return isOverSpeed ? DriveTheme.danger : DriveTheme.skyDeep
     }
 
@@ -71,7 +88,9 @@ private struct DrivingCockpit: View {
             let landscape = geometry.size.width > geometry.size.height
             ZStack {
                 LinearGradient(
-                    colors: [DriveTheme.skySoft.opacity(0.6), .white, Color(red: 0.85, green: 0.91, blue: 0.96)],
+                    colors: [Color(red: 0.91, green: 0.97, blue: 1),
+                             Color(red: 0.76, green: 0.91, blue: 0.99),
+                             Color(red: 0.65, green: 0.84, blue: 0.97)],
                     startPoint: .top, endPoint: .bottom
                 )
                     .ignoresSafeArea()
@@ -100,24 +119,34 @@ private struct DrivingCockpit: View {
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: "steeringwheel")
-                .font(.system(size: 21, weight: .medium))
+                .font(.system(size: 27, weight: .medium))
                 .foregroundStyle(DriveTheme.skyDeep)
             VStack(alignment: .leading, spacing: 2) {
+                Text("VietDrive")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(DriveTheme.skyDeep)
                 Text("CHẾ ĐỘ LÁI XE")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: 9, weight: .medium))
                     .tracking(0.6)
-                Text("VietDrive · Mazda CX-5")
-                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(DriveTheme.textMuted)
             }
             Spacer(minLength: 4)
+            Button(action: onDemo) {
+                Image(systemName: "play.circle")
+                    .font(.system(size: 21, weight: .regular))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(DriveTheme.skyDeep)
+            .accessibilityLabel("Chạy thử tuyến DEMO")
             HStack(spacing: 5) {
                 Circle().fill(statusTint).frame(width: 6, height: 6)
-                Text(isReplay ? "PHÁT LẠI" : (!hasGPS ? "CHỜ GPS" : (isMoving ? "ĐANG CHẠY" : "SẴN SÀNG")))
+                Text(snapshot.isDemo ? (isReplay ? "PHÁT LẠI" : "DEMO") : (!hasGPS ? "CHỜ GPS" : "GPS"))
                     .font(.system(size: 9, weight: .bold, design: .rounded))
                     .lineLimit(1)
             }
             .foregroundStyle(statusTint)
+            .accessibilityLabel(snapshot.isDemo ? "GPS mô phỏng" : gpsQuality.title)
         }
         .frame(minHeight: 42)
     }
@@ -125,21 +154,14 @@ private struct DrivingCockpit: View {
     private var portraitCockpit: some View {
         GeometryReader { geometry in
             let compact = geometry.size.height < 570
-            let sideWidth = max(74, min(138, geometry.size.width * 0.235))
             VStack(spacing: compact ? 4 : 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    journeyContext(compact: compact)
-                        .frame(width: sideWidth, alignment: .leading)
-                    speedReadout(compact: compact)
-                        .frame(maxWidth: .infinity)
-                        .layoutPriority(1)
-                    gpsContext(compact: compact)
-                        .frame(width: sideWidth, alignment: .trailing)
-                }
+                speedReadout(compact: compact)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, compact ? 6 : 18)
+                driveContext
                 vehicleScene(maximumCarWidth: min(geometry.size.width * 0.52, 194), compact: compact)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, -18)
                 motionStatus
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -149,19 +171,11 @@ private struct DrivingCockpit: View {
     private var landscapeCockpit: some View {
         GeometryReader { geometry in
             HStack(alignment: .center, spacing: 16) {
-                VStack(alignment: .leading, spacing: 10) {
-                    journeyContext(compact: true)
-                    Label(gpsQuality.title, systemImage: gpsQuality.symbol)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(gpsTint)
-                    if let section = snapshot.activeSectionSpeed {
-                        Text("TB đoạn: \(section.averageSpeedKmh) km/h")
-                            .font(.system(size: 11, weight: .semibold))
-                    }
+                VStack(spacing: 10) {
+                    speedReadout(compact: true)
+                    driveContext
                 }
-                .frame(width: min(142, geometry.size.width * 0.20))
-                speedReadout(compact: true)
-                    .frame(width: 110)
+                .frame(width: min(210, geometry.size.width * 0.32))
                 VStack(spacing: 0) {
                     vehicleScene(maximumCarWidth: 180, compact: true)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -173,86 +187,32 @@ private struct DrivingCockpit: View {
         }
     }
 
-    private func journeyContext(compact: Bool) -> some View {
-        VStack(alignment: .leading, spacing: compact ? 9 : 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(isGuiding ? "DẪN ĐƯỜNG" : "LÁI TỰ DO")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .tracking(0.4)
-                    .foregroundStyle(DriveTheme.skyDeep)
-                Text(hasGPS ? snapshot.roadName : "Đang xác định vị trí")
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(compact ? 3 : 4)
-                if hasGPS && !compact {
-                    Text(snapshot.province)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(DriveTheme.textMuted)
-                        .lineLimit(2)
-                }
-            }
-            HStack(alignment: .top, spacing: 5) {
-                Image(systemName: hasGPS ? "location.north.fill" : "location.slash")
-                    .font(.system(size: 12, weight: .semibold))
-                    .rotationEffect(.degrees(hasGPS ? snapshot.heading : 0))
-                    .foregroundStyle(DriveTheme.skyDeep)
-                Text(hasGPS ? compassDirection : "Chờ GPS")
-                    .font(.system(size: 11, weight: .semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var driveContext: some View {
+        VStack(spacing: 5) {
+            Text(hasGPS ? snapshot.roadName : "Đang xác định vị trí")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(DriveTheme.ink.opacity(0.68))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             if isGuiding {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(snapshot.nextManeuver)
-                        .font(.system(size: 11, weight: .semibold))
-                        .lineLimit(2)
-                    if snapshot.maneuverDistanceMeters > 0 {
-                        Text(drivingDistance(Double(snapshot.maneuverDistanceMeters)))
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundStyle(DriveTheme.skyDeep)
-                    }
-                }
-            }
-        }
-        .multilineTextAlignment(.leading)
-    }
-
-    private func gpsContext(compact: Bool) -> some View {
-        VStack(alignment: .trailing, spacing: compact ? 9 : 14) {
-            Text("TÍN HIỆU GPS")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                .tracking(0.4)
-                .foregroundStyle(DriveTheme.skyDeep)
-            Image(systemName: gpsQuality.symbol)
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(gpsTint)
-            Text(gpsQuality.title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(gpsTint)
-            if hasGPS, let accuracyMeters, accuracyMeters.isFinite, accuracyMeters > 0, !compact {
-                Text("Sai số ±\(Int(accuracyMeters.rounded())) m")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(DriveTheme.textMuted)
+                Text("\(snapshot.nextManeuver) · \(drivingDistance(Double(snapshot.maneuverDistanceMeters)))")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(DriveTheme.skyDeep)
+                    .lineLimit(2)
             }
             if let section = snapshot.activeSectionSpeed {
-                Text("TB đoạn: \(section.averageSpeedKmh) km/h")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                Text("Tốc độ TB đoạn: \(section.averageSpeedKmh) km/h")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(DriveTheme.skyDeep)
             }
         }
-        .multilineTextAlignment(.trailing)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
     }
 
     private var controls: some View {
-        HStack(spacing: 10) {
-            Button(action: onSearch) {
-                Label("Tìm địa điểm", systemImage: "magnifyingglass")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(DriveTheme.skyDeep)
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 46)
-                    .background(.white.opacity(0.78), in: Capsule())
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.9), lineWidth: 1))
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
+        HStack(spacing: 28) {
+            DrivingControlButton(icon: "magnifyingglass", title: "Tìm địa điểm", tint: DriveTheme.skyDeep, action: onSearch)
             DrivingControlButton(
                 icon: voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill",
                 title: voiceEnabled ? "Tắt cảnh báo giọng nói" : "Bật cảnh báo giọng nói",
@@ -260,7 +220,7 @@ private struct DrivingCockpit: View {
                 action: onToggleVoice
             )
             .accessibilityValue(voiceEnabled ? "Đang bật" : "Đang tắt")
-            DrivingControlButton(icon: "slider.horizontal.3", title: "Cài đặt", tint: DriveTheme.ink, action: onSettings)
+            DrivingControlButton(icon: "slider.horizontal.3", title: "Cài đặt", tint: DriveTheme.skyDeep, action: onSettings)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
@@ -268,11 +228,21 @@ private struct DrivingCockpit: View {
 
     private func vehicleScene(maximumCarWidth: CGFloat, compact: Bool) -> some View {
         GeometryReader { geometry in
-            let carWidth = min(maximumCarWidth, geometry.size.height * 0.64, geometry.size.width * 0.52)
-            let carY = geometry.size.height * 0.92 - carWidth / 2
+            let scene = hasGPS && (accuracyMeters ?? 20) <= 65 ? preparedScene : .empty
+            let carFrame = DrivingRibbon.egoFrame(size: geometry.size, maximumWidth: maximumCarWidth)
+            let carWidth = carFrame.width
+            let carY = carFrame.midY
             let placements = DrivingRoadsideLayout.placements(alerts: roadsideAlerts, size: geometry.size)
+            let tolls = roadsideAlerts.filter { $0.kind == .toll }.map {
+                DrivingSceneEvent(id: "toll-\($0.id)", kind: .toll, distanceMeters: $0.distanceMeters)
+            }
             ZStack {
-                DrivingRoadSurface(speed: snapshot.speedKmh, isAnimating: animateRoad && isMoving)
+                DrivingSceneSurface(scene: scene, speed: snapshot.speedKmh,
+                                    isAnimating: animateRoad && isMoving,
+                                    hasNearbyAlert: roadsideAlerts.first.map { $0.distanceMeters < 150 } ?? false,
+                                    supplementalEvents: tolls,
+                                    reservedSignRects: placements.map { CGRect(x: $0.x - $0.width / 2, y: $0.top,
+                                                                             width: $0.width, height: $0.readableHeight) })
                 ForEach(placements) { placement in
                     DrivingRoadsideSign(placement: placement)
                         .frame(width: placement.width, height: placement.height)
@@ -281,31 +251,24 @@ private struct DrivingCockpit: View {
                         .transition(animateRoad && isMoving && placement.alert.distanceMeters < 90
                             ? .offset(y: geometry.size.height).combined(with: .opacity) : .opacity)
                 }
-                DrivingMazdaCar(isAnimating: animateRoad && isMoving)
+                DrivingVehicleSprite(speed: snapshot.speedKmh, curve: 0,
+                                     isAnimating: animateRoad && isMoving)
                     .frame(width: carWidth, height: carWidth)
-                    .position(x: geometry.size.width / 2, y: carY)
+                    .position(x: carFrame.midX, y: carY)
                     .zIndex(2)
                 if showsMascot {
                     let mascotSize: CGFloat = compact ? 56 : 68
                     MascotMayView(mood: companionMood, size: mascotSize, isAnimationEnabled: animateRoad)
                         .position(
-                            x: max(mascotSize / 2, geometry.size.width / 2 - carWidth / 2 - mascotSize * 0.25),
+                            x: max(mascotSize / 2 + 4, geometry.size.width * 0.12),
                             y: min(geometry.size.height - mascotSize / 2, carY + carWidth * 0.35)
                         )
                         .zIndex(4)
                         .allowsHitTesting(false)
                 }
             }
-            .animation(animateRoad && isMoving ? .linear(duration: 0.65) : nil, value: placements)
+            .animation(animateRoad && isMoving ? .linear(duration: 0.22) : nil, value: placements)
             .clipped()
-            .overlay(alignment: .topLeading) {
-                if roadsideAlerts.isEmpty {
-                    Text(hasGPS ? "Chưa có cảnh báo phía trước" : "Chờ GPS để cập nhật biển báo")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(DriveTheme.textMuted)
-                        .padding(.top, 10)
-                }
-            }
         }
     }
 
@@ -317,49 +280,42 @@ private struct DrivingCockpit: View {
     }
 
     private func speedReadout(compact: Bool) -> some View {
-        VStack(spacing: compact ? 6 : 10) {
-            VStack(spacing: -2) {
-                Text(hasGPS ? "\(snapshot.speedKmh)" : "—")
-                    .font(.system(size: compact ? 56 : 76, weight: .bold, design: .rounded))
-                    .tracking(-3)
-                    .monospacedDigit()
-                    .foregroundStyle(isOverSpeed ? DriveTheme.danger : DriveTheme.ink)
-                    .contentTransition(.numericText())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("km/h")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(DriveTheme.textMuted)
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(hasGPS ? "Tốc độ \(snapshot.speedKmh) kilomet mỗi giờ" : "Chưa có tốc độ GPS")
-
-            HStack(spacing: 7) {
-                DrivingLimitBadge(limit: snapshot.speedLimitKmh)
-                    .frame(width: compact ? 40 : 48, height: compact ? 40 : 48)
-                VStack(alignment: .leading, spacing: 3) {
+        VStack(spacing: 8) {
+            HStack(alignment: .center, spacing: compact ? 14 : 20) {
+                VStack(spacing: -3) {
+                    Text(hasGPS ? "\(snapshot.speedKmh)" : "—")
+                        .font(.system(size: compact ? 72 : 94, weight: .semibold))
+                        .tracking(-4)
+                        .monospacedDigit()
+                        .foregroundStyle(isOverSpeed ? DriveTheme.danger : DriveTheme.ink)
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                    Text("km/h")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(DriveTheme.ink.opacity(0.8))
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(hasGPS ? "Tốc độ \(snapshot.speedKmh) kilomet mỗi giờ" : "Chưa có tốc độ GPS")
+                VStack(spacing: 5) {
+                    DrivingLimitBadge(limit: snapshot.speedLimitKmh)
+                        .frame(width: compact ? 48 : 56, height: compact ? 48 : 56)
                     Text("GIỚI HẠN")
-                        .font(.system(size: 9, weight: .heavy, design: .rounded))
-                    Text(snapshot.speedLimitKmh > 0 ? "Hiện tại" : "Chưa có dữ liệu")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(DriveTheme.textMuted)
                 }
             }
             if let nextLimit = snapshot.nextSpeedLimitKmh,
                let distance = snapshot.nextSpeedDistanceMeters,
                nextLimit > 0, nextLimit != snapshot.speedLimitKmh {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.down")
-                    Text("\(nextLimit) km/h · \(drivingDistance(Double(distance)))")
-                }
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(DriveTheme.skyDeep)
-                .multilineTextAlignment(.center)
+                Text("Sắp tới \(nextLimit) km/h · \(drivingDistance(Double(distance)))")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(DriveTheme.skyDeep)
+                    .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
     }
-
 
     private var motionStatus: some View {
         Group {
@@ -367,6 +323,8 @@ private struct DrivingCockpit: View {
                 Label("Đang tìm tín hiệu GPS", systemImage: "location.magnifyingglass")
             } else if isOverSpeed {
                 Label("Giảm tốc độ để lái xe an toàn", systemImage: "exclamationmark.circle.fill")
+            } else if gpsQuality == .weak {
+                Label("Tín hiệu GPS yếu", systemImage: "location.circle")
             } else {
                 Color.clear.frame(height: 1)
                     .accessibilityHidden(true)
@@ -378,18 +336,6 @@ private struct DrivingCockpit: View {
         .frame(maxWidth: .infinity, minHeight: 22)
     }
 
-    private var compassDirection: String {
-        let directions = ["Bắc", "Đông Bắc", "Đông", "Đông Nam", "Nam", "Tây Nam", "Tây", "Tây Bắc"]
-        let normalized = (snapshot.heading.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-        return directions[Int((normalized / 45).rounded()) % directions.count]
-    }
-
-    private var gpsTint: Color {
-        switch gpsQuality {
-        case .unavailable, .weak: DriveTheme.amber
-        case .good, .excellent: DriveTheme.skyDeep
-        }
-    }
 }
 private func drivingDistance(_ meters: Double) -> String {
     let distance = max(0, Int(meters.rounded()))
@@ -408,7 +354,7 @@ private struct DrivingControlButton: View {
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(tint)
                 .frame(width: 46, height: 46)
-                .background(.white.opacity(0.60), in: Circle())
+                .background(.white.opacity(0.22), in: Circle())
                 .overlay(Circle().strokeBorder(.white.opacity(0.8), lineWidth: 1))
                 .contentShape(Circle())
         }
@@ -514,7 +460,7 @@ struct DrivingSignPassage {
     }
 }
 
-/// Illustrative right-shoulder placement, not surveyed pole or lane geometry.
+/// All eligible traffic signs stay on the right shoulder. No side-balancing or sign duplication.
 enum DrivingRoadsideLayout {
     struct Placement: Identifiable, Equatable {
         let alert: DriveAlert
@@ -524,18 +470,17 @@ enum DrivingRoadsideLayout {
         var top: CGFloat
         var x: CGFloat
         var id: Int { alert.id }
-        var width: CGFloat { max(52, faceSize) }
+        var width: CGFloat { max(44, faceSize) }
         var readableHeight: CGFloat { faceSize + 18 }
     }
 
     static func depth(distance: Double) -> Double {
         guard distance.isFinite else { return 0 }
-        return 220 / (220 + max(0, distance))
+        return DrivingRibbon.depth(distance)
     }
 
     static func roadPoint(depth: Double, side: Double, size: CGSize) -> CGPoint {
-        CGPoint(x: size.width * (0.5 + side * (0.045 + depth * 0.275)),
-                y: size.height * (0.05 + depth * 0.93))
+        DrivingRibbon.point(depth: depth, side: side, size: size)
     }
 
     static func placements(alerts: [DriveAlert], size: CGSize) -> [Placement] {
@@ -544,35 +489,37 @@ enum DrivingRoadsideLayout {
         let ordered = Array(DrivingSignPassage().upcoming(from: alerts).prefix(count).reversed())
         guard !ordered.isEmpty else { return [] }
         let n = CGFloat(ordered.count)
-        // Reserve all metre labels, gaps, the final pole and both outer margins.
+        // Reserve readable faces/labels and the final pole on the one allowed shoulder.
         let cap = max(16, min(62, size.width * 0.17,
-            (size.height - 8 - 24 * n) / n,
-            (size.height - 8 - 24 * (n - 1)) / (n + 0.9)))
-        var result: [Placement] = []
+            (size.height * 0.96 - 8 - 24 * n) / n,
+            (size.height * 0.96 - 8 - 24 * (n - 1)) / (n + 0.9)))
+        var posts: [Placement] = []
         for alert in ordered {
             let depth = depth(distance: alert.distanceMeters)
             let face = max(16, cap * (0.5 + 0.5 * depth))
             let height = face + max(24, face * 0.9)
             var top = max(4, roadPoint(depth: depth, side: 1, size: size).y - height)
-            if let previous = result.last {
+            if let previous = posts.last {
                 top = max(top, previous.top + previous.readableHeight + 6)
             }
-            result.append(.init(alert: alert, depth: depth, faceSize: face, height: height, top: top, x: 0))
+            posts.append(.init(alert: alert, depth: depth, faceSize: face, height: height, top: top, x: 0))
         }
-        // Only separate overlapping faces/labels. Metre labels and relative order remain unchanged.
-        for index in result.indices.reversed() {
-            let bottomLimit = index == result.count - 1
-                ? size.height - 4 - result[index].height
-                : result[index + 1].top - result[index].readableHeight - 6
-            result[index].top = min(result[index].top, bottomLimit)
+        for index in posts.indices.reversed() {
+            // Follow the right edge upward when space is tight, never move a sign to the left.
+            let maxDepth = min(1, (0.5 - (posts[index].width / 2 + 3) / size.width - 0.035) / 0.365)
+            let bottom = roadPoint(depth: maxDepth, side: 1, size: size).y
+            var topLimit = min(size.height - 4, bottom) - posts[index].height
+            if index + 1 < posts.count {
+                topLimit = min(topLimit, posts[index + 1].top - posts[index].readableHeight - 6)
+            }
+            posts[index].top = min(posts[index].top, topLimit)
         }
-        for index in result.indices {
-            let base = result[index].top + result[index].height
-            let visualDepth = max(0, min(1, (base / size.height - 0.05) / 0.93))
-            let shoulder = roadPoint(depth: visualDepth, side: 1, size: size).x + size.width * 0.065
-            result[index].x = min(size.width - result[index].width / 2 - 3, shoulder)
+        for index in posts.indices {
+            let base = posts[index].top + posts[index].height
+            let visualDepth = (base / size.height - 0.04) / 0.92
+            posts[index].x = roadPoint(depth: visualDepth, side: 1, size: size).x
         }
-        return result
+        return posts
     }
 }
 
@@ -582,10 +529,9 @@ private struct DrivingRoadsideSign: View {
     var body: some View {
         ZStack(alignment: .top) {
             RoundedRectangle(cornerRadius: 2)
-                .fill(LinearGradient(colors: [Color(red: 0.48, green: 0.58, blue: 0.66), .white,
-                                              Color(red: 0.55, green: 0.63, blue: 0.70)],
-                                     startPoint: .leading, endPoint: .trailing))
-                .frame(width: max(3, placement.faceSize * 0.075), height: placement.height - placement.faceSize / 2)
+                .fill(LinearGradient(colors: [.white.opacity(0.85), DriveTheme.skyDeep.opacity(0.08)],
+                                     startPoint: .top, endPoint: .bottom))
+                .frame(width: 2, height: placement.height - placement.faceSize / 2)
                 .offset(y: placement.faceSize / 2)
             VStack(spacing: 2) {
                 DrivingSignSymbol(alert: placement.alert)
@@ -598,7 +544,7 @@ private struct DrivingRoadsideSign: View {
                     .minimumScaleFactor(0.8)
                     .padding(.horizontal, 4)
                     .frame(height: 15)
-                    .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 3))
+                    .background(.white.opacity(0.60), in: Capsule())
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -606,83 +552,6 @@ private struct DrivingRoadsideSign: View {
         .accessibilityLabel("\(placement.alert.message), sau \(drivingDistance(placement.alert.distanceMeters))")
         .accessibilitySortPriority(-placement.alert.distanceMeters)
         .allowsHitTesting(false)
-    }
-}
-
-private struct DrivingRoadSurface: View {
-    let speed: Int
-    let isAnimating: Bool
-    @State private var phaseOffset = 0.0
-    @State private var phaseDate = Date()
-    @State private var phaseRate = 0.0
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !isAnimating)) { timeline in
-            let phase = phaseOffset + max(0, timeline.date.timeIntervalSince(phaseDate)) * phaseRate
-            Canvas { context, size in
-                let h = size.height
-                var road = Path()
-                road.move(to: DrivingRoadsideLayout.roadPoint(depth: 0, side: -1, size: size))
-                road.addLine(to: DrivingRoadsideLayout.roadPoint(depth: 0, side: 1, size: size))
-                road.addLine(to: DrivingRoadsideLayout.roadPoint(depth: 1.1, side: 1, size: size))
-                road.addLine(to: DrivingRoadsideLayout.roadPoint(depth: 1.1, side: -1, size: size))
-                road.closeSubpath()
-                context.fill(road, with: .linearGradient(
-                    Gradient(colors: [.white.opacity(0), Color(red: 0.73, green: 0.83, blue: 0.90).opacity(0.52)]),
-                    startPoint: CGPoint(x: 0, y: h * 0.05), endPoint: CGPoint(x: 0, y: h)
-                ))
-                for side in [-1.0, 1.0] {
-                    var edge = Path()
-                    edge.move(to: DrivingRoadsideLayout.roadPoint(depth: 0, side: side, size: size))
-                    edge.addLine(to: DrivingRoadsideLayout.roadPoint(depth: 1.1, side: side, size: size))
-                    context.stroke(edge, with: .color(.white.opacity(0.70)), lineWidth: 2)
-                    for index in 0..<10 {
-                        let t = (Double(index) / 10 + phase).truncatingRemainder(dividingBy: 1)
-                        let near = pow(t, 1.7)
-                        let far = pow(max(0, t - 0.036), 1.7)
-                        var dash = Path()
-                        dash.move(to: DrivingRoadsideLayout.roadPoint(depth: far, side: side * 0.64, size: size))
-                        dash.addLine(to: DrivingRoadsideLayout.roadPoint(depth: near, side: side * 0.64, size: size))
-                        context.stroke(dash, with: .color(DriveTheme.skyDeep.opacity(0.10 * t)), style: StrokeStyle(lineWidth: 3 + near * 5, lineCap: .round))
-                        context.stroke(dash, with: .color(.white.opacity(0.95 * t)), style: StrokeStyle(lineWidth: 1.5 + near * 4, lineCap: .round))
-                    }
-                }
-            }
-        }
-        .onAppear { updateRate() }
-        .onChange(of: speed) { _, _ in updateRate() }
-        .onChange(of: isAnimating) { _, _ in updateRate() }
-        .mask(LinearGradient(stops: [.init(color: .black, location: 0),
-                                     .init(color: .black, location: 0.88),
-                                     .init(color: .clear, location: 1)],
-                             startPoint: .top, endPoint: .bottom))
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    /// Integrate the old rate first, so speed changes do not jump the road markings.
-    private func updateRate() {
-        let now = Date()
-        phaseOffset = (phaseOffset + now.timeIntervalSince(phaseDate) * phaseRate).truncatingRemainder(dividingBy: 1)
-        phaseDate = now
-        phaseRate = isAnimating ? Double(max(0, min(speed, 160))) / 3.6 / 70 : 0
-    }
-}
-
-private struct DrivingMazdaCar: View {
-    let isAnimating: Bool
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !isAnimating)) { timeline in
-            Image("DrivingMazdaCX5Rear")
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .offset(y: isAnimating ? sin(timeline.date.timeIntervalSinceReferenceDate * 9) * 1.2 : 0)
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Mazda CX-5 màu trắng, biển số 86A 26427")
     }
 }
 
@@ -711,9 +580,9 @@ private struct DrivingCockpitPreview: View {
             DriveAlert(id: 3, kind: .speedLimit, speedLimit: 50, latitude: 10.7769 + 800.0 / 111_195, longitude: 106.7009, message: "Giới hạn 50 km/h", province: "", distanceMeters: abs(800 - travelledMeters), assetName: TrafficSignCatalog.assetName(for: TrafficSignCatalog.speedCode(50)))
         ] : []
         return DrivingCockpit(
-            snapshot: snapshot, alerts: alerts, gpsQuality: hasGPS ? .excellent : .unavailable,
+            snapshot: snapshot, preparedScene: .empty, alerts: alerts, gpsQuality: hasGPS ? .excellent : .unavailable,
             accuracyMeters: hasGPS ? 5 : nil, isGuiding: false, isReplay: false, voiceEnabled: true,
-            showsMascot: showsMascot, animateRoad: animateRoad, onSearch: {}, onSettings: {}, onToggleVoice: {}
+            showsMascot: showsMascot, animateRoad: animateRoad, onSearch: {}, onSettings: {}, onDemo: {}, onToggleVoice: {}
         )
     }
 }

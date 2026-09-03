@@ -25,7 +25,7 @@ with data_pipeline/normalize.py after changing recovered source data.
 - SQLite read-only cho dữ liệu cảnh báo offline.
 - Photon cho tìm kiếm địa điểm; Valhalla ưu tiên cho tuyến ô tô, OSRM dự phòng.
 - Cache response tìm kiếm/tuyến và MapLibre ambient tile cache 150 MB.
-- CoreLocation và AVSpeechSynthesizer. BLE đang bị loại khỏi target.
+- CoreLocation và bộ MP3 Adam thu sẵn. BLE đang bị loại khỏi target.
 
 Các endpoint development nằm trong `VietDrive/Support/Info.plist`:
 
@@ -95,12 +95,13 @@ chờ kiểm duyệt, không tự động xóa dữ liệu đang phát hành.
 
 ## Voice
 
-App dùng bộ **Adam · Nam miền Nam** do chủ dự án cung cấp, gồm 75 MP3 tại
+App dùng bộ **Adam · Nam miền Nam** do chủ dự án cung cấp, gồm 107 MP3 tại
 `VietDrive/Resources/VoicePacks/south_male_adam`. Bộ này thay thế toàn bộ bộ nữ
 miền Nam cũ. `VoicePrompts/manifest.json` ánh xạ các câu chỉ đường, camera,
-tốc độ và đổi tuyến; câu chưa có file được đọc bằng TTS tiếng Việt của iOS.
-Camera đo tốc độ theo đoạn dùng TTS vì `camera_ai.mp3` của bộ Adam nói về
-camera tốc độ và đèn tín hiệu, chỉ phù hợp với `alert.camera.dual`.
+tốc độ, biển báo và đổi tuyến. App chỉ phát file Adam, không dùng TTS của iOS;
+các dữ liệu động ngoài danh mục dùng file Adam tổng quát tương ứng.
+Camera đo tốc độ theo đoạn có file riêng; `camera_ai.mp3` chỉ dành cho
+camera tốc độ kết hợp đèn tín hiệu (`alert.camera.dual`).
 Quy tắc cấm rẽ suy luận (`turnRestriction`) không phát voice; biển vật lý hợp lệ
 vẫn đi qua luồng cảnh báo. Chi tiết file, checksum và mapping ở
 `VietDrive/Resources/VoicePrompts/README.md`. Xác nhận quyền sử dụng/phân phối
@@ -115,6 +116,33 @@ sau khi kiểm tra kích thước, SHA-256 và `PRAGMA integrity_check`; bản t
 giữ lại để rollback.
 
 ## Chẩn đoán và phát lại GPS
+
+Chế độ lái xe dùng một đường thẳng minh hoạ bằng nét trắng mờ. Ngã ba/ngã tư,
+cầu/hầm và trạm thu phí chỉ xuất hiện khi có dữ liệu phù hợp phía trước; hình
+đường không uốn theo bản đồ. Hai làn rộng bằng nhau: Mazda và xe cùng chiều
+ở làn phải, xe ngược chiều giả lập ở làn trái; mọi biển báo chỉ ở lề phải.
+Người đi bộ ở ngoài mép đường. Đây không phải giao thông
+được cảm biến phát hiện. Xem [thiết kế cảnh lái xe](../docs/driving-scene-assets.md).
+
+### Chạy thử tuyến không cần bản ghi GPS
+
+Trong **Chế độ lái xe → Chạy thử**, bấm **Sài Gòn → Phan Thiết** để chạy ngay
+tuyến ~168 km có sẵn trong app, không gọi API route và không cần mạng.
+Có thể nhảy đến các mốc 0/25/50/75/95% trong bảng điều khiển DEMO.
+Hoặc chọn tuyến riêng rồi bấm **Bắt đầu chạy thử**.
+Cũng có nút ▶ ở thẻ xem trước tuyến trên bản đồ. Chọn điểm xuất phát thủ công
+nếu chưa có GPS thật. DEMO chạy dọc hình học của tuyến đã chọn với tốc độ
+10–120 km/h; thanh DEMO cho phép đổi tốc độ, tạm dừng, tiếp tục, chạy lại và thoát.
+
+Chế độ này chỉ dùng khi đang dừng xe. GPS thật tạm ngừng; app dùng một phiên
+matcher riêng để mẫu giả không ảnh hưởng lịch sử bám đường thật. Cảnh báo/voice
+vẫn lấy từ database và engine hiện có, không tạo biển báo giả. Không ghi trace,
+không lưu phiên dẫn đường giả và không phát dữ liệu DEMO lên Watch/CarPlay/Live
+Activity. App tự tạm dừng khi mất trạng thái active; bấm tiếp tục để chạy lại.
+Thoát DEMO xóa trạng thái mô phỏng, loại kết quả truy vấn đang chờ của nguồn cũ
+và trở về GPS thật. Đây không phải phép thử khả năng GPS chạy nền.
+
+### Phát lại bản ghi thật
 
 Khi dẫn đường thật, app mặc định ghi GPS cục bộ và checkpoint mỗi 10 mẫu; giữ tối
 đa 10 hành trình. Trong Settings > Chẩn đoán có thể chọn một tuyến A → B, phát lại

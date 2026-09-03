@@ -58,7 +58,7 @@ struct RecordedVoiceCatalog {
     }
 }
 
-final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesizerDelegate {
+final class VoiceAlertService: NSObject, AVAudioPlayerDelegate {
     private enum PromptPriority: Int {
         case preview = 10
         case information = 30
@@ -71,15 +71,13 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     private struct PendingPrompt {
         let id: String
         let group: String
-        let recordedKey: String?
+        let recordedKey: String
         let fallbackText: String
         let priority: PromptPriority
         let expiresAt: Date
         let sequence: Int
     }
 
-    private let synthesizer = AVSpeechSynthesizer()
-    private let voice: AVSpeechSynthesisVoice?
     private let recordedCatalog = RecordedVoiceCatalog()
     private var audioPlayer: AVAudioPlayer?
     private var activePrompt: PendingPrompt?
@@ -110,18 +108,11 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         if let recordedCatalog {
             return "\(recordedCatalog.manifest.voiceName) · MP3"
         }
-        guard let voice else { return "Giọng tiếng Việt mặc định" }
-        switch voice.quality {
-        case .premium: return "\(voice.name) · Premium"
-        case .enhanced: return "\(voice.name) · Nâng cao"
-        default: return "\(voice.name) · Mặc định"
-        }
+        return "Bộ voice Adam chưa sẵn sàng"
     }
 
     override init() {
-        voice = Self.bestVietnameseVoice()
         super.init()
-        synthesizer.delegate = self
         configureAudioSession()
         interruptionObserver = NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
@@ -221,7 +212,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
 
         let distance = naturalDistance(alert.distanceMeters)
         let message: String
-        let recordedKey: String?
+        let recordedKey: String
 
         if let announcement = TrafficSignCatalog.voiceAnnouncement(
             for: alert,
@@ -230,7 +221,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
             recordedKey = announcement.promptKey
             message = announcement.message
         } else if alert.speedLimit > 0 {
-            recordedKey = speedPromptKey(limit: alert.speedLimit)
+            recordedKey = Self.speedPromptKey(limit: alert.speedLimit)
             message = alert.kind == .camera
                 ? "Phía trước \(distance) có camera tốc độ \(alert.speedLimit) ki lô mét một giờ."
                 : "Phía trước \(distance), giới hạn tốc độ \(alert.speedLimit) ki lô mét một giờ."
@@ -238,10 +229,10 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
             recordedKey = "alert.camera"
             message = "Phía trước \(distance) có camera giám sát."
         } else if alert.isRoadRuleDerived && alert.distanceMeters < 80 {
-            recordedKey = nil
+            recordedKey = "alert.generic"
             message = "Đoạn đường hiện tại, \(alert.message.lowercased())."
         } else {
-            recordedKey = nil
+            recordedKey = "alert.generic"
             message = "Phía trước \(distance), \(alert.message.lowercased())."
         }
         if enqueue(
@@ -266,7 +257,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         guard lastSpokenNextSpeed != limit || now.timeIntervalSince(lastSpokenNextSpeedAt) > 45 else { return }
 
         let distance = naturalDistance(distanceMeters)
-        let key = "speed.next.\(limit)"
+        let key = Self.speedPromptKey(limit: limit)
         let fallback = "Phía trước \(distance), sắp đến đoạn đường giới hạn tốc độ \(limit) ki lô mét một giờ."
 
         if enqueue(
@@ -391,22 +382,22 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         audioPlayer?.delegate = nil
         audioPlayer?.stop()
         audioPlayer = nil
-        synthesizer.delegate = nil
-        synthesizer.stopSpeaking(at: .immediate)
-        synthesizer.delegate = self
         deactivateAudioSession()
     }
 
-    private func speedPromptKey(limit: Int) -> String? {
-        guard [30, 40, 50, 60, 70, 80, 90, 100, 120].contains(limit) else { return nil }
-        return "speed.next.\(limit)"
+    static func speedPromptKey(limit: Int) -> String {
+        [30, 40, 50, 60, 70, 80, 90, 100, 120].contains(limit)
+            ? "speed.next.\(limit)"
+            : "speed.generic"
     }
 
-    static func maneuverPromptKey(step: NavigationStep, stage: Int) -> String? {
+    static func maneuverPromptKey(step: NavigationStep, stage: Int) -> String {
         let timing = stage == 1 ? "300" : "now"
         let type = step.type.lowercased()
         if type.contains("roundabout") || type.contains("rotary") {
-            guard let exit = step.exitNumber, (1...9).contains(exit) else { return nil }
+            guard let exit = step.exitNumber, (1...9).contains(exit) else {
+                return "maneuver.generic"
+            }
             return "maneuver.\(timing).roundabout.\(exit)"
         }
         let modifier = step.modifier
@@ -416,7 +407,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         guard [
             "left", "right", "sharp_left", "sharp_right",
             "slight_left", "slight_right", "straight", "uturn"
-        ].contains(modifier) else { return nil }
+        ].contains(modifier) else { return "maneuver.generic" }
         return "maneuver.\(timing).\(modifier)"
     }
 
@@ -424,7 +415,7 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
     private func enqueue(
         id: String,
         group: String,
-        recordedKey: String?,
+        recordedKey: String,
         fallbackText: String,
         priority: PromptPriority,
         lifetime: TimeInterval,
@@ -482,29 +473,21 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         audioRetryWorkItem = nil
         consecutiveActivationFailures = 0
 
-        if let key = prompt.recordedKey,
-           let url = recordedCatalog?.url(for: key),
+        if let url = recordedCatalog?.url(for: prompt.recordedKey),
            let player = try? AVAudioPlayer(contentsOf: url) {
             player.delegate = self
             player.volume = 1
             player.prepareToPlay()
             audioPlayer = player
             if player.play() {
-                diagnose("MP3 \(recordedCatalog?.manifest.voiceName ?? "VietDrive") · \(key) · \(url.lastPathComponent)")
+                diagnose("MP3 \(recordedCatalog?.manifest.voiceName ?? "VietDrive") · \(prompt.recordedKey) · \(url.lastPathComponent)")
                 return
             }
             audioPlayer = nil
         }
 
-        let utterance = AVSpeechUtterance(string: prompt.fallbackText)
-        utterance.voice = voice
-        utterance.rate = 0.47
-        utterance.pitchMultiplier = 1.03
-        utterance.volume = 0.95
-        utterance.preUtteranceDelay = 0.08
-        utterance.postUtteranceDelay = 0.12
-        synthesizer.speak(utterance)
-        diagnose("TTS iOS · \(prompt.fallbackText)")
+        diagnose("Thiếu MP3 Adam · \(prompt.recordedKey) · \(prompt.fallbackText)")
+        finishActivePrompt()
     }
 
     private func cancelCurrentPlayback(requeue: Bool) {
@@ -515,9 +498,6 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         audioPlayer?.delegate = nil
         audioPlayer?.stop()
         audioPlayer = nil
-        synthesizer.delegate = nil
-        synthesizer.stopSpeaking(at: .immediate)
-        synthesizer.delegate = self
     }
 
     private func finishActivePrompt() {
@@ -558,15 +538,6 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         finishActivePrompt()
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        diagnose("TTS đã phát xong")
-        finishActivePrompt()
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        finishActivePrompt()
-    }
-
     private func naturalDistance(_ meters: Double) -> String {
         if meters >= 1_000 {
             let kilometers = (meters / 1_000 * 10).rounded() / 10
@@ -583,17 +554,6 @@ final class VoiceAlertService: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesi
         // branch in free-drive mode. Physical sign nodes (P103/P123/P124) do,
         // and should be announced like other audited road signs.
         alert.kind == .turnRestriction
-    }
-
-    private static func bestVietnameseVoice() -> AVSpeechSynthesisVoice? {
-        let candidates = AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.caseInsensitiveCompare("vi-VN") == .orderedSame }
-        return candidates.max { left, right in
-            if left.quality.rawValue != right.quality.rawValue {
-                return left.quality.rawValue < right.quality.rawValue
-            }
-            return left.name.localizedCaseInsensitiveCompare(right.name) == .orderedDescending
-        } ?? AVSpeechSynthesisVoice(language: "vi-VN")
     }
 
     private func configureAudioSession() {

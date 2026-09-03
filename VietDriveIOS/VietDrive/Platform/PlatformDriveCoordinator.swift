@@ -20,6 +20,7 @@ final class PlatformDriveCoordinator: ObservableObject {
 
     private let watchSender = WatchContextSender()
     private let liveActivity = LiveActivityCoordinator.shared
+    private var routeDemoActive = false
 
     private init() {}
 
@@ -32,6 +33,7 @@ final class PlatformDriveCoordinator: ObservableObject {
         remainingDistanceMeters: Double,
         remainingDurationSeconds: Double
     ) {
+        guard !routeDemoActive else { return }
         self.snapshot = snapshot
         self.alerts = alerts
         self.roads = roads
@@ -51,7 +53,29 @@ final class PlatformDriveCoordinator: ObservableObject {
     }
 
     func setDriveSessionActive(_ active: Bool) {
-        liveActivity.setDriveSessionActive(active)
+        liveActivity.setDriveSessionActive(active && !routeDemoActive)
+    }
+
+    /// Demo is local to iPhone; never send synthetic speeds/signs as live companion data.
+    func setRouteDemoActive(_ active: Bool) {
+        routeDemoActive = active
+        if active {
+            liveActivity.setDriveSessionActive(false)
+            var placeholder = DriveSnapshot()
+            placeholder.roadName = "DEMO đang chạy trên iPhone"
+            snapshot = placeholder
+            alerts = []
+            roads = []
+            destinationCoordinate = nil
+            destinationName = nil
+            isNavigating = false
+            remainingDistanceMeters = 0
+            remainingDurationSeconds = 0
+            companionState = Self.makeCompanionState(snapshot: placeholder, isNavigating: false)
+            watchSender.send(companionState)
+        } else {
+            liveActivity.setDriveSessionActive(true)
+        }
     }
 
     func refreshLiveActivityPreference() {

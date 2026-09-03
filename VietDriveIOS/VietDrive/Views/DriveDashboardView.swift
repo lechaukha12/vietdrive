@@ -6,6 +6,8 @@ struct DriveDashboardView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var showLayers = false
     @State private var showSearch = false
+    @State private var showDemo = false
+    @State private var chooseRouteAfterDemo = false
     @State private var showSettings = ProcessInfo.processInfo.arguments.contains("--settings-screen")
     @State private var selectedAlert: DriveAlert?
     @AppStorage("showMascotOnMap") private var showMascotOnMap = true
@@ -18,7 +20,8 @@ struct DriveDashboardView: View {
             if drivingModeEnabled {
                 DrivingModeView(
                     onSearch: { showSearch = true },
-                    onSettings: { showSettings = true }
+                    onSettings: { showSettings = true },
+                    onDemo: { showDemo = true }
                 )
                 .environmentObject(model)
             } else {
@@ -115,6 +118,12 @@ struct DriveDashboardView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if model.isRouteDemoActive {
+                DrivingDemoStatusBar(onOpenControls: { showDemo = true })
+                    .environmentObject(model)
+            }
+        }
         .animation(.snappy(duration: 0.35), value: model.countdownBannerAlert?.id)
         .preferredColorScheme(dashboardColorScheme)
         .task {
@@ -129,6 +138,16 @@ struct DriveDashboardView: View {
         .sheet(isPresented: $showSearch) {
             DestinationSearchView()
                 .environmentObject(model)
+        }
+        .sheet(isPresented: $showDemo, onDismiss: {
+            if chooseRouteAfterDemo { chooseRouteAfterDemo = false; showSearch = true }
+        }) {
+            DrivingDemoView(onChooseRoute: {
+                if model.isRouteDemoActive { model.stopRouteDemo() }
+                chooseRouteAfterDemo = true
+                showDemo = false
+            })
+            .environmentObject(model)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -744,6 +763,7 @@ private struct FreeDriveHUD: View {
     }
 
     private var areaText: String {
+        if model.isRouteDemoActive { return "DEMO · Vị trí đang mô phỏng" }
         if model.snapshot.isDemo { return "Đang phát lại hành trình GPS" }
         return model.snapshot.province.isEmpty ? "Đang xác định khu vực" : model.snapshot.province
     }
@@ -957,6 +977,7 @@ private struct RoutePlanningCard: View {
 
 private struct RoutePreviewCard: View {
     @EnvironmentObject private var model: DriveViewModel
+    @State private var showDemo = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -1036,6 +1057,12 @@ private struct RoutePreviewCard: View {
             HStack(spacing: 10) {
                 Button("Hủy", role: .cancel) { model.cancelRoute() }
                     .buttonStyle(.bordered)
+                Button { showDemo = true } label: {
+                    Image(systemName: "play.circle")
+                        .frame(minWidth: 24, minHeight: 24)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Chạy thử tuyến đường")
                 Button { model.startNavigation() } label: {
                     Label("Bắt đầu dẫn đường", systemImage: "location.fill")
                         .frame(maxWidth: .infinity)
@@ -1053,6 +1080,9 @@ private struct RoutePreviewCard: View {
         }
         .padding(16)
         .glassPanel(cornerRadius: 26)
+        .sheet(isPresented: $showDemo) {
+            DrivingDemoView().environmentObject(model)
+        }
     }
 
     private static func durationText(_ seconds: Double) -> String {

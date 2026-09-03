@@ -7,6 +7,48 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DC0000000000000000000051 /* FixedDemoRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000041 /* FixedDemoRoute.swift */; };
+		DC0000000000000000000052 /* saigon-phanthiet.json in Resources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000042 /* saigon-phanthiet.json */; };
+		DC0000000000000000000053 /* FixedDemoRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000043 /* FixedDemoRouteTests.swift */; };
+		DC0000000000000000000021 /* RouteDemoPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000031 /* RouteDemoPlayback.swift */; };
+		DC0000000000000000000022 /* DrivingDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000032 /* DrivingDemoView.swift */; };
+		DC0000000000000000000023 /* RouteDemoPlaybackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000033 /* RouteDemoPlaybackTests.swift */; };
+		DC0000000000000000000011 /* DrivingScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000001 /* DrivingScene.swift */; };
+		DC0000000000000000000012 /* DrivingSceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000002 /* DrivingSceneStore.swift */; };
+		DC0000000000000000000013 /* DrivingSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000003 /* DrivingSceneView.swift */; };
+		DC0000000000000000000014 /* DrivingSceneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000000000000000000004 /* DrivingSceneTests.swift */; };
+		AE0000000000000000000001 /* preview.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000001 /* preview.mp3 */; };
+		AE0000000000000000000002 /* camera_section.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000002 /* camera_section.mp3 */; };
+		AE0000000000000000000003 /* generic_alert.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000003 /* generic_alert.mp3 */; };
+		AE0000000000000000000004 /* generic_speed_limit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000004 /* generic_speed_limit.mp3 */; };
+		AE0000000000000000000005 /* generic_navigation.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000005 /* generic_navigation.mp3 */; };
+		AE0000000000000000000006 /* sign_P101.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000006 /* sign_P101.mp3 */; };
+		AE0000000000000000000007 /* sign_P102.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000007 /* sign_P102.mp3 */; };
+		AE0000000000000000000008 /* sign_P103a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000008 /* sign_P103a.mp3 */; };
+		AE0000000000000000000009 /* sign_P103c.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000009 /* sign_P103c.mp3 */; };
+		AE0000000000000000000010 /* sign_P105.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000010 /* sign_P105.mp3 */; };
+		AE0000000000000000000011 /* sign_P122.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000011 /* sign_P122.mp3 */; };
+		AE0000000000000000000012 /* sign_P123a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000012 /* sign_P123a.mp3 */; };
+		AE0000000000000000000013 /* sign_P123b.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000013 /* sign_P123b.mp3 */; };
+		AE0000000000000000000014 /* sign_P123c.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000014 /* sign_P123c.mp3 */; };
+		AE0000000000000000000015 /* sign_P124a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000015 /* sign_P124a.mp3 */; };
+		AE0000000000000000000016 /* sign_P124b.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000016 /* sign_P124b.mp3 */; };
+		AE0000000000000000000017 /* sign_P130.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000017 /* sign_P130.mp3 */; };
+		AE0000000000000000000018 /* sign_P131a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000018 /* sign_P131a.mp3 */; };
+		AE0000000000000000000019 /* sign_P131b.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000019 /* sign_P131b.mp3 */; };
+		AE0000000000000000000020 /* sign_P131c.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000020 /* sign_P131c.mp3 */; };
+		AE0000000000000000000021 /* sign_R301a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000021 /* sign_R301a.mp3 */; };
+		AE0000000000000000000022 /* sign_R301b.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000022 /* sign_R301b.mp3 */; };
+		AE0000000000000000000023 /* sign_R301c.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000023 /* sign_R301c.mp3 */; };
+		AE0000000000000000000024 /* sign_R301d.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000024 /* sign_R301d.mp3 */; };
+		AE0000000000000000000025 /* sign_R301e.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000025 /* sign_R301e.mp3 */; };
+		AE0000000000000000000026 /* sign_R301f.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000026 /* sign_R301f.mp3 */; };
+		AE0000000000000000000027 /* sign_R302a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000027 /* sign_R302a.mp3 */; };
+		AE0000000000000000000028 /* sign_W208.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000028 /* sign_W208.mp3 */; };
+		AE0000000000000000000029 /* sign_W224.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000029 /* sign_W224.mp3 */; };
+		AE0000000000000000000030 /* sign_W225.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000030 /* sign_W225.mp3 */; };
+		AE0000000000000000000031 /* sign_W245a.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000031 /* sign_W245a.mp3 */; };
+		AE0000000000000000000032 /* sign_I437.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AD0000000000000000000032 /* sign_I437.mp3 */; };
 		DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */; };
 		01FBBAE066C6CB77E4376B9F /* gps_signal_lost.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 34C0E39A837D64BA31E3C4AB /* gps_signal_lost.mp3 */; };
 		02B692456DFBB6D1B7519980 /* gps_signal_found.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C93BC792A7F07FC711C542B8 /* gps_signal_found.mp3 */; };
@@ -199,6 +241,48 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DC0000000000000000000041 /* FixedDemoRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedDemoRoute.swift; sourceTree = "<group>"; };
+		DC0000000000000000000042 /* saigon-phanthiet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Demo/saigon-phanthiet.json"; sourceTree = "<group>"; };
+		DC0000000000000000000043 /* FixedDemoRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedDemoRouteTests.swift; sourceTree = "<group>"; };
+		DC0000000000000000000031 /* RouteDemoPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDemoPlayback.swift; sourceTree = "<group>"; };
+		DC0000000000000000000032 /* DrivingDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingDemoView.swift; sourceTree = "<group>"; };
+		DC0000000000000000000033 /* RouteDemoPlaybackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDemoPlaybackTests.swift; sourceTree = "<group>"; };
+		DC0000000000000000000001 /* DrivingScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingScene.swift; sourceTree = "<group>"; };
+		DC0000000000000000000002 /* DrivingSceneStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingSceneStore.swift; sourceTree = "<group>"; };
+		DC0000000000000000000003 /* DrivingSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingSceneView.swift; sourceTree = "<group>"; };
+		DC0000000000000000000004 /* DrivingSceneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingSceneTests.swift; sourceTree = "<group>"; };
+		AD0000000000000000000001 /* preview.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = preview.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000002 /* camera_section.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = camera_section.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000003 /* generic_alert.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = generic_alert.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000004 /* generic_speed_limit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = generic_speed_limit.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000005 /* generic_navigation.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = generic_navigation.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000006 /* sign_P101.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P101.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000007 /* sign_P102.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P102.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000008 /* sign_P103a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P103a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000009 /* sign_P103c.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P103c.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000010 /* sign_P105.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P105.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000011 /* sign_P122.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P122.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000012 /* sign_P123a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P123a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000013 /* sign_P123b.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P123b.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000014 /* sign_P123c.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P123c.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000015 /* sign_P124a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P124a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000016 /* sign_P124b.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P124b.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000017 /* sign_P130.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P130.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000018 /* sign_P131a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P131a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000019 /* sign_P131b.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P131b.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000020 /* sign_P131c.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_P131c.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000021 /* sign_R301a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000022 /* sign_R301b.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301b.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000023 /* sign_R301c.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301c.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000024 /* sign_R301d.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301d.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000025 /* sign_R301e.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301e.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000026 /* sign_R301f.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R301f.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000027 /* sign_R302a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_R302a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000028 /* sign_W208.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_W208.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000029 /* sign_W224.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_W224.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000030 /* sign_W225.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_W225.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000031 /* sign_W245a.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_W245a.mp3; sourceTree = "<group>"; };
+		AD0000000000000000000032 /* sign_I437.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = sign_I437.mp3; sourceTree = "<group>"; };
 		DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingRoadsidePresentationTests.swift; sourceTree = "<group>"; };
 		005232845C943AE36B4B6A6F /* next_speed_60.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_60.mp3; sourceTree = "<group>"; };
 		01B6DB0AEF165A276A924E8A /* next_speed_120.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = next_speed_120.mp3; sourceTree = "<group>"; };
@@ -360,6 +444,7 @@
 				078E5FC3F125000C257C0B1A /* CommunityImportParser.swift */,
 				BF6EEF36BA745BB3F4DA4E57 /* ConditionalRuleEvaluator.swift */,
 				D5B6AA2A95AC35F4EB0AC173 /* DriveTraceStore.swift */,
+				DC0000000000000000000002 /* DrivingSceneStore.swift */,
 				75A1C8A032C6C84C8A2A635E /* LocationService.swift */,
 				8E1B3151F145C9B10EB9FB59 /* MapDataIssueStore.swift */,
 				0B80F01997377BDCF33E54C3 /* MapDataUpdateService.swift */,
@@ -414,6 +499,9 @@
 			children = (
 				DD997E12F042C0E2ED831526 /* CommunityContribution.swift */,
 				665EF9810DD5F8898A74B82B /* DriveModels.swift */,
+				DC0000000000000000000001 /* DrivingScene.swift */,
+				DC0000000000000000000031 /* RouteDemoPlayback.swift */,
+				DC0000000000000000000041 /* FixedDemoRoute.swift */,
 				BB9A7EBBB0F9DEB1F867EB76 /* NavigationModels.swift */,
 			);
 			path = Models;
@@ -445,6 +533,7 @@
 		6B8C826A305C91F0EB9A09F0 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DC0000000000000000000042 /* saigon-phanthiet.json */,
 				FC3467B5B3FBC5FF486554F6 /* Assets.xcassets */,
 				EFB5BCFC586D9004E062F43E /* PrivacyInfo.xcprivacy */,
 				A137781CB8785A6DFA327F2B /* VoicePacks */,
@@ -523,6 +612,8 @@
 				FA27B0FABC65726F3E66DE9D /* DriveDashboardView.swift */,
 				C51C9FC280DF37299DAB7D2C /* DriveDiagnosticsView.swift */,
 				3994AD2596984C2944DE0329 /* DrivingModeView.swift */,
+				DC0000000000000000000003 /* DrivingSceneView.swift */,
+				DC0000000000000000000032 /* DrivingDemoView.swift */,
 				DCAAC75F8A45D2197B261487 /* LoginView.swift */,
 				3119761D74686B55C2D3B5E3 /* MascotMayView.swift */,
 				E2D1C6D933F4CA5DEB7AD1C5 /* OnboardingView.swift */,
@@ -575,6 +666,9 @@
 				63FB2ABE42748D6E5B46D460 /* OpenMapServiceTests.swift */,
 				5CF560F3DDD02E42F1526098 /* PlatformDriveCoordinatorTests.swift */,
 				DD028A9000114422AABBCC02 /* DrivingRoadsidePresentationTests.swift */,
+				DC0000000000000000000004 /* DrivingSceneTests.swift */,
+				DC0000000000000000000033 /* RouteDemoPlaybackTests.swift */,
+				DC0000000000000000000043 /* FixedDemoRouteTests.swift */,
 				68AEC2212DB0996E45BDDA7E /* RouteProgressEngineTests.swift */,
 				5D966FFDF03666D52351F8C4 /* VoiceAlertServiceTests.swift */,
 			);
@@ -603,6 +697,38 @@
 		EA44C10C7F2315CBCB509353 /* south_male_adam */ = {
 			isa = PBXGroup;
 			children = (
+				AD0000000000000000000001 /* preview.mp3 */,
+				AD0000000000000000000002 /* camera_section.mp3 */,
+				AD0000000000000000000003 /* generic_alert.mp3 */,
+				AD0000000000000000000004 /* generic_speed_limit.mp3 */,
+				AD0000000000000000000005 /* generic_navigation.mp3 */,
+				AD0000000000000000000006 /* sign_P101.mp3 */,
+				AD0000000000000000000007 /* sign_P102.mp3 */,
+				AD0000000000000000000008 /* sign_P103a.mp3 */,
+				AD0000000000000000000009 /* sign_P103c.mp3 */,
+				AD0000000000000000000010 /* sign_P105.mp3 */,
+				AD0000000000000000000011 /* sign_P122.mp3 */,
+				AD0000000000000000000012 /* sign_P123a.mp3 */,
+				AD0000000000000000000013 /* sign_P123b.mp3 */,
+				AD0000000000000000000014 /* sign_P123c.mp3 */,
+				AD0000000000000000000015 /* sign_P124a.mp3 */,
+				AD0000000000000000000016 /* sign_P124b.mp3 */,
+				AD0000000000000000000017 /* sign_P130.mp3 */,
+				AD0000000000000000000018 /* sign_P131a.mp3 */,
+				AD0000000000000000000019 /* sign_P131b.mp3 */,
+				AD0000000000000000000020 /* sign_P131c.mp3 */,
+				AD0000000000000000000021 /* sign_R301a.mp3 */,
+				AD0000000000000000000022 /* sign_R301b.mp3 */,
+				AD0000000000000000000023 /* sign_R301c.mp3 */,
+				AD0000000000000000000024 /* sign_R301d.mp3 */,
+				AD0000000000000000000025 /* sign_R301e.mp3 */,
+				AD0000000000000000000026 /* sign_R301f.mp3 */,
+				AD0000000000000000000027 /* sign_R302a.mp3 */,
+				AD0000000000000000000028 /* sign_W208.mp3 */,
+				AD0000000000000000000029 /* sign_W224.mp3 */,
+				AD0000000000000000000030 /* sign_W225.mp3 */,
+				AD0000000000000000000031 /* sign_W245a.mp3 */,
+				AD0000000000000000000032 /* sign_I437.mp3 */,
 				1D43A647476155C5CC9509DE /* 300_roundabout_1_exit.mp3 */,
 				45004A54AF6DC7BD1275CFB2 /* 300_roundabout_2_exit.mp3 */,
 				63719D9DFED4C7E31AE82065 /* 300_roundabout_3_exit.mp3 */,
@@ -821,6 +947,39 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC0000000000000000000052 /* saigon-phanthiet.json in Resources */,
+				AE0000000000000000000001 /* preview.mp3 in Resources */,
+				AE0000000000000000000002 /* camera_section.mp3 in Resources */,
+				AE0000000000000000000003 /* generic_alert.mp3 in Resources */,
+				AE0000000000000000000004 /* generic_speed_limit.mp3 in Resources */,
+				AE0000000000000000000005 /* generic_navigation.mp3 in Resources */,
+				AE0000000000000000000006 /* sign_P101.mp3 in Resources */,
+				AE0000000000000000000007 /* sign_P102.mp3 in Resources */,
+				AE0000000000000000000008 /* sign_P103a.mp3 in Resources */,
+				AE0000000000000000000009 /* sign_P103c.mp3 in Resources */,
+				AE0000000000000000000010 /* sign_P105.mp3 in Resources */,
+				AE0000000000000000000011 /* sign_P122.mp3 in Resources */,
+				AE0000000000000000000012 /* sign_P123a.mp3 in Resources */,
+				AE0000000000000000000013 /* sign_P123b.mp3 in Resources */,
+				AE0000000000000000000014 /* sign_P123c.mp3 in Resources */,
+				AE0000000000000000000015 /* sign_P124a.mp3 in Resources */,
+				AE0000000000000000000016 /* sign_P124b.mp3 in Resources */,
+				AE0000000000000000000017 /* sign_P130.mp3 in Resources */,
+				AE0000000000000000000018 /* sign_P131a.mp3 in Resources */,
+				AE0000000000000000000019 /* sign_P131b.mp3 in Resources */,
+				AE0000000000000000000020 /* sign_P131c.mp3 in Resources */,
+				AE0000000000000000000021 /* sign_R301a.mp3 in Resources */,
+				AE0000000000000000000022 /* sign_R301b.mp3 in Resources */,
+				AE0000000000000000000023 /* sign_R301c.mp3 in Resources */,
+				AE0000000000000000000024 /* sign_R301d.mp3 in Resources */,
+				AE0000000000000000000025 /* sign_R301e.mp3 in Resources */,
+				AE0000000000000000000026 /* sign_R301f.mp3 in Resources */,
+				AE0000000000000000000027 /* sign_R302a.mp3 in Resources */,
+				AE0000000000000000000028 /* sign_W208.mp3 in Resources */,
+				AE0000000000000000000029 /* sign_W224.mp3 in Resources */,
+				AE0000000000000000000030 /* sign_W225.mp3 in Resources */,
+				AE0000000000000000000031 /* sign_W245a.mp3 in Resources */,
+				AE0000000000000000000032 /* sign_I437.mp3 in Resources */,
 				3442D41CF5F45AB2EA80BF05 /* 300_roundabout_1_exit.mp3 in Resources */,
 				E1EEA6EB3A8C58507EB1AE0F /* 300_roundabout_2_exit.mp3 in Resources */,
 				F0D39C1B7ECDEC5147A08895 /* 300_roundabout_3_exit.mp3 in Resources */,
@@ -947,6 +1106,9 @@
 				E60C21A307596BBC85667E4C /* OpenMapServiceTests.swift in Sources */,
 				070EA3397108B138AF548A7E /* PlatformDriveCoordinatorTests.swift in Sources */,
 				DD028A9000114422AABBCC01 /* DrivingRoadsidePresentationTests.swift in Sources */,
+				DC0000000000000000000014 /* DrivingSceneTests.swift in Sources */,
+				DC0000000000000000000023 /* RouteDemoPlaybackTests.swift in Sources */,
+				DC0000000000000000000053 /* FixedDemoRouteTests.swift in Sources */,
 				2F08E3640F8777386A9186BF /* RouteProgressEngineTests.swift in Sources */,
 				157AE3111F9365CA37142B4E /* VoiceAlertServiceTests.swift in Sources */,
 			);
@@ -972,6 +1134,12 @@
 				129AFBCEE7A72A1A65AE7F50 /* DriveTraceStore.swift in Sources */,
 				C2317119A635150450A063D1 /* DriveViewModel.swift in Sources */,
 				F9E4D71277CCCD5107A7603D /* DrivingModeView.swift in Sources */,
+				DC0000000000000000000011 /* DrivingScene.swift in Sources */,
+				DC0000000000000000000012 /* DrivingSceneStore.swift in Sources */,
+				DC0000000000000000000013 /* DrivingSceneView.swift in Sources */,
+				DC0000000000000000000021 /* RouteDemoPlayback.swift in Sources */,
+				DC0000000000000000000051 /* FixedDemoRoute.swift in Sources */,
+				DC0000000000000000000022 /* DrivingDemoView.swift in Sources */,
 				51CF1D9ED468EAB7D0740CC1 /* LiveActivityCoordinator.swift in Sources */,
 				703596EC96F7B87875308C31 /* LocationService.swift in Sources */,
 				7515BDE96FF54AAE6CAACD99 /* LoginView.swift in Sources */,
