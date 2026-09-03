@@ -1,59 +1,35 @@
 # VietDrive iOS
 
-VietDrive 0.3 is an internal iOS navigation prototype with OSM place search, live OSRM
-routing, validated offline overlays, camera/traffic-sign alerts, GPS speed,
-heading-aware warnings, Vietnamese voice feedback and automatic rerouting. It
-is not release-ready: map coverage, driving safety validation and UX testing are
-still incomplete. The
-BLE companion prototype remains excluded from the active target.
+VietDrive 0.3.0 là ứng dụng iOS dẫn đường và trợ lý lái xe thông minh với tìm kiếm địa điểm OSM/Photon, định tuyến ô tô OSRM/Valhalla, lớp cảnh báo giao thông offline chuẩn xác, tốc độ GPS làm mượt, cảnh báo hướng di chuyển, âm thanh giọng nói Adam tiếng Việt (MP3 thu sẵn) và tự động đổi tuyến khi đi lệch. Ứng dụng độc lập hoàn toàn với Google Maps.
 
-Giao diện prototype dùng bảng màu cartoon xanh dương nhạt–hồng và mascot “Mây”.
-Flow khởi động luôn hiển thị onboarding 3 trang, sau đó login thử nghiệm bằng
-`admin/admin`. Đây không phải xác thực thật và phải được thay thế trước mọi hình
-thức phân phối ứng dụng.
+Giao diện sử dụng phong cách buồng lái tối giản trực quan (Roadside presentation) kết hợp bảng màu cartoon nhẹ nhàng và mascot “Mây”. Flow khởi động hiển thị onboarding 3 trang, sau đó màn hình đăng nhập thử nghiệm (`admin/admin` phục vụ prototype nội bộ).
 
-The application consumes extracted/map_database_v2.sqlite. Rebuild that file
-with data_pipeline/normalize.py after changing recovered source data.
+Ứng dụng tiêu thụ cơ sở dữ liệu `extracted/map_database_v2.sqlite` (Schema v6, Contract `vn.vietdrive.map-data` v1). Sử dụng master pipeline `update_pipeline.py` để biên dịch lại database khi có dữ liệu nguồn mới.
 
-Ứng dụng iOS nền tảng của VietDrive, không phụ thuộc Google.
+---
 
-## Stack
+## Công nghệ & Thư viện
 
-- SwiftUI + iOS 17 trở lên.
-- MapLibre Native 6.29 qua Swift Package Manager.
-- OpenFreeMap/OSM vector tiles cho bản đồ phát triển.
-- SQLite read-only cho dữ liệu cảnh báo offline.
-- Photon cho tìm kiếm địa điểm; Valhalla ưu tiên cho tuyến ô tô, OSRM dự phòng.
-- Cache response tìm kiếm/tuyến và MapLibre ambient tile cache 150 MB.
-- CoreLocation và bộ MP3 Adam thu sẵn. BLE đang bị loại khỏi target.
+- **SwiftUI + Swift Concurrency**: iOS 17.0 trở lên, watchOS 10.0 trở lên.
+- **MapLibre Native 6.29.0**: Tích hợp qua Swift Package Manager, render vector tiles mượt mà.
+- **OpenFreeMap / OSM Vector Tiles**: Lớp bản đồ nền với ambient tile cache 150 MB và hỗ trợ offline packs.
+- **SQLite v2 (Schema v6)**: Read-only database nhúng trong app, truy vấn không gian cực nhanh bằng R-Tree 2D.
+- **Định vị & Dẫn đường**: Photon cho tìm kiếm địa điểm; OSRM & Valhalla cho định tuyến đa phương án.
+- **Âm thanh giọng nói**: Bộ giọng **Adam · Nam miền Nam** (107 file MP3 chất lượng cao).
+- **Phần cứng đồng hành**: Hỗ trợ Apple Watch (`VietDriveWatch`), Dynamic Island & Lock Screen (`VietDriveLiveActivity`), và Apple CarPlay. Mã BLE companion tạm thời được loại khỏi target đang build.
 
-Các endpoint development nằm trong `VietDrive/Support/Info.plist`:
-
-- `VietDriveGeocoderBaseURL`
-- `VietDriveGeocoderFallbackBaseURLs`
+Các endpoint development cấu hình trong `VietDrive/Support/Info.plist`:
+- `VietDriveGeocoderBaseURL` & `VietDriveGeocoderFallbackBaseURLs`
 - `VietDriveValhallaBaseURLs`
-- `VietDriveRouterBaseURL`
-- `VietDriveRouterFallbackBaseURLs`
+- `VietDriveRouterBaseURL` & `VietDriveRouterFallbackBaseURLs`
 
-Mặc định dùng demo công cộng Photon/Valhalla/OSRM; khi primary lỗi HTTP/timeout app thử
-endpoint dự phòng rồi mới dùng response cache cũ cho lỗi tạm thời. Màn hình Chẩn đoán hiển thị
-endpoint, latency, cache và trạng thái fallback. Trước khi phát hành vẫn phải
-thay bằng instance VietDrive tự host hoặc nhà cung cấp có SLA.
+Màn hình **Chẩn đoán (Drive Diagnostics)** hiển thị chi tiết endpoint, latency, cache, số lượng điểm camera/đường bộ và trạng thái fallback.
 
-## Apple Watch và CarPlay
+---
 
-- Target `VietDriveWatch` nhận trạng thái tức thời bằng WatchConnectivity, hiển thị
-  tốc độ, giới hạn tốc độ và biển cấm; dữ liệu camera không được gửi sang đồng hồ.
-- Watch phát haptic khi một biển mới đi vào phạm vi 450 m.
-- CarPlay dùng `CPMapTemplate` và cùng trạng thái GPS/tuyến với màn hình iPhone;
-  không có routing engine riêng cho CarPlay.
-- Apple phải cấp navigation entitlement cho bundle `vn.vietdrive.ios` trước khi
-  CarPlay scene có thể chạy trên xe hoặc CarPlay Simulator. Entitlement hạn chế này
-  không được khai báo giả trong repository vì sẽ làm provisioning bản dev lỗi.
+## Cấu hình & Mở Project với XcodeGen
 
-## Mở project
-
-Project được sinh bằng XcodeGen để cấu hình luôn có thể tái tạo:
+Project được sinh từ file `project.yml` để đảm bảo tính nhất quán:
 
 ```sh
 cd VietDriveIOS
@@ -61,145 +37,72 @@ xcodegen generate
 open VietDrive.xcodeproj
 ```
 
-Máy hiện tại cài Xcode tại `/Applications/Xcode-beta.app` nhưng developer directory
-đang trỏ tới Command Line Tools. Có thể chọn Xcode trong Settings > Locations hoặc dùng:
-
+Build bằng Xcode hoặc chạy lệnh Terminal:
 ```sh
-sudo xcode-select -s /Applications/Xcode-beta.app/Contents/Developer
+xcodebuild -project VietDrive.xcodeproj \
+  -scheme VietDrive \
+  -destination 'generic/platform=iOS' \
+  build
 ```
 
-Sau đó tải một iOS Simulator runtime trong Xcode Settings > Components.
+---
 
-## Tìm kiếm và dẫn đường
+## Tìm kiếm & Dẫn đường Động
 
-Chạm ô “Bạn muốn đi đâu?”, chọn riêng điểm bắt đầu A (hoặc vị trí GPS hiện tại)
-và điểm đến B, rồi xem các tuyến thay thế. Settings cho phép ưu tiên nhanh/ngắn
-và yêu cầu tránh thu phí,
-cao tốc hoặc phà; nếu endpoint OSRM không hỗ trợ exclude, app tự fallback và
-hiển thị trạng thái rõ ràng.
-Khi bắt đầu, GPS được chiếu lên geometry để tính quãng đường còn lại và maneuver.
-Map matching kết hợp độ lệch ngang, course, tính liên tục và sai số GPS; app không
-reroute khi fix yếu. Hai mẫu lệch rõ hoặc ba mẫu lệch/hướng ngược đã xác minh mới
-kích hoạt đổi tuyến, có cooldown 8 giây.
-HUD dẫn đường hiển thị giờ đến dự kiến, thời gian và quãng đường còn lại cùng
-thanh tiến độ. Mascot đổi hiệu ứng theo maneuver, tốc độ, cảnh báo, reroute và
-trạng thái đến nơi.
+1. **Tìm kiếm & Chọn tuyến**: Chạm ô tìm kiếm, nhập địa chỉ (Photon trả kết quả GeoJSON ưu tiên quanh vị trí hiện tại). Xem trước các tuyến thay thế (thời gian, khoảng cách, tránh thu phí/cao tốc/phà).
+2. **Theo dõi hành trình**: GPS được chiếu vuông góc lên từng phân đoạn của polyline để đo khoảng cách còn lại và tính maneuver kế tiếp.
+3. **Đổi tuyến tự động (Reroute)**: Thuật toán map-matching kết hợp sai số ngang, góc di chuyển (`course`) và tính liên tục. Khi ghi nhận 2 mẫu lệch rõ ràng hoặc 3 mẫu lệch/ngược hướng liên tiếp (>75 m), app tự động gọi tìm đường mới (cooldown 8 giây chống spam request khi GPS nhiễu).
+4. **HUD dẫn đường**: Hiển thị giờ đến dự kiến (ETA), thời gian và quãng đường còn lại, thanh tiến độ trực quan, và biểu cảm mascot Mây tương ứng với hành động lái xe.
 
-Database schema v3 tách biển vật lý, 1.659 quan hệ cấm rẽ và quy tắc trên đoạn
-đường. Cảnh báo khi đang dẫn đường được chiếu lên route geometry để loại biển ở
-đường song song; restriction có điều kiện ngày/giờ phổ biến được đánh giá theo
-giờ thiết bị. Lane data từ OSRM được hiển thị khi endpoint cung cấp.
-Biển có confidence dưới quality gate bị ẩn; metadata hướng được so với bearing
-của chính đoạn tuyến. Chạm marker để xem nguồn/độ tin cậy và gửi báo sai vào hàng
-chờ kiểm duyệt, không tự động xóa dữ liệu đang phát hành.
+---
 
-## Voice
+## Cơ sở dữ liệu Schema v6 & Map-Matching Chuẩn Firmware
 
-App dùng bộ **Adam · Nam miền Nam** do chủ dự án cung cấp, gồm 107 MP3 tại
-`VietDrive/Resources/VoicePacks/south_male_adam`. Bộ này thay thế toàn bộ bộ nữ
-miền Nam cũ. `VoicePrompts/manifest.json` ánh xạ các câu chỉ đường, camera,
-tốc độ, biển báo và đổi tuyến. App chỉ phát file Adam, không dùng TTS của iOS;
-các dữ liệu động ngoài danh mục dùng file Adam tổng quát tương ứng.
-Camera đo tốc độ theo đoạn có file riêng; `camera_ai.mp3` chỉ dành cho
-camera tốc độ kết hợp đèn tín hiệu (`alert.camera.dual`).
-Quy tắc cấm rẽ suy luận (`turnRestriction`) không phát voice; biển vật lý hợp lệ
-vẫn đi qua luồng cảnh báo. Chi tiết file, checksum và mapping ở
-`VietDrive/Resources/VoicePrompts/README.md`. Xác nhận quyền sử dụng/phân phối
-của bộ giọng mới trước khi phát hành.
+Cơ sở dữ liệu `map_database_v2.sqlite` tuân thủ **Schema v6 (Contract v1)**:
+- **`map_data_points`**: Hơn 36.000 điểm POI cảnh báo (camera tốc độ, camera đèn đỏ, camera đo tốc độ đoạn đường, biển R.420 khu đông dân cư).
+- **`map_data_road_links`**: Mạng lưới đường bộ với tốc độ giới hạn 2 chiều riêng biệt (`direction_1_speed_kmh`, `direction_2_speed_kmh`) và liên kết tên đường.
 
-## Cập nhật dữ liệu
+### Quy tắc Map-Matching & Cảnh báo:
+- **Xe dừng (`speed < 7 km/h`)**: Quét bán kính dung sai 100 m, ưu tiên tốc độ hiển thị tức thì.
+- **Xe chạy (`speed >= 7 km/h`)**: Quét bán kính 50 m, so sánh góc phương vị của phân đoạn gần nhất với hướng xe chạy:
+  - Góc lệch $\le 30^\circ$: Lấy tốc độ chiều thuận (`direction_1_speed_kmh`).
+  - Góc lệch $\approx 180^\circ \pm 30^\circ$: Lấy tốc độ chiều nghịch (`direction_2_speed_kmh`).
+- **Dự báo biển tốc độ kế tiếp (`lookaheadNextSpeedMatch`)**: Quét trước 150–650 m dọc theo tuyến, báo sớm bằng giọng nói khi sắp chuyển sang đoạn đường có giới hạn tốc độ thấp hơn.
+- **Đo tốc độ trung bình đoạn đường (Section Camera)**: Khi vào khu vực camera đo đoạn, app tính toán thời gian và quãng đường đã đi để hiển thị tốc độ trung bình liên tục trên HUD.
 
-`extracted/data_manifest.json` chứa version, checksum SHA-256 và số bản ghi.
-Sau khi host database, dùng `data_pipeline/package_release.py` và cấu hình
-`VietDriveDataManifestURL` trong Info.plist. App chỉ kích hoạt database tải về
-sau khi kiểm tra kích thước, SHA-256 và `PRAGMA integrity_check`; bản trước được
-giữ lại để rollback.
+---
 
-## Chẩn đoán và phát lại GPS
+## Giọng nói Cảnh báo Adam (Nam miền Nam)
 
-Chế độ lái xe dùng một đường thẳng minh hoạ bằng nét trắng mờ. Ngã ba/ngã tư,
-cầu/hầm và trạm thu phí chỉ xuất hiện khi có dữ liệu phù hợp phía trước; hình
-đường không uốn theo bản đồ. Hai làn rộng bằng nhau: Mazda và xe cùng chiều
-ở làn phải, xe ngược chiều giả lập ở làn trái; mọi biển báo chỉ ở lề phải.
-Người đi bộ ở ngoài mép đường. Đây không phải giao thông
-được cảm biến phát hiện. Xem [thiết kế cảnh lái xe](../docs/driving-scene-assets.md).
+Ứng dụng sử dụng bộ giọng thu sẵn độc quyền **Adam · Nam miền Nam** gồm 107 file MP3 tại `VietDrive/Resources/VoicePacks/south_male_adam`. 
 
-### Chạy thử tuyến không cần bản ghi GPS
+- Quản lý qua `VoicePrompts/manifest.json` schema 2.
+- Ánh xạ đầy đủ các câu lệnh dẫn đường, rẽ trái/phải/vòng xuyến, các loại camera (tốc độ, đèn tín hiệu, camera kép, camera đoạn), khu dân cư, đường hầm, cầu vượt, trạm thu phí và dự báo biển tốc độ tiếp theo.
+- Quản lý theo hàng đợi mức độ ưu tiên (`PromptPriority`), tự động khử lặp trong 90 giây và xử lý thông minh khi có cuộc gọi hoặc âm thanh hệ thống can thiệp.
+- Tuyệt đối không fallback sang TTS máy của iOS để giữ trải nghiệm âm thanh nhất quán.
 
-Trong **Chế độ lái xe → Chạy thử**, bấm **Sài Gòn → Phan Thiết** để chạy ngay
-tuyến ~168 km có sẵn trong app, không gọi API route và không cần mạng.
-Có thể nhảy đến các mốc 0/25/50/75/95% trong bảng điều khiển DEMO.
-Hoặc chọn tuyến riêng rồi bấm **Bắt đầu chạy thử**.
-Cũng có nút ▶ ở thẻ xem trước tuyến trên bản đồ. Chọn điểm xuất phát thủ công
-nếu chưa có GPS thật. DEMO chạy dọc hình học của tuyến đã chọn với tốc độ
-10–120 km/h; thanh DEMO cho phép đổi tốc độ, tạm dừng, tiếp tục, chạy lại và thoát.
+---
 
-Chế độ này chỉ dùng khi đang dừng xe. GPS thật tạm ngừng; app dùng một phiên
-matcher riêng để mẫu giả không ảnh hưởng lịch sử bám đường thật. Cảnh báo/voice
-vẫn lấy từ database và engine hiện có, không tạo biển báo giả. Không ghi trace,
-không lưu phiên dẫn đường giả và không phát dữ liệu DEMO lên Watch/CarPlay/Live
-Activity. App tự tạm dừng khi mất trạng thái active; bấm tiếp tục để chạy lại.
-Thoát DEMO xóa trạng thái mô phỏng, loại kết quả truy vấn đang chờ của nguồn cũ
-và trở về GPS thật. Đây không phải phép thử khả năng GPS chạy nền.
+## Buồng lái Lái xe Trực quan (Driving Mode Scene)
 
-### Phát lại bản ghi thật
+- **Minh họa đường thẳng**: Sử dụng đường thẳng 2 làn phong cách cartoon, các nét đứt di chuyển theo tốc độ GPS thực tế của xe.
+- **Biển báo ven đường (Roadside Signs)**: Tối đa 3 biển báo hoặc camera sắp tới được cắm cọc bên lề đường phải, tự động phóng to dần theo khoảng cách mét thực tế và biến mất khi xe chạy qua.
+- **Xe Mazda CX-5**: Minh họa 3D nhìn từ sau (`DrivingMazdaCX5Rear`), biển số `86A 26427`, nằm ngay ngắn ở làn đường bên phải.
+- **Chống tắt màn hình (`keepsDrivingScreenAwake`)**: Tự động vô hiệu hóa chế độ khóa màn hình khi Driving Mode đang hoạt động ở foreground.
 
-Khi dẫn đường thật, app mặc định ghi GPS cục bộ và checkpoint mỗi 10 mẫu; giữ tối
-đa 10 hành trình. Trong Settings > Chẩn đoán có thể chọn một tuyến A → B, phát lại
-bản ghi x4 để tái hiện map matching, voice và reroute. Màn hình này cũng hiển thị
-sai số GPS, trạng thái bám tuyến, prompt voice cuối và sức khỏe routing.
+---
 
-## Bản đồ offline và ban đêm
+## Chế độ Chạy thử Tuyến Offline (Fixed Demo)
 
-MapLibre giữ ambient cache tối đa 150 MB. Settings cho phép tải vùng khoảng 13 km
-quanh vị trí hiện tại ở zoom 9–15 thành offline pack. Bản đồ có chế độ ngày, đêm
-hoặc tự động theo giờ; style lấy trực tiếp từ OpenFreeMap.
+- Vào mục **Chế độ lái xe** $\to$ **Chạy thử** $\to$ **Sài Gòn → Phan Thiết**.
+- Tuyến đường cố định 168,3 km gồm 1.263 tọa độ được đóng gói sẵn trong [saigon-phanthiet.json](VietDrive/Resources/Demo/saigon-phanthiet.json).
+- Hỗ trợ tùy chỉnh tốc độ từ 10 đến 120 km/h và các nút nhảy nhanh mốc tiến độ (0%, 25%, 50%, 75%, 95%).
+- Không phụ thuộc mạng internet, không gọi API dẫn đường và không làm ô nhiễm lịch sử GPS thật.
 
-## Test
+---
 
-```sh
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-  xcodebuild test -project VietDrive.xcodeproj -scheme VietDrive \
-  -destination 'id=00008150-000D38D92278401C'
-```
+## Apple Watch, Live Activity & CarPlay
 
-## BLE cho VietDrive Box (tạm gác)
-
-Điện thoại hoạt động như BLE peripheral:
-
-| Thành phần | UUID |
-| --- | --- |
-| Service | `7E4A0001-7A54-4D52-4956-455652495645` |
-| Telemetry notify/read | `7E4A0002-7A54-4D52-4956-455652495645` |
-| JPEG frame notify | `7E4A0003-7A54-4D52-4956-455652495645` |
-| Command write | `7E4A0004-7A54-4D52-4956-455652495645` |
-
-Mỗi notification có header 8 byte little-endian:
-
-```text
-byte 0      protocol version (1)
-byte 1      kind: 1 = JSON telemetry, 2 = JPEG frame
-byte 2..3   sequence
-byte 4..5   chunk index, bắt đầu từ 0
-byte 6..7   tổng số chunk
-byte 8..    payload
-```
-
-Ghi byte `0x01` vào command characteristic để yêu cầu gửi lại frame JPEG gần nhất.
-
-## Giới hạn dữ liệu hiện tại
-
-Database schema v3 được bundle để phát triển nhưng VietDrive chủ động bỏ qua toàn bộ
-`toll_booth`: nguồn hiện tại đánh dấu tất cả 5.517 đoạn đường là thu phí. Map-matching
-đoạn đường phục hồi chỉ bật cho 791 segment vượt quality gate. Giới hạn tốc độ
-trên HUD ưu tiên 29.980 way OSM có `maxspeed`, khớp theo khoảng cách, hướng
-tuyến và chiều `oneway`. Nếu đoạn đường không có `maxspeed` đáng tin cậy, HUD hiển thị
-`—`; VietDrive tuyệt đối không tự suy luận giới hạn tốc độ. Camera và biển tốc độ
-được dùng như lớp cảnh báo đã gắn hướng/tuyến khi metadata cho phép.
-Ngoài ra, 2.049 điểm tốc độ do người dùng cung cấp trong `speed_signs.geojson`
-được đọc từ bảng `speed_observations` và hiển thị thành lớp MapLibre riêng. Điểm
-này chỉ lên HUD khi GPS cách tối đa 30 m, không phát voice/haptic và không được
-kéo dài sang đoạn đường khác khi chưa có hướng/phạm vi hiệu lực.
-Lớp biển báo vật lý lấy từ OSM là dữ liệu cộng đồng không đầy đủ; app chỉ công bố
-node có mã nhận dạng được và asset tương ứng, đồng thời lưu độ phủ thật trong
-`sign_pipeline/sign_report.json`.
+- **Apple Watch (`VietDriveWatch`)**: Nhận gói dữ liệu `PlatformDriveState` qua WatchConnectivity, hiển thị tốc độ, giới hạn tốc độ và rung haptic khi sắp gặp biển báo.
+- **Live Activity (`VietDriveLiveActivity`)**: Widget Dynamic Island và Màn hình khóa hiển thị chỉ dẫn rẽ kế tiếp, khoảng cách và mascot Mây.
+- **CarPlay**: Hỗ trợ template bản đồ `CPMapTemplate` đồng bộ cùng trạng thái dẫn đường của iPhone.

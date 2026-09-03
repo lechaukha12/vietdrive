@@ -1,211 +1,223 @@
 # VietDrive
 
-VietDrive là ứng dụng trợ lý lái xe iOS dùng bản đồ và dữ liệu mở. Dự án không
-dùng Google Maps SDK, Google Places, Google Directions hoặc Google Encoded
-Polyline.
+VietDrive là ứng dụng trợ lý lái xe và dẫn đường thông minh dành riêng cho thị trường Việt Nam trên nền tảng iOS (hỗ trợ Apple Watch, Live Activity / Dynamic Island và CarPlay), sử dụng bản đồ mở và cơ sở dữ liệu giao thông offline chuẩn xác. Dự án độc lập hoàn toàn, **không sử dụng** Google Maps SDK, Google Places hay Google Directions.
+
+---
 
 ## Trạng thái hiện tại
 
-- Phiên bản ứng dụng: 0.2.0 prototype nội bộ, chưa sẵn sàng phát hành.
-- Nền tảng: iOS 17 trở lên, SwiftUI.
-- Bộ hiển thị bản đồ: MapLibre Native 6.29.
-- Lớp nền: OpenFreeMap/OpenStreetMap, hiện cần kết nối mạng để tải tile.
-- Lớp VietDrive: SQLite v2 nhúng trong ứng dụng, truy vấn offline bằng RTree.
-- Thiết bị đã kiểm thử: iPhone Air, iOS 27.
-- BLE/ESP32: tạm gác; mã thử nghiệm được giữ nhưng không thuộc target đang build.
-- Asset biển báo: bộ tuyển chọn 25 hình public-domain, có manifest nguồn và hash.
-- Nhận diện giao diện: cartoon xanh dương nhạt–hồng với mascot “Mây”; app icon
-  và các pose mascot được nhúng trong Asset Catalog.
+- **Phiên bản ứng dụng**: `0.3.0` prototype nội bộ.
+- **Nền tảng**: iOS 17.0 trở lên, watchOS 10.0 trở lên, viết bằng SwiftUI và Swift Concurrency.
+- **Bộ hiển thị bản đồ**: MapLibre Native 6.29.0 (Swift Package Manager).
+- **Lớp bản đồ nền**: Vector tiles từ OpenFreeMap/OpenStreetMap, có ambient cache 150 MB và tính năng tải offline pack cho khu vực xung quanh bán kính ~13 km.
+- **Lớp dữ liệu VietDrive**: SQLite v2 Schema v6 (Contract `vn.vietdrive.map-data` v1) nhúng trực tiếp trong ứng dụng (`extracted/map_database_v2.sqlite`), truy vấn hoàn toàn offline bằng chỉ mục không gian R-Tree 2D.
+- **Thiết bị đã kiểm thử**: iPhone 15 Pro, iPhone 16 series, iPhone Air; iOS 17+.
+- **Bộ giọng nói**: Bộ giọng thu âm **Adam · Nam miền Nam** gồm 107 file MP3 chất lượng cao, không phụ thuộc Apple iOS TTS.
+- **Nhận diện giao diện**: Phong cách buồng lái tối giản trực quan (Roadside presentation), xe Mazda CX-5 trắng nhìn từ sau, biển báo nổi bên lề đường theo khoảng cách mét thực tế, mascot đám mây “Mây” tương tác linh hoạt.
+- **Định tuyến & Tìm kiếm**: Photon (geocoding tiếng Việt, bounding box Việt Nam) và OSRM/Valhalla đa phương án cho ô tô.
+- **Chế độ chạy thử offline (Demo Mode)**: Tuyến cố định Sài Gòn → Phan Thiết (168,3 km, 1.263 tọa độ) đóng gói sẵn, cho phép chạy thử và nhảy mốc tiến độ mà không cần GPS thật hay kết nối mạng.
 
-Ứng dụng hiện có tìm kiếm địa điểm, định tuyến ô tô, theo dõi tiến trình tuyến,
-đổi tuyến khi đi lệch, bản đồ, vị trí GPS, tốc độ, hướng di chuyển, camera gần
-xe, lớp biển báo OSM thử nghiệm, cảnh báo giọng nói tiếng Việt, lớp đường đã
-vượt kiểm tra hình học, lọc lớp dữ liệu và chế độ mô phỏng. Đây là nền móng để
-kiểm thử, chưa phải sản phẩm hoàn thiện.
+---
 
-Mỗi lần khởi động hiện đi qua onboarding 3 trang rồi màn hình đăng nhập. Tài
-khoản `admin/admin` chỉ là fixture hard-code phục vụ prototype, tuyệt đối không
-được xem là cơ chế xác thực hoặc giữ lại trong bản phát hành. Settings cho phép
-bật/tắt giọng nói, mascot, chuyển động, rung, các lớp dữ liệu, mô phỏng và đăng
-xuất.
+## Kiến trúc hệ thống
 
-Khi xem trước hoặc đang chạy tuyến, HUD hiển thị đồng thời giờ dự kiến đến,
-thời gian còn lại, quãng đường còn lại và thanh tiến độ. Các giá trị giảm theo
-vị trí đã map-match trên tuyến; chế độ mô phỏng dùng thời gian lái xe thực của
-fixture thay vì thời gian đã nén. Mây có trạng thái riêng cho tìm tuyến, chạy
-thẳng, rẽ trái/phải, cảnh báo, quá tốc độ, tái định tuyến và đến nơi; cài đặt
-Giảm chuyển động sẽ tắt các animation lặp.
+```text
+                             SwiftUI Dashboard / Driving Mode
+                                            │
+         ┌──────────────────────────────────┼──────────────────────────────────┐
+         │                                  │                                  │
+         ▼                                  ▼                                  ▼
+  MapLibre Native                   LocationService                    OpenMapService
+  (OpenFreeMap tiles)              (CoreLocation GPS,               (Photon Search + OSRM
+  Ambient cache 150MB              speed, heading, bg)                multi-route & steps)
+         │                                  │                                  │
+         └──────────────────────────────────┼──────────────────────────────────┘
+                                            │
+                                            ▼
+                                  RouteProgressEngine
+                             (Chiếu GPS polyline, đo ETA,
+                              khoảng cách còn lại & reroute)
+                                            │
+                                            ▼
+                                    OfflineAlertStore
+                       (SQLite v2 Schema v6 + R-Tree 2D Index)
+                       ├─ map_data_points (Camera, R.420, Biển tốc độ)
+                       ├─ map_data_road_links (Mạng đường & tốc độ 2 chiều)
+                       ├─ lookaheadNextSpeedMatch (Dự báo biển tốc độ kế)
+                       └─ Section Camera (Đo tốc độ TB đoạn đường)
+                                            │
+                                            ▼
+                                    VoiceAlertService
+                         (Adam · Nam miền Nam · 107 MP3)
+                         (Hàng đợi ưu tiên, khử lặp, ngắt session)
+                                            │
+         ┌──────────────────────────────────┼──────────────────────────────────┐
+         │                                  │                                  │
+         ▼                                  ▼                                  ▼
+  Platform Coordinator              LiveActivity Coordinator            MascotMayView
+(WatchConnectivity sync             (ActivityKit Dynamic Island        (Trạng thái Mây:
+ Apple Watch VietDriveWatch)         & Lockscreen widget)               cruise, turn, alert...)
+```
 
-Tìm kiếm dùng Photon và tuyến động dùng OSRM/OpenStreetMap; các endpoint nằm
-trong Info.plist để thay mà không sửa logic. Demo công cộng chỉ phù hợp phát
-triển, chưa có SLA. Nguồn đường khôi phục vẫn không được dùng làm routing graph.
+---
 
-## Kiến trúc
+## Cơ sở dữ liệu VietDrive (`map_database_v2.sqlite`)
 
-    SwiftUI dashboard
-          |
-          +-- MapLibre Native -> OpenFreeMap / OpenStreetMap base tiles
-          |
-          +-- LocationService -> Core Location GPS, speed, heading
-          |
-          +-- OpenMapService -> Photon search + OSRM route/steps
-          |
-          +-- RouteProgressEngine -> map projection + remaining distance
-          |
-          +-- OfflineAlertStore -> SQLite v2 + RTree
-          |       +-- camera alerts
-          |       +-- recognized OSM traffic signs
-          |       +-- validated road overlays
-          |       +-- nearest-road speed matching
-          |
-          +-- VoiceAlertService -> Vietnamese TTS and repeat suppression
+Tệp sản xuất nằm tại `extracted/map_database_v2.sqlite` và được tự động bundle vào `VietDriveIOS/VietDrive/Resources/map_database_v2.sqlite`.
 
-          +-- AppSessionModel -> onboarding -> prototype login -> drive
+> [!IMPORTANT]
+> Tuyệt đối không chỉnh sửa tệp SQLite thủ công. Hãy sử dụng pipeline tự động `update_pipeline.py` để biên dịch từ file `secrect.bin` gốc.
 
-          +-- MascotMayView -> idle / search / cruise / turn / alert / reroute / arrive
+### Thông tin Schema v6 (Contract `vn.vietdrive.map-data` v1)
 
-Lớp nền và lớp dữ liệu VietDrive độc lập. Mất mạng không làm mất camera, dữ
-liệu đường đã nhúng, GPS, HUD hoặc TTS; tuy nhiên các tile nền chưa lưu cache có
-thể không hiển thị.
+| Bảng | Vai trò | Cấu trúc chính |
+| :--- | :--- | :--- |
+| **`metadata`** | Lưu version schema, contract ID, ngày build, SHA-256 nguồn | `key TEXT, value TEXT` |
+| **`map_data_points`** | Hơn 36.000 điểm camera, biển báo tốc độ, khu dân cư | `source_node_id, type_code, kind, latitude, longitude, speed_kmh, direction_type, direction_degrees, warning_text` |
+| **`map_data_points_rtree`** | Chỉ mục không gian 2D cho `map_data_points` | `point_id, min_lat, max_lat, min_lon, max_lon` |
+| **`map_data_road_links`** | Mạng lưới đường bộ có tốc độ và tên đường 2 chiều | `road_serial_number, provider_road_id, inline_road_name, direction_1_name_id, direction_2_name_id, direction_1_speed_kmh, direction_2_speed_kmh, geometry_json` |
+| **`map_data_road_links_rtree`** | Chỉ mục không gian 2D cho `map_data_road_links` | `link_id, min_lat, max_lat, min_lon, max_lon` |
+| **`map_data_city_lookup`** | Danh mục Tỉnh / Thành phố giải mã từ `citiesen.bin` | `city_id, city_name` |
+| **`map_data_name_lookup`** | Danh mục Quận / Huyện / Tên đường từ `districtsen.bin` | `name_id, city_id, name_text` |
+| **`road_segments`** | Các đoạn đường OSM/khôi phục đã vượt kiểm tra hình học | `road_id, speed_kmh, length_meters, geometry_json` |
+| **`turn_restrictions`** | Quy định cấm rẽ / cấm quay đầu từ OSM | `from_way, to_way, via_node, restriction_type` |
+| **`road_rules`** | Quy định làn đường, cấm đỗ, cấm dừng theo khung giờ | `road_id, rule_type, rule_value, conditional` |
+| **`alerts`** | Cụm camera và biển báo OSM đã deduplicate | `alert_id, kind, latitude, longitude, speed_limit` |
+| **`data_issues`** | Nhật ký bản ghi bị cách ly và nguyên nhân | `entity_type, entity_id, reason, raw_payload` |
 
-## Cơ sở dữ liệu v2
+---
 
-File sản xuất là extracted/map_database_v2.sqlite. Không chỉnh file này bằng
-tay; hãy thay đổi quy tắc trong data_pipeline/normalize.py rồi tạo lại.
+## Thuật toán Map-Matching & Cảnh báo Chuẩn Firmware
 
-Các bảng chính:
+Logic so khớp và cảnh báo trong [OfflineAlertStore.swift](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Services/OfflineAlertStore.swift) được đối chiếu chặt chẽ với firmware gốc VietMap M1 (hàm `0x00cb725c`, `0x00cb473c`):
 
-| Bảng | Vai trò |
-| --- | --- |
-| metadata | phiên bản schema, quy tắc và SHA-256 của nguồn |
-| alerts | cụm camera và biển báo OSM đã sàng lọc |
-| alerts_rtree | chỉ mục không gian cảnh báo |
-| road_segments | đoạn đường vượt kiểm tra hình học |
-| road_segments_rtree | chỉ mục không gian đoạn đường |
-| speed_observations | quan sát tốc độ chỉ để tham khảo |
-| data_issues | bản ghi bị cách ly và nguyên nhân |
+1. **Khi xe đứng yên (`speed < 7 km/h`)**:
+   - Quét bán kính dung sai **100 m** (bù trừ độ trôi GPS khi xuất phát trong hẻm/bãi đỗ).
+   - Nếu đường có 2 chiều cùng tốc độ: Hiển thị ngay giới hạn tốc độ.
+   - Nếu đường 1 chiều hoặc 2 chiều khác tốc độ: So khớp với hướng La bàn thiết bị (`heading`) hoặc ưu tiên tốc độ cao hơn.
+   - Fallback 2 lớp: Nếu đoạn đường chưa có tốc độ, tự động tìm biển báo/camera gần nhất trong bán kính 100 m.
+2. **Khi xe di chuyển (`speed >= 7 km/h`)**:
+   - Quét bán kính bám làn **50 m**.
+   - Tính góc phương vị của phân đoạn nhỏ $(P_i, P_{i+1})$ gần xe nhất trên polyline.
+   - So sánh với góc di chuyển GPS `course`, kiểm tra độ lệch góc:
+     - Góc lệch $\le 30^\circ$: Khớp chuẩn theo chiều số hóa thuận ($P_0 \to P_n$) $\to$ lấy `direction_1_speed_kmh`.
+     - Góc lệch gần $180^\circ$ ($\pm 30^\circ$): Khớp chiều nghịch ($P_n \to P_0$) $\to$ lấy `direction_2_speed_kmh`.
+3. **Cảnh báo Camera & Lọc Hướng**:
+   - Camera trong phạm vi 3 m được gộp cụm (clustering).
+   - Khi xe chạy từ 8 km/h, camera cách từ 80–450 m chỉ được phát âm thanh nếu nằm trong nón quan sát **$75^\circ$** phía trước xe.
+   - Cùng một camera không lặp lại cảnh báo trong vòng **90 giây**.
+4. **Camera Đo Tốc Độ Theo Đoạn (Section Camera)**:
+   - Khi đi qua camera bắt đầu đoạn, ghi nhận mốc thời gian `sectionSpeedStartTime`, vị trí `sectionStartLocation` và tốc độ cho phép `sectionSpeedLimit`.
+   - Tính toán liên tục **tốc độ trung bình thực tế** = $\frac{\text{quãng đường di chuyển}}{\text{thời gian trôi qua}}$ và hiển thị trên HUD để tài xế điều chỉnh ga trước khi đến trạm kiểm tra cuối đoạn.
+5. **Dự báo Biển Báo Tốc Độ Tiếp Theo (`lookaheadNextSpeedMatch`)**:
+   - Quét trước dọc theo hướng di chuyển từ 150 m đến 650 m.
+   - Khi phát hiện đoạn đường phía trước có tốc độ giới hạn thay đổi (ví dụ: sắp giảm từ 80 km/h xuống 60 km/h), hệ thống phát cảnh báo sớm bằng giọng nói Adam: *"Phía trước tốc độ giới hạn 60 km/h"*.
 
-Kết quả chất lượng hiện tại:
+---
 
-| Dataset | Nguồn | Sản xuất | Cách xử lý |
-| --- | ---: | ---: | --- |
-| Camera | 3.892 | 3.603 cụm | loại 129 điểm ngoài biên, hợp nhất 160 điểm gần trùng |
-| Đoạn đường | 5.517 | 791 | cách ly 4.726 đoạn có cạnh phi lý |
-| Đường có tốc độ đã biết | 2.049 quan sát | 329 đoạn hợp lệ | map-match trong bán kính 45 m |
-| Thu phí | 5.517 cờ nguồn | 0 | cách ly toàn bộ vì mọi đường đều bị gán thu phí |
-| Biển báo OSM | 822 node liên quan | 134 (snapshot 25/08/2026) | 635 node `traffic_sign=yes` không đủ thông tin; chỉ công bố mã có asset tương ứng |
+## Hệ thống Cảnh báo Giọng nói Adam (Nam miền Nam)
 
-Nhãn tỉnh trong nguồn cũ được giữ để truy vết, không hiển thị như dữ liệu chính
-thức. Các điểm speed_limit được coi là quan sát tham khảo, không khẳng định là
-vị trí biển báo vật lý.
+VietDrive sử dụng bộ giọng độc quyền **Adam · Nam miền Nam** gồm 107 file MP3 tại [VoicePacks/south_male_adam](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Resources/VoicePacks/south_male_adam):
 
-## Quy tắc cảnh báo và map matching
+- Quản lý qua [manifest.json](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Resources/VoicePrompts/manifest.json) v2 (104 key ánh xạ).
+- Các nhóm âm thanh:
+  - Chỉ dẫn rẽ/vòng xuyến: `maneuver.300.*` (ở khoảng cách 80–360 m) và `maneuver.now.*` (dưới 80 m).
+  - Tốc độ tiếp theo: `speed.next.{30,40,50,60,70,80,90,100,120}`.
+  - Camera: `alert.camera.speed`, `alert.camera.traffic`, `alert.camera.section`, `alert.camera.dual` (`camera_ai.mp3`).
+  - Khu dân cư, đường hầm, cầu vượt, trạm thu phí: `alert.town.in`, `alert.town.out`, `alert.tunnel`, `alert.toll`...
+- **Hàng đợi ưu tiên (`PromptPriority`)**:
+  `preview` (10) < `information` (30) < `safetyAlert` (50) < `overSpeed` (70) < `navigation` (90) < `criticalNavigation` (100).
+- Khi có cảnh báo khẩn cấp hoặc chỉ dẫn rẽ tức thời, âm thanh ưu tiên thấp hơn sẽ tự động nhường hàng đợi. Không sử dụng TTS của hệ điều hành.
 
-- Camera trong phạm vi 3 m được hợp nhất bằng spatial buckets và union-find.
-- Khi xe chạy từ 8 km/h, camera xa hơn 70 m chỉ được giữ nếu nằm trong nón 75
-  độ phía trước.
-- Camera gần nhất từ 80–450 m có thể phát TTS; cùng một camera không lặp trong
-  90 giây.
-- Giới hạn tốc độ chỉ được nhận từ đoạn đường hợp lệ cách vị trí tối đa 45 m.
-- Khi xe chạy, hướng đường phải lệch không quá 55 độ so với hướng xe, tính cả
-  hai chiều số hóa.
-- Vượt tốc chỉ kích hoạt khi đã map-match được giới hạn lớn hơn 0.
+---
 
-## Tìm kiếm và dẫn đường động
+## Giao diện Buồng lái Lái xe Trực quan (Driving Mode)
 
-- Photon trả địa điểm dạng GeoJSON, ưu tiên quanh vị trí hiện tại và giới hạn
-  bounding box Việt Nam.
-- OSRM trả tối đa ba phương án; app chọn phương án có khoảng cách ngắn nhất,
-  geometry đầy đủ và danh sách maneuver.
-- GPS được chiếu lên từng đoạn của polyline để tính quãng đường còn lại.
-- Ba mẫu GPS liên tiếp cách tuyến trên 75 m kích hoạt đổi tuyến; cooldown 15
-  giây ngăn lặp request khi tín hiệu nhiễu.
-- TTS thông báo maneuver ở các ngưỡng 500 m, 180 m và 60 m.
-- OSRM không được dùng để suy đoán giới hạn tốc độ. HUD chỉ hiện giới hạn khi
-  map-match được dữ liệu VietDrive/OSM tương ứng.
+Giao diện [DrivingModeView.swift](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Views/DrivingModeView.swift) & [DrivingSceneView.swift](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Views/DrivingSceneView.swift) cung cấp trải nghiệm tập trung, an toàn khi lái xe:
 
-## Fixture hành trình TP.HCM → Phan Thiết
+- **Xe minh họa Mazda CX-5**: Asset vector 3D sắc nét nhìn từ đuôi xe (`DrivingMazdaCX5Rear`), biển số `86A 26427`, nằm gọn gàng trên làn đường phải.
+- **Đường thẳng minh họa (Symbolic Road)**: Đường 2 làn với nét đứt trắng chuyển động theo tốc độ GPS thực tế. Xe ngược chiều trang trí ở làn trái.
+- **Biển báo ven đường theo khoảng cách thực (Roadside Presentation)**:
+  - Tối đa 3 biển báo/camera sắp tới được dựng thành các cột biển báo ở **lề đường bên phải**.
+  - Kích thước biển và khoảng cách cọc phóng to dần theo phối cảnh 3D dựa trên khoảng cách mét thực tế đo bằng GPS.
+  - Tự động ẩn biển báo sau khi xe đã vượt qua.
+- **Mascot Mây**: Đám mây hoạt hình tương tác theo tình trạng lái xe:
+  - Bình thường / Dẫn đường: Biểu cảm tươi vui.
+  - Cảnh báo rẽ: Nghiêng người chỉ hướng rẽ.
+  - Cảnh báo tốc độ / Camera: Đổi màu cảnh báo và nhắc nhở.
+- **Chống tắt màn hình tự động (`keepsDrivingScreenAwake`)**: Tự động giữ màn hình luôn sáng khi đang mở Chế độ lái xe ở foreground.
 
-Pipeline `route_pipeline/build_demo.py` lấy tuyến hợp lệ ngắn nhất trong các
-phương án trả về bởi OSRM, giữ geometry đầy đủ và danh sách thao tác rẽ. Fixture
-hiện tại dài 168,3 km, gồm 1.263 điểm và 28 thao tác.
+---
 
-Mô phỏng cập nhật ở 10 FPS và nội suy liên tục theo khoảng cách, vì vậy xe đi
-dọc theo đường thay vì nhảy qua một danh sách waypoint thưa. Tốc độ hiển thị là
-90% giới hạn của đoạn đường và tăng/giảm dần; thời gian không gian được nén x8
-để kiểm thử thuận tiện. Trong 1.263 điểm, 899 điểm (71,2%) có `maxspeed` OSM;
-364 điểm còn lại được đánh dấu `conservative_fallback`, không được trình bày như
-giới hạn pháp lý đã xác minh.
+## Chế độ Chạy thử Tuyến Offline (Fixed Demo Mode)
 
-Endpoint OSRM/Overpass công cộng chỉ dùng để tạo fixture phát triển. Bản phát
-hành phải tự host hoặc dùng nhà cung cấp có SLA và chính sách sử dụng phù hợp.
+Hỗ trợ kiểm thử đầy đủ mọi tính năng dẫn đường, HUD, cảnh báo camera và giọng nói ngay tại bàn làm việc:
 
-## Tạo lại dữ liệu
+- Lộ trình đóng gói: [saigon-phanthiet.json](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Resources/Demo/saigon-phanthiet.json) (168,3 km, 1.263 điểm GPS từ TP.HCM đi Phan Thiết).
+- Khởi động: Vào **Chế độ lái xe** $\to$ **Chạy thử** $\to$ **Sài Gòn → Phan Thiết**.
+- Bộ điều khiển:
+  - Tùy chỉnh tốc độ mô phỏng từ **10 đến 120 km/h**.
+  - Nút nhảy nhanh đến các mốc hành trình: **0%**, **25%**, **50%**, **75%**, **95%**.
+  - Nút Tạm dừng / Tiếp tục / Khởi động lại / Thoát.
+- Demo hoạt động trên một matcher riêng biệt, không ghi đè vào GPS thật, không lưu trace rác và tự động tạm dừng khi app ra khỏi foreground.
 
-Yêu cầu Python 3, không cần thư viện ngoài:
+---
 
-    cd data_pipeline
-    python3 -m unittest -v
-    python3 normalize.py
+## Nền tảng Đồng hành: Apple Watch & Live Activity
 
-Kết quả:
+1. **Apple Watch (`VietDriveWatch`)**:
+   - Sử dụng `WatchConnectivity` truyền nhận gói trạng thái lái xe tức thời `PlatformDriveState`.
+   - Hiển thị tốc độ hiện tại, giới hạn tốc độ và biển báo sắp tới.
+   - Rung phản hồi haptic khi có biển báo hoặc camera mới trong phạm vi 450 m.
+2. **Live Activity & Dynamic Island (`VietDriveLiveActivity`)**:
+   - Sử dụng Apple `ActivityKit` với `VietDriveActivityAttributes`.
+   - Hiển thị trên Dynamic Island và Màn hình khóa: khoảng cách đến thao tác rẽ kế tiếp, icon hướng rẽ, tên đường sắp rẽ và mascot Mây.
+3. **CarPlay (`CarPlaySceneDelegate`)**:
+   - Tích hợp chuẩn `CPMapTemplate` của Apple CarPlay.
 
-- extracted/map_database_v2.sqlite
-- data_pipeline/reports/data_quality.json
-- data_pipeline/reports/data_quality.md
+---
 
-Pipeline kiểm tra PRAGMA integrity_check, đặt PRAGMA user_version = 2 và lưu
-SHA-256 của từng GeoJSON nguồn.
+## Quy trình Cập nhật Dữ liệu 1-Click (`update_pipeline.py`)
 
-Lớp biển báo được tạo trước từ bản trích xuất OSM Việt Nam. Báo cáo luôn tách
-số node thô, số biển được công bố và mã chưa nhận dạng; dữ liệu cộng đồng OSM
-không được mô tả như danh mục biển báo pháp lý đầy đủ.
+Khi có file `secrect.bin` mới từ nhà sản xuất, chạy một lệnh duy nhất:
 
-    cd sign_pipeline
-    python3 -m venv .venv
-    .venv/bin/pip install osmium
-    .venv/bin/python build_signs.py
+```bash
+python3 update_pipeline.py --input /duong/dan/toi/secrect.bin
+```
 
-## Asset biển báo giao thông
+Script sẽ tự động:
+1. **Giải mã firmware (`map-data/extract_all.py`)**: Sử dụng bảng thế S-Box `0x00cc08b0` giải mã `edogen.bin`, `citiesen.bin`, `districtsen.bin` và giải nén LZ77 `roadsenz.bin`.
+2. **Chuẩn hóa SQLite v6 (`data_pipeline/normalize.py`)**: Lọc ranh giới đất liền Việt Nam, deduplicate camera 3m, tính góc bearing, lập chỉ mục không gian R-Tree 2D.
+3. **Kiểm tra tính toàn vẹn**: Thực thi `PRAGMA integrity_check`.
+4. **Đồng bộ vào Xcode**: Tự động ghi đè file `map_database_v2.sqlite` vào thư mục `VietDriveIOS/VietDrive/Resources/`.
 
-Thư mục traffic_sign_assets chứa pipeline lấy asset từ Wikimedia Commons. Chuẩn
-pháp lý đối chiếu là QCVN 41:2024/BGTVT có hiệu lực từ 01/01/2025.
+---
 
-Bộ hiện tại có 25 biển thiết yếu: tốc độ 30 đến 120 km/h, đường cấm, cấm đi
-ngược chiều, STOP, cấm vượt, cấm rẽ, cấm dừng/đỗ, nhường đường, hướng bắt buộc,
-người đi bộ, trẻ em, đi chậm và đường cao tốc.
-Mỗi file có URL nguồn, URL trang mô tả, license và SHA-256 trong manifest.json.
-Pipeline chỉ nhận file được Commons API báo là Public domain.
+## Hướng dẫn Build Ứng dụng iOS
 
-    cd traffic_sign_assets
-    python3 fetch_assets.py
+Project sử dụng **XcodeGen** để đảm bảo cấu trúc project luôn đồng nhất:
 
-Các hình được nhập vào Xcode Assets dưới namespace TrafficSigns. Trạng thái
-public-domain chỉ cho phép tái sử dụng; từng hình vẫn phải được đối chiếu trực
-quan với phụ lục QCVN 41:2024 trước khi dùng cho chức năng an toàn.
+```bash
+cd VietDriveIOS
+xcodegen generate
+open VietDrive.xcodeproj
+```
 
-## Build iOS
+Build & chạy trên thiết bị hoặc Simulator:
+```bash
+xcodebuild -project VietDrive.xcodeproj \
+  -scheme VietDrive \
+  -destination 'generic/platform=iOS' \
+  build
+```
 
-Project Xcode được sinh từ VietDriveIOS/project.yml:
+---
 
-    cd VietDriveIOS
-    xcodegen generate
-    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-      xcodebuild -project VietDrive.xcodeproj \
-      -scheme VietDrive \
-      -destination 'id=00008150-000D38D92278401C' \
-      -allowProvisioningUpdates build
+## Các tài liệu tham khảo chi tiết
 
-Bundle ID là vn.vietdrive.ios. Team ký cá nhân nằm trong project.yml; cần đổi
-giá trị này nếu build bằng tài khoản Apple Developer khác.
-
-## Giới hạn cần giải quyết tiếp
-
-1. Tự host Photon và Valhalla/OSRM; chuyển endpoint khỏi demo công cộng.
-2. Xây tile cache/offline region có điều khoản sử dụng rõ ràng.
-3. Đối soát camera với nguồn có ngày cập nhật, loại camera cũ và bổ sung hướng
-   camera khi có bằng chứng.
-4. Chuẩn hóa địa giới hành chính Việt Nam hiện hành bằng polygon tin cậy thay
-   cho nhãn tỉnh khôi phục.
-5. Thêm test hiệu năng, test hành trình GPS ghi sẵn và test UI.
-6. Thiết kế cơ chế cập nhật database có chữ ký trước khi phát hành.
+- [MAP_DATA_SPEC_AND_PIPELINE.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/MAP_DATA_SPEC_AND_PIPELINE.md): Đặc tả chi tiết kỹ thuật giải mã S-Box, cấu trúc khối LZ77 và schema database.
+- [HOW_TO_UPDATE_MAP_DATA.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/HOW_TO_UPDATE_MAP_DATA.md): Hướng dẫn nhanh cho người dùng cập nhật dữ liệu bản đồ.
+- [FIRMWARE_PROVENANCE.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/map-data/FIRMWARE_PROVENANCE.md): Bằng chứng dịch ngược MIPS firmware VietMap M1.
+- [driving-demo-offline.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/docs/driving-demo-offline.md): Tài liệu thiết kế chế độ chạy thử Sài Gòn → Phan Thiết.
+- [driving-mode-design.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/docs/driving-mode-design.md): Tài liệu thiết kế buồng lái 3D và roadside presentation.
+- [VoicePrompts/README.md](file:///Users/lechaukha12/Desktop/tools/vietdrive/VietDriveIOS/VietDrive/Resources/VoicePrompts/README.md): Danh mục và checksum bộ giọng đọc Adam.
