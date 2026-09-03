@@ -17,6 +17,7 @@ struct RouteDemoPlayback {
     private let coordinates: [CLLocationCoordinate2D]
     private let cumulative: [Double]
     private(set) var distanceMeters = 0.0
+    private(set) var elapsedSeconds = 0.0
     private(set) var speedKmh: Int
     private(set) var isPaused = false
     var totalDistanceMeters: Double { cumulative.last ?? 0 }
@@ -60,7 +61,10 @@ struct RouteDemoPlayback {
     mutating func advance(by seconds: TimeInterval) {
         guard !isPaused, !isFinished, seconds.isFinite, seconds > 0 else { return }
         // Never fast-forward across time spent suspended or a stalled main run loop.
-        distanceMeters = min(totalDistanceMeters, distanceMeters + min(1, seconds) * Double(speedKmh) / 3.6)
+        let speed = Double(speedKmh) / 3.6
+        let elapsed = min(1, seconds, (totalDistanceMeters - distanceMeters) / speed)
+        elapsedSeconds += elapsed
+        distanceMeters = min(totalDistanceMeters, distanceMeters + elapsed * speed)
         if isFinished { isPaused = true }
     }
 

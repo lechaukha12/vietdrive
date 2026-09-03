@@ -5,6 +5,15 @@ import OSLog
 import UIKit
 
 final class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
+    struct Fix {
+        let location: CLLocation
+        let speedKmh: Int
+        let heading: Double
+        let headingSource: String
+    }
+
+    /// Published only after all properties for an accepted GPS sample are committed.
+    @Published private(set) var currentFix: Fix?
     @Published private(set) var location: CLLocation?
     @Published private(set) var speedKmh = 0
     @Published private(set) var heading = 0.0
@@ -124,6 +133,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         setNavigationActive(false)
         stop()
         location = nil
+        currentFix = nil
         speedKmh = 0
         fixQuality = .unavailable
         lastFixAt = .distantPast
@@ -241,7 +251,6 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         default: fixQuality = .weak
         }
         lastLocationError = nil
-        location = latest
         speedKmh = latest.speed > 0 ? Int((latest.speed * 3.6).rounded()) : 0
 
         // GPS course is much more reliable than the magnetometer inside a car.
@@ -256,6 +265,9 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
                   Date().timeIntervalSince(lastCourseAt) > 3 {
             applyHeading(compassHeading, source: "compass", alpha: 0.18)
         }
+        location = latest
+        currentFix = Fix(location: latest, speedKmh: speedKmh,
+                         heading: heading, headingSource: headingSource)
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {

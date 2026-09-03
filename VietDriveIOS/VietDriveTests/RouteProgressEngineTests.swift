@@ -1,4 +1,5 @@
 import CoreLocation
+import Combine
 import XCTest
 @testable import VietDrive
 
@@ -232,5 +233,108 @@ final class RouteProgressEngineTests: XCTestCase {
     func testAngularDifferenceWrapsNorthAndDetectsReverse() {
         XCTAssertEqual(RouteProgressEngine.angularDifference(355, 5), 10, accuracy: 0.001)
         XCTAssertEqual(RouteProgressEngine.angularDifference(90, 270), 180, accuracy: 0.001)
+    }
+}
+
+final class NavigationArrivalRegressionTests: XCTestCase {
+    func testArrivalRequiresARecentAccurateFixAtTheActualEndpoint() throws {
+        let coordinates = [CLLocationCoordinate2D(latitude: 10, longitude: 106),
+                           CLLocationCoordinate2D(latitude: 10.01, longitude: 106)]
+        let cumulative = RouteProgressEngine.cumulativeDistances(for: coordinates)
+        let route = NavigationRoute(distanceMeters: cumulative.last!, durationSeconds: 120,
+                                    coordinates: coordinates, cumulativeDistances: cumulative, steps: [])
+        let now = Date()
+        func fix(_ coordinate: CLLocationCoordinate2D, accuracy: Double = 5, age: Double = 0) -> CLLocation {
+            CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: accuracy,
+                       verticalAccuracy: -1, course: 0, speed: 10, timestamp: now.addingTimeInterval(-age))
+        }
+        let far = fix(.init(latitude: 10.0101, longitude: 106.005))
+        let offRoute = try XCTUnwrap(RouteProgressEngine.progress(on: route, location: far.coordinate))
+        XCTAssertEqual(offRoute.remainingDistanceMeters, 0)
+        XCTAssertGreaterThan(offRoute.distanceFromRouteMeters, 500)
+        XCTAssertFalse(RouteProgressEngine.hasArrived(on: route, progress: offRoute, location: far, at: now))
+
+        let atEnd = fix(coordinates.last!)
+        let endProgress = try XCTUnwrap(RouteProgressEngine.progress(on: route, location: atEnd.coordinate))
+        XCTAssertTrue(RouteProgressEngine.hasArrived(on: route, progress: endProgress, location: atEnd, at: now))
+        for inaccurate in [fix(coordinates.last!, accuracy: 60), fix(coordinates.last!, accuracy: -1),
+                           fix(coordinates.last!, age: 30), fix(coordinates.last!, age: -20),
+                           fix(.init(latitude: 10.012, longitude: 106))] {
+            let progress = try XCTUnwrap(RouteProgressEngine.progress(on: route, location: inaccurate.coordinate))
+            XCTAssertFalse(RouteProgressEngine.hasArrived(on: route, progress: progress, location: inaccurate, at: now))
+        }
+    }
+}
+
+final class DriveInputRegressionTests: XCTestCase {
+    @MainActor
+    func testCompletedDemoReturnsAlertsToFreeDriveWhileKeepingArrivalRoute() {
+        let model = DriveViewModel(navigationBackend: PreviewRoutingBackend())
+        XCTAssertTrue(model.startFixedRouteDemo())
+        defer { model.stopRouteDemo() }
+        XCTAssertNotNil(model.activeAlertRoute)
+        model.seekRouteDemo(to: 1)
+        XCTAssertTrue(model.didArrive)
+        XCTAssertEqual(model.routePhase, .preview)
+        XCTAssertNotNil(model.navigationRoute)
+        XCTAssertNil(model.activeAlertRoute)
+    }
+
+    @MainActor
+    func testGPSPublishesSpeedHeadingAndStoredLocationFromTheSameFix() {
+        let service = LocationService()
+        let manager = CLLocationManager()
+        let now = Date()
+        let fixes = [(10.0, 60.0, 90.0), (10.001, 36.0, 180.0)].map {
+            CLLocation(coordinate: .init(latitude: $0.0, longitude: 106), altitude: 0,
+                       horizontalAccuracy: 5, verticalAccuracy: -1, course: $0.2,
+                       speed: $0.1 / 3.6, timestamp: now)
+        }
+        var received: [LocationService.Fix] = []
+        let subscription = service.$currentFix.compactMap { $0 }.sink { fix in
+            received.append(fix)
+            XCTAssertEqual(fix.location, service.location)
+            XCTAssertEqual(fix.speedKmh, Int((fix.location.speed * 3.6).rounded()))
+            XCTAssertEqual(fix.heading, service.heading)
+            XCTAssertEqual(fix.headingSource, "gps_course")
+        }
+        for fix in fixes { service.locationManager(manager, didUpdateLocations: [fix]) }
+        XCTAssertEqual(received.map(\.speedKmh), [60, 36])
+        XCTAssertEqual(received.first?.heading, 90)
+        XCTAssertGreaterThan(received.last?.heading ?? 0, 90)
+        withExtendedLifetime(subscription) {}
+    }
+
+    @MainActor
+    func testPreviewKeepsRouteForMapButDoesNotUseItForDrivingAlerts() async throws {
+        let backend = PreviewRoutingBackend()
+        let model = DriveViewModel(navigationBackend: backend)
+        let ready = expectation(description: "route preview")
+        let subscription = model.$routePhase.filter { $0 == .preview }.first().sink { _ in ready.fulfill() }
+        let start = PlaceSearchResult(id: "start", name: "Start", subtitle: "", latitude: 10.5, longitude: 106)
+        let end = PlaceSearchResult(id: "end", name: "End", subtitle: "", latitude: 10.51, longitude: 106)
+        model.planRoute(from: start, to: end)
+        await fulfillment(of: [ready], timeout: 3)
+        XCTAssertNotNil(model.navigationRoute)
+        XCTAssertNil(model.activeAlertRoute)
+        XCTAssertFalse(model.roads.isEmpty)
+        withExtendedLifetime(subscription) {}
+    }
+}
+
+private final class PreviewRoutingBackend: NavigationBackend {
+    var onRoutingHealthUpdate: ((RoutingHealthSnapshot) -> Void)?
+    func search(query: String, near coordinate: CLLocationCoordinate2D?) async throws -> [PlaceSearchResult] { [] }
+    func route(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D,
+               preferences: RoutePreferences, originBearing: Double?, originAccuracy: Double?) async throws -> NavigationRoute {
+        let coordinates = [origin, destination]
+        let cumulative = RouteProgressEngine.cumulativeDistances(for: coordinates)
+        return NavigationRoute(distanceMeters: cumulative.last!, durationSeconds: 120,
+                               coordinates: coordinates, cumulativeDistances: cumulative, steps: [])
+    }
+    func routes(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D,
+                preferences: RoutePreferences, originBearing: Double?, originAccuracy: Double?) async throws -> [NavigationRoute] {
+        [try await route(from: origin, to: destination, preferences: preferences,
+                         originBearing: originBearing, originAccuracy: originAccuracy)]
     }
 }

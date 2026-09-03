@@ -2,6 +2,21 @@ import CoreLocation
 import Foundation
 
 enum RouteProgressEngine {
+    /// Projection reaching the route's end is insufficient when the car is off-route.
+    static func hasArrived(
+        on route: NavigationRoute,
+        progress: NavigationProgress,
+        location: CLLocation,
+        at date: Date = Date()
+    ) -> Bool {
+        guard let end = route.coordinates.last,
+              location.horizontalAccuracy >= 0, location.horizontalAccuracy <= 42,
+              (-5...8).contains(date.timeIntervalSince(location.timestamp)),
+              progress.remainingDistanceMeters <= 25,
+              progress.distanceFromRouteMeters <= 25 else { return false }
+        return location.distance(from: CLLocation(latitude: end.latitude, longitude: end.longitude)) <= 35
+    }
+
     struct Projection {
         let distanceAlongRouteMeters: Double
         let lateralDistanceMeters: Double

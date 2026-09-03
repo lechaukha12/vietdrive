@@ -1,4 +1,5 @@
 import CoreLocation
+import SQLite3
 import UIKit
 import XCTest
 @testable import VietDrive
@@ -324,5 +325,87 @@ final class OfflineAlertStoreTests: XCTestCase {
             ).signCode,
             TrafficSignCatalog.sectionCameraCode
         )
+    }
+}
+
+final class DrivingAlertRegressionTests: XCTestCase {
+    func testCrossingRoadDoesNotHideAlignedSpeedLimit() async throws {
+        let store = try makeStore()
+        let context = await query(store, heading: 90)
+        XCTAssertEqual(context.matchedSpeedLimit, 50)
+        XCTAssertEqual(context.speedLimitMatch?.roadName, "eastbound")
+    }
+
+    func testRetainedRoadIsRejectedAfterDirectionChanges() async throws {
+        let store = try makeStore()
+        let north = await query(store, heading: 0)
+        XCTAssertEqual(north.matchedSpeedLimit, 40)
+        let east = await query(store, heading: 90)
+        XCTAssertEqual(east.matchedSpeedLimit, 50)
+        let west = await query(store, heading: 270)
+        XCTAssertEqual(west.matchedSpeedLimit, 50)
+    }
+
+    func testWrongWayOneWayCandidateDoesNotHideNextValidRoad() async throws {
+        let store = try makeStore(oneWay: true)
+        let context = await query(store, heading: 270)
+        XCTAssertEqual(context.matchedSpeedLimit, 50)
+        XCTAssertEqual(context.speedLimitMatch?.roadName, "eastbound")
+    }
+
+    func testSharedAlertFilterKeepsNearbyFreeDriveSignsAndRejectsOffRouteSigns() {
+        let location = CLLocation(latitude: 10, longitude: 106)
+        let alert = DriveAlert(id: 99, kind: .roadSign, speedLimit: 0, latitude: 10.0001,
+                               longitude: 106.0002, message: "Cấm đi ngược chiều", province: "",
+                               distanceMeters: 25, signCode: "P102", source: "OpenStreetMap", confidence: 0.9)
+        let coordinates = [CLLocationCoordinate2D(latitude: 10.5, longitude: 106),
+                           CLLocationCoordinate2D(latitude: 10.51, longitude: 106)]
+        let cumulative = RouteProgressEngine.cumulativeDistances(for: coordinates)
+        let route = NavigationRoute(distanceMeters: cumulative.last!, durationSeconds: 100,
+                                    coordinates: coordinates, cumulativeDistances: cumulative, steps: [])
+        XCTAssertEqual(OfflineAlertStore.filterDrivingAlerts([alert], location: location, heading: 90,
+            speedKmh: 30, route: nil, matchedDistanceMeters: nil, radiusMeters: 1_500).count, 1)
+        XCTAssertTrue(OfflineAlertStore.filterDrivingAlerts([alert], location: location, heading: 90,
+            speedKmh: 30, route: route, matchedDistanceMeters: nil, radiusMeters: 1_500).isEmpty)
+    }
+
+    private func query(_ store: OfflineAlertStore, heading: Double) async -> OfflineMapContext {
+        await withCheckedContinuation { continuation in
+            store.nearbyContext(location: CLLocation(latitude: 10, longitude: 106), heading: heading,
+                                speedKmh: 30) { continuation.resume(returning: $0) }
+        }
+    }
+
+    private func makeStore(oneWay: Bool = false) throws -> OfflineAlertStore {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        addTeardownBlock { try? FileManager.default.removeItem(at: path) }
+        var database: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(path.path, &database), SQLITE_OK)
+        defer { sqlite3_close(database) }
+        let geometry = oneWay ? "[[105.999,10],[106.001,10]]" : "[[106,9.999],[106,10.001]]"
+        let sql = """
+            PRAGMA user_version=6;
+            CREATE TABLE metadata(key TEXT, value TEXT);
+            INSERT INTO metadata VALUES('contract_id','vn.vietdrive.map-data'),('contract_version','1');
+            CREATE TABLE map_data_city_lookup(id INTEGER PRIMARY KEY, label TEXT);
+            CREATE TABLE map_data_name_lookup(id INTEGER PRIMARY KEY, city_id INTEGER, label TEXT);
+            CREATE TABLE map_data_points(id INTEGER PRIMARY KEY, source_node_id INTEGER, type_code INTEGER,
+                latitude REAL, longitude REAL, speed_kmh INTEGER, direction_type INTEGER, direction_degrees REAL,
+                warning_text TEXT, source TEXT, source_ref TEXT, confidence REAL);
+            CREATE VIRTUAL TABLE map_data_points_rtree USING rtree(point_id,min_lat,max_lat,min_lon,max_lon);
+            INSERT INTO map_data_points VALUES(1,1,2,20,106,0,0,NULL,'camera','map-data/edogen.bin','test',0.9);
+            INSERT INTO map_data_points_rtree VALUES(1,20,20,106,106);
+            CREATE TABLE map_data_road_links(id INTEGER PRIMARY KEY, road_serial_number INTEGER,
+                provider_road_id INTEGER, inline_road_name TEXT, direction_1_name_id INTEGER, direction_2_name_id INTEGER,
+                direction_1_speed_kmh INTEGER, direction_2_speed_kmh INTEGER, geometry_json TEXT);
+            CREATE VIRTUAL TABLE map_data_road_links_rtree USING rtree(link_id,min_lat,max_lat,min_lon,max_lon);
+            INSERT INTO map_data_road_links VALUES(1,1,1,'nearest',0,0,40,\(oneWay ? 0 : 40),'\(geometry)');
+            INSERT INTO map_data_road_links VALUES(2,2,2,'eastbound',0,0,50,50,'[[105.999,10.00018],[106.001,10.00018]]');
+            INSERT INTO map_data_road_links_rtree VALUES(1,9.999,10.001,105.999,106.001);
+            INSERT INTO map_data_road_links_rtree VALUES(2,10.00018,10.00018,105.999,106.001);
+            """
+        let result = sqlite3_exec(database, sql, nil, nil, nil)
+        XCTAssertEqual(result, SQLITE_OK, String(cString: sqlite3_errmsg(database)))
+        return OfflineAlertStore(databasePath: path.path)
     }
 }

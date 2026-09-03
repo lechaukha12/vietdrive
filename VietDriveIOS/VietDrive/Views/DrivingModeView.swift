@@ -201,7 +201,7 @@ private struct DrivingCockpit: View {
                     .lineLimit(2)
             }
             if let section = snapshot.activeSectionSpeed {
-                Text("Tốc độ TB đoạn: \(section.averageSpeedKmh) km/h")
+                Text("TB ước tính từ camera: \(section.averageSpeedKmh) km/h")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(DriveTheme.skyDeep)
             }

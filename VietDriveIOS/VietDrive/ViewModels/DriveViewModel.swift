@@ -28,10 +28,14 @@ final class DriveViewModel: ObservableObject {
     @Published private(set) var cameraRevision = 0
     @Published private(set) var communityRevision = 0
 
-    @Published private(set) var routePhase: RoutePhase = .idle
+    @Published private(set) var routePhase: RoutePhase = .idle {
+        didSet { if oldValue != routePhase { invalidateAlertQuery() } }
+    }
     @Published private(set) var routeOrigin: PlaceSearchResult?
     @Published private(set) var destination: PlaceSearchResult?
-    @Published private(set) var navigationRoute: NavigationRoute?
+    @Published private(set) var navigationRoute: NavigationRoute? {
+        didSet { invalidateAlertQuery() }
+    }
     @Published private(set) var routeAlternatives: [NavigationRoute] = []
     @Published private(set) var selectedRouteIndex = 0
     @Published var routePreferences = DriveViewModel.loadRoutePreferences()
@@ -80,6 +84,7 @@ final class DriveViewModel: ObservableObject {
     private var lastDatabaseQuery = Date.distantPast
     private var isDatabaseQueryInFlight = false
     private var locationSourceGeneration = UUID()
+    private var alertQueryGeneration = UUID()
     private var lastViewportCenter: CLLocationCoordinate2D?
     private var lastViewportRadius = 0.0
     private var viewportQueryToken = UUID()
@@ -89,9 +94,9 @@ final class DriveViewModel: ObservableObject {
     private var routePlanningToken = UUID()
     private var lastHapticAlertID: Int?
     private var wasOverSpeed = false
-    private var sectionSpeedStartTime: Date?
-    private var sectionSpeedLimit: Int?
-    private var sectionStartLocation: CLLocation?
+    private var sectionSpeedTracker = SectionSpeedTracker()
+    private var lastProcessedLocation: CLLocation?
+    private var lastProcessedTime: TimeInterval?
     private var matchedRouteDistanceMeters: Double?
     private var lastSessionSaveAt = Date.distantPast
     private var journeyTask: Task<Void, Never>?
@@ -167,25 +172,25 @@ final class DriveViewModel: ObservableObject {
                 self.snapshot.primaryAlert = self.preferredPrimaryAlert(from: self.visibleAlerts)
             }
             .store(in: &cancellables)
-        locationService.$location
+        locationService.$currentFix
             .compactMap { $0 }
-            .sink { [weak self] location in
+            .sink { [weak self] fix in
                 guard let self else { return }
                 self.refreshLocationRoutingAvailability()
                 guard !self.isSimulatedLocationActive else { return }
                 self.waitingForLiveFixAfterDemo = false
                 if self.routePhase == .navigating, let routeID = self.navigationRoute?.id {
                     self.telemetry.rawLocation(
-                        location,
-                        resolvedHeading: self.locationService.heading,
-                        headingSource: self.locationService.headingSource,
+                        fix.location,
+                        resolvedHeading: fix.heading,
+                        headingSource: fix.headingSource,
                         routeID: routeID
                     )
                 }
                 self.process(
-                    location: location,
-                    speed: self.locationService.speedKmh,
-                    heading: self.locationService.heading
+                    location: fix.location,
+                    speed: fix.speedKmh,
+                    heading: fix.heading
                 )
             }
             .store(in: &cancellables)
@@ -261,12 +266,19 @@ final class DriveViewModel: ObservableObject {
     }
 
     var visibleAlerts: [DriveAlert] {
-        let communityAlerts = communityStore.approvedAlerts(near: snapshot.coordinate)
+        let communityAlerts = communityStore.approvedAlerts(
+            near: snapshot.coordinate,
+            radiusMeters: 1_500,
+            heading: snapshot.heading,
+            speedKmh: snapshot.speedKmh,
+            route: activeAlertRoute,
+            matchedDistanceMeters: activeAlertRoute == nil ? nil : matchedRouteDistanceMeters
+        )
         return (alerts + communityAlerts).filter { alert in
             guard alert.confidence == 0 || alert.confidence >= 0.55 else { return false }
             if Self.isTurnRestrictionAlert(alert) {
                 return showRoadSigns
-                    && isGuidanceActive
+                    && activeAlertRoute != nil
                     && isTurnRestrictionOnActiveRoute(alert)
             }
             return switch alert.kind {
@@ -307,6 +319,9 @@ final class DriveViewModel: ObservableObject {
     var isRoutePreview: Bool { routePhase == .preview }
     var isPlanningRoute: Bool { routePhase == .planning }
     var isGuidanceActive: Bool { isNavigating || isTraceReplayActive }
+    var activeAlertRoute: NavigationRoute? {
+        routePhase == .navigating && !didArrive ? navigationRoute : nil
+    }
     var isRouteDemoActive: Bool { routeDemo != nil }
     var isSimulatedLocationActive: Bool { isTraceReplayActive || isRouteDemoActive }
     var routeOriginText: String { routeOrigin?.name ?? "Vị trí hiện tại" }
@@ -628,6 +643,7 @@ final class DriveViewModel: ObservableObject {
         traceReplayElapsed = 0
         traceReplayProgress = 0
         isTraceReplayActive = true
+        resetSectionSpeed()
         mapMatchStatus = "Đang phát lại GPS đã ghi · x4"
         didArrive = false
         routePhase = .navigating
@@ -647,6 +663,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     func stopTraceReplay() {
+        resetSectionSpeed()
         isTraceReplayActive = false
         traceReplayTimer?.cancel()
         traceReplayTimer = nil
@@ -816,7 +833,8 @@ final class DriveViewModel: ObservableObject {
     private func publishRouteDemoSample() {
         guard let playback = routeDemo else { return }
         let sample = playback.sample()
-        process(location: sample.location, speed: sample.speedKmh, heading: sample.heading, isReplay: true)
+        process(location: sample.location, speed: sample.speedKmh, heading: sample.heading,
+                isReplay: true, sampleTime: playback.elapsedSeconds)
         mapMatchStatus = playback.isFinished ? "DEMO · Đã hoàn tất tuyến"
             : playback.isPaused ? "DEMO · Đã tạm dừng" : "DEMO · \(demoSpeedKmh) km/h"
     }
@@ -836,9 +854,7 @@ final class DriveViewModel: ObservableObject {
         wrongDirectionSamples = 0
         lastHapticAlertID = nil
         wasOverSpeed = false
-        sectionSpeedStartTime = nil
-        sectionSpeedLimit = nil
-        sectionStartLocation = nil
+        resetSectionSpeed()
         journeyTask?.cancel()
         snapshot = DriveSnapshot()
         snapshot.coordinate = coordinate
@@ -881,6 +897,7 @@ final class DriveViewModel: ObservableObject {
 
     func endUserSession() {
         cancelRoute()
+        resetSectionSpeed()
         offlineMapDownloadService.pauseActiveDownload()
         voice.setNavigationActive(false)
         voice.stopAll()
@@ -894,6 +911,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     private func terminateApplicationSession() {
+        resetSectionSpeed()
         invalidateReroute()
         journeyTask?.cancel()
         traceReplayTimer?.cancel()
@@ -950,7 +968,8 @@ final class DriveViewModel: ObservableObject {
             location: sample.location,
             speed: Int((sample.speedMetersPerSecond * 3.6).rounded()),
             heading: sample.course,
-            isReplay: true
+            isReplay: true,
+            sampleTime: sample.elapsedSeconds
         )
     }
 
@@ -958,8 +977,12 @@ final class DriveViewModel: ObservableObject {
         location: CLLocation,
         speed: Int,
         heading: Double,
-        isReplay: Bool = false
+        isReplay: Bool = false,
+        sampleTime: TimeInterval? = nil
     ) {
+        let time = sampleTime ?? location.timestamp.timeIntervalSinceReferenceDate
+        lastProcessedLocation = location
+        lastProcessedTime = time
         snapshot.coordinate = location.coordinate
         snapshot.speedKmh = speed
         snapshot.heading = heading
@@ -1001,17 +1024,22 @@ final class DriveViewModel: ObservableObject {
             lastDatabaseQuery = Date()
             isDatabaseQueryInFlight = true
             let queryLocation = location
-            let primaryRoute = navigationRoute?.overlay
             let generation = locationSourceGeneration
+            let queryGeneration = alertQueryGeneration
+            let route = activeAlertRoute
             (demoAlertStore ?? alertStore).nearbyContext(
                 location: location,
                 heading: heading,
                 speedKmh: speed,
-                route: navigationRoute,
-                matchedDistanceMeters: matchedRouteDistanceMeters
+                route: route,
+                matchedDistanceMeters: route == nil ? nil : matchedRouteDistanceMeters
             ) { [weak self] context in
                 guard let self, self.locationSourceGeneration == generation else { return }
                 self.isDatabaseQueryInFlight = false
+                guard self.alertQueryGeneration == queryGeneration else {
+                    self.lastDatabaseQuery = .distantPast
+                    return
+                }
                 let currentLocation = CLLocation(
                     latitude: self.snapshot.coordinate.latitude,
                     longitude: self.snapshot.coordinate.longitude
@@ -1025,30 +1053,12 @@ final class DriveViewModel: ObservableObject {
                 }
                 self.apply(
                     context,
-                    routeOverlay: primaryRoute
+                    routeOverlay: self.navigationRoute?.overlay
                 )
             }
         }
 
-        // Update section speed tracking if active
-        if let startTime = sectionSpeedStartTime, let limit = sectionSpeedLimit, let startLoc = sectionStartLocation {
-            let elapsed = Date().timeIntervalSince(startTime)
-            let distance = location.distance(from: startLoc)
-            if distance > 12_000 || elapsed > 900 {
-                // Section ended or timed out
-                sectionSpeedStartTime = nil
-                sectionSpeedLimit = nil
-                sectionStartLocation = nil
-                snapshot.activeSectionSpeed = nil
-            } else if elapsed >= 4 {
-                let avgSpeedKmh = Int(((distance / elapsed) * 3.6).rounded())
-                snapshot.activeSectionSpeed = SectionSpeedProgress(
-                    speedLimit: limit,
-                    averageSpeedKmh: avgSpeedKmh,
-                    distanceTraveledMeters: distance
-                )
-            }
-        }
+        snapshot.activeSectionSpeed = sectionSpeedTracker.update(location: location, time: time)
 
         let isOverCritical = snapshot.isOverSpeedCritical && snapshot.speedLimitCanTriggerAlerts
         voice.updateOverSpeed(isOverCritical, limit: snapshot.speedLimitKmh)
@@ -1072,7 +1082,8 @@ final class DriveViewModel: ObservableObject {
             totalDistance: route.distanceMeters,
             remainingDistance: progress.remainingDistanceMeters
         )
-        if progress.remainingDistanceMeters <= 25 && (!isRouteDemoActive || routeDemo?.isFinished == true) {
+        if RouteProgressEngine.hasArrived(on: route, progress: progress, location: location),
+           !isRouteDemoActive || routeDemo?.isFinished == true {
             invalidateReroute()
             // Keep the route available for the arrival card, but end the live
             // navigation lifecycle so a later background transition cannot
@@ -1387,12 +1398,8 @@ final class DriveViewModel: ObservableObject {
             TrafficSignCatalog.isSectionCamera($0) && $0.distanceMeters <= 60
         }) {
             let limit = sectionCam.speedLimit > 0 ? sectionCam.speedLimit : snapshot.speedLimitKmh
-            if limit > 0 && sectionSpeedStartTime == nil {
-                sectionSpeedStartTime = Date()
-                sectionSpeedLimit = limit
-                sectionStartLocation = isRouteDemoActive
-                    ? CLLocation(latitude: snapshot.coordinate.latitude, longitude: snapshot.coordinate.longitude)
-                    : locationService.routingLocation
+            if let location = lastProcessedLocation, let time = lastProcessedTime {
+                sectionSpeedTracker.start(limit: limit, location: location, time: time)
             }
         }
 
@@ -1417,6 +1424,20 @@ final class DriveViewModel: ObservableObject {
     private func refreshLocationRoutingAvailability() {
         canUseCurrentLocationForRouting = locationService.routingLocation != nil
         locationAuthorizationDenied = locationService.authorizationDenied
+    }
+
+    private func invalidateAlertQuery() {
+        alertQueryGeneration = UUID()
+        lastDatabaseQuery = .distantPast
+        alerts = []
+        snapshot.primaryAlert = nil
+    }
+
+    private func resetSectionSpeed() {
+        sectionSpeedTracker.reset()
+        lastProcessedLocation = nil
+        lastProcessedTime = nil
+        snapshot.activeSectionSpeed = nil
     }
 
     private func invalidateReroute() {
@@ -1482,7 +1503,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     private func isTurnRestrictionOnActiveRoute(_ alert: DriveAlert) -> Bool {
-        guard let route = navigationRoute,
+        guard let route = activeAlertRoute,
               let projection = RouteProgressEngine.projection(
                 on: route,
                 coordinate: alert.coordinate

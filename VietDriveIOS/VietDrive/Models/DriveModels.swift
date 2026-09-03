@@ -461,6 +461,68 @@ struct SectionSpeedProgress: Equatable {
     let distanceTraveledMeters: Double
 }
 
+/// Distance accumulated along accepted fixes, using their clock (GPS or simulation).
+/// Firmware does not identify paired entry/exit cameras. Limits below expire an
+/// estimate with insufficient evidence; they do not identify an official section end.
+struct SectionSpeedTracker {
+    private struct Session {
+        let limit: Int
+        let startedAt: TimeInterval
+        var previousLocation: CLLocation
+        var previousTime: TimeInterval
+        var distance = 0.0
+    }
+
+    private var session: Session?
+
+    mutating func reset() { session = nil }
+
+    mutating func start(limit: Int, location: CLLocation, time: TimeInterval) {
+        guard session == nil, limit > 0, Self.isUsable(location), time.isFinite else { return }
+        session = Session(limit: limit, startedAt: time,
+                          previousLocation: location, previousTime: time)
+    }
+
+    mutating func update(location: CLLocation, time: TimeInterval) -> SectionSpeedProgress? {
+        guard var current = session, time.isFinite else { return nil }
+        let elapsed = time - current.startedAt
+        let interval = time - current.previousTime
+        // Do not connect fixes across a GPS outage or a change of playback clock.
+        guard elapsed <= 900, interval >= 0, interval <= 30 else {
+            reset()
+            return nil
+        }
+        guard Self.isUsable(location) else { return nil }
+        if interval > 0 {
+            let distance = location.distance(from: current.previousLocation)
+            let tolerance = location.horizontalAccuracy + current.previousLocation.horizontalAccuracy
+            guard distance.isFinite, distance <= 50 * interval + tolerance else {
+                reset()
+                return nil
+            }
+            // Avoid accumulating stationary GPS jitter as travelled distance.
+            if location.speed != 0 || current.previousLocation.speed != 0 {
+                current.distance += distance
+            }
+            current.previousLocation = location
+            current.previousTime = time
+        }
+        guard current.distance <= 12_000 else { reset(); return nil }
+        session = current
+        guard elapsed >= 4 else { return nil }
+        return SectionSpeedProgress(
+            speedLimit: current.limit,
+            averageSpeedKmh: Int((current.distance / elapsed * 3.6).rounded()),
+            distanceTraveledMeters: current.distance
+        )
+    }
+
+    private static func isUsable(_ location: CLLocation) -> Bool {
+        CLLocationCoordinate2DIsValid(location.coordinate)
+            && location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 42
+    }
+}
+
 struct OfflineMapContext {
     let alerts: [DriveAlert]
     let roads: [RoadOverlay]

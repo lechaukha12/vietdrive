@@ -114,10 +114,16 @@ final class CommunityContributionStore: ObservableObject {
 
     func approvedAlerts(
         near coordinate: CLLocationCoordinate2D,
-        radiusMeters: CLLocationDistance = 15_000
+        radiusMeters: CLLocationDistance = 1_500,
+        heading: Double = 0,
+        speedKmh: Int = 0,
+        route: NavigationRoute? = nil,
+        matchedDistanceMeters: Double? = nil,
+        at date: Date = Date(),
+        calendar: Calendar = .current
     ) -> [DriveAlert] {
         let origin = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        return approved.compactMap { contribution in
+        let candidates: [DriveAlert] = approved.compactMap { contribution in
             guard let anchor = contribution.anchor else { return nil }
             let distance = origin.distance(from: CLLocation(
                 latitude: anchor.latitude,
@@ -141,7 +147,12 @@ final class CommunityContributionStore: ObservableObject {
                 confidence: contribution.confidence,
                 conditional: contribution.conditional.isEmpty ? nil : contribution.conditional
             )
-        }.sorted { $0.distanceMeters < $1.distanceMeters }
+        }
+        return OfflineAlertStore.filterDrivingAlerts(
+            candidates, location: origin, heading: heading, speedKmh: speedKmh,
+            route: route, matchedDistanceMeters: matchedDistanceMeters,
+            radiusMeters: radiusMeters, at: date, calendar: calendar
+        )
     }
 
     private func update(id: UUID, mutation: (inout CommunityContribution) -> Void) {
