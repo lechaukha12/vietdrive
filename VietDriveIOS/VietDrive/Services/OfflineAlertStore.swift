@@ -71,11 +71,10 @@ final class OfflineAlertStore {
     private(set) var pendingReviewCount = 0
     private(set) var datasetVersion = "Không rõ"
 
-    init() {
+    init(databasePath: String? = nil) {
         let downloadedPath = UserDefaults.standard.string(forKey: "activeMapDatabasePath")
         let bundledPath = Bundle.main.path(forResource: "map_database_v2", ofType: "sqlite")
-        let candidates = [downloadedPath, bundledPath]
-            .compactMap { $0 }
+        let candidates = (databasePath.map { [$0] } ?? [downloadedPath, bundledPath].compactMap { $0 })
             .filter { FileManager.default.fileExists(atPath: $0) }
         guard !candidates.isEmpty else {
             print("VietDrive: map_database_v2.sqlite chưa được bundle")
@@ -95,7 +94,7 @@ final class OfflineAlertStore {
                 break
             }
             if let candidate { sqlite3_close(candidate) }
-            if path == downloadedPath {
+            if databasePath == nil, path == downloadedPath {
                 UserDefaults.standard.removeObject(forKey: "activeMapDatabasePath")
             }
         }
@@ -266,8 +265,7 @@ final class OfflineAlertStore {
             ).filter(Self.isNonFirmwarePhysicalSign)
             let allCandidates = mapDataAlerts + physicalSigns
                 + roadRuleResults.alerts + turnRestrictions
-            let matchedLimit = matchedSpeed?.limit ?? 0
-            let rawAlerts = self.routeAwareAlerts(
+            let rawAlerts = Self.filterDrivingAlerts(
                 allCandidates,
                 location: location,
                 heading: heading,
@@ -655,18 +653,23 @@ final class OfflineAlertStore {
         )
     }
 
-    private func routeAwareAlerts(
+    /// Shared by bundled alerts and approved community contributions.
+    static func filterDrivingAlerts(
         _ alerts: [DriveAlert],
         location: CLLocation,
         heading: Double,
         speedKmh: Int,
         route: NavigationRoute?,
         matchedDistanceMeters: Double?,
-        radiusMeters: Double
+        radiusMeters: Double,
+        at date: Date = Date(),
+        calendar: Calendar = .current
     ) -> [DriveAlert] {
         let confirmedTownEntryIDs = Self.confirmedFirmwareTownEntryIDs(in: alerts)
         let filtered: [DriveAlert] = alerts.compactMap { alert -> DriveAlert? in
-            guard ConditionalRuleEvaluator.isPotentiallyActive(alert.conditional ?? "") else {
+            guard ConditionalRuleEvaluator.isPotentiallyActive(
+                alert.conditional ?? "", at: date, calendar: calendar
+            ) else {
                 return nil
             }
             // Firmware type 10 is directional navigation data. Showing every
@@ -1079,34 +1082,56 @@ final class OfflineAlertStore {
             return (road, nearest.distance, nearest.bearing)
         }
 
-        // Hysteresis: Keep retained road if still within 8 meters
-        let retained = measured.first { $0.road.id == retainedRoadID && $0.distance <= 8 }
-
         // Firmware tolerance radius: 100m when stationary / starting, 50m when moving
         let maxSearchRadius = speedKmh < 7 ? 100.0 : 50.0
-        let candidate = retained ?? measured
+        let candidates = measured
             .filter { $0.distance <= maxSearchRadius }
             .filter { Self.supportedSpeedLimits.contains($0.road.direction1Speed) || Self.supportedSpeedLimits.contains($0.road.direction2Speed) }
-            .min { a, b in
+            .sorted { a, b in
+                let retainA = a.road.id == retainedRoadID && a.distance <= 8
+                let retainB = b.road.id == retainedRoadID && b.distance <= 8
+                if retainA != retainB { return retainA }
                 var scoreA = a.distance
                 var scoreB = b.distance
                 let maxA = max(a.road.direction1Speed, a.road.direction2Speed)
                 let maxB = max(b.road.direction1Speed, b.road.direction2Speed)
                 if speedKmh >= 65 {
-                    if maxA >= 70 && maxB <= 60 { scoreA -= 20 }
-                    if maxB >= 70 && maxA <= 60 { scoreB -= 20 }
+                    if maxA >= 70 { scoreA -= 20 }
+                    if maxB >= 70 { scoreB -= 20 }
                 }
-                return scoreA < scoreB
+                return scoreA == scoreB ? a.road.id < b.road.id : scoreA < scoreB
             }
-            ?? measured.filter { $0.distance <= maxSearchRadius }.min { $0.distance < $1.distance }
 
-        guard let candidate else {
-            retainedRoadID = nil
-            return nil
+        // Retention/proximity only rank candidates; every chosen road must also
+        // support the current direction. A crossing or old retained road must
+        // not prevent us from trying the next correctly aligned candidate.
+        for candidate in candidates {
+            guard let selection = Self.speedSelection(
+                road: candidate.road, segmentBearing: candidate.segmentBearing,
+                speedKmh: speedKmh, heading: heading, movementBearing: movementBearing
+            ) else { continue }
+            retainedRoadID = candidate.road.id
+            return SpeedLimitMatch(
+                limit: selection.speed,
+                roadName: selection.roadName,
+                source: "map-data/roadsenz.bin #\(candidate.road.roadSerialNumber)",
+                distanceMeters: candidate.distance,
+                alignmentDegrees: selection.alignment,
+                canTriggerDrivingAlerts: true,
+                province: candidate.road.province
+            )
         }
+        retainedRoadID = nil
+        return nil
+    }
 
-        let road = candidate.road
-        let segBearing = candidate.segmentBearing
+    private static func speedSelection(
+        road: FirmwareRoadCandidate,
+        segmentBearing segBearing: Double,
+        speedKmh: Int,
+        heading: Double?,
+        movementBearing: Double?
+    ) -> (speed: Int, alignment: Double?, roadName: String)? {
         let d1 = road.direction1Speed
         let d2 = road.direction2Speed
         let selection: (speed: Int, alignment: Double?, roadName: String)?
@@ -1167,17 +1192,7 @@ final class OfflineAlertStore {
             }
         }
 
-        guard let selection else { return nil }
-        retainedRoadID = road.id
-        return SpeedLimitMatch(
-            limit: selection.speed,
-            roadName: selection.roadName,
-            source: "map-data/roadsenz.bin #\(road.roadSerialNumber)",
-            distanceMeters: candidate.distance,
-            alignmentDegrees: selection.alignment,
-            canTriggerDrivingAlerts: true,
-            province: road.province
-        )
+        return selection
     }
 
     private func lookaheadNextSpeedMatch(

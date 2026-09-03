@@ -931,7 +931,7 @@ private struct SectionSpeedBanner: View {
                 .scaledToFit()
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading, spacing: 2) {
-                Text("ĐOẠN ĐO TỐC ĐỘ TỰ ĐỘNG")
+                Text("TB ƯỚC TÍNH TỪ CAMERA GẦN NHẤT")
                     .font(.system(size: 8, weight: .black))
                     .foregroundStyle(DriveTheme.pink)
                 HStack(spacing: 8) {

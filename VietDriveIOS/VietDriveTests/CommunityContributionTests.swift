@@ -144,4 +144,31 @@ final class CommunityContributionTests: XCTestCase {
             submitter: "tester"
         )
     }
+
+    func testApprovedAlertsRespectTimeHeadingAndActiveRoute() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = CommunityContributionStore(storageURL: file, loadPersistedData: false)
+        var contribution = makeContribution()
+        contribution.conditional = "no @ (Mo-Fr 06:00-09:00,16:00-20:00)"
+        contribution.sourceReference = "https://example.org/community-time"
+        XCTAssertTrue(store.submit(contribution).isValid)
+        store.approve(id: contribution.id, reviewer: "test")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "Asia/Ho_Chi_Minh"))
+        let active = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 9, day: 3, hour: 17)))
+        let inactive = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 9, day: 3, hour: 12)))
+        let anchor = try XCTUnwrap(contribution.anchor)
+        let behind = CLLocationCoordinate2D(latitude: anchor.latitude - 0.002, longitude: anchor.longitude)
+        XCTAssertEqual(store.approvedAlerts(near: behind, heading: 0, speedKmh: 40, at: active, calendar: calendar).count, 1)
+        XCTAssertTrue(store.approvedAlerts(near: behind, heading: 0, speedKmh: 40, at: inactive, calendar: calendar).isEmpty)
+        XCTAssertTrue(store.approvedAlerts(near: behind, heading: 180, speedKmh: 40, at: active, calendar: calendar).isEmpty)
+        let coordinates = [CLLocationCoordinate2D(latitude: anchor.latitude - 0.005, longitude: anchor.longitude + 0.002),
+                           CLLocationCoordinate2D(latitude: anchor.latitude + 0.005, longitude: anchor.longitude + 0.002)]
+        let distances = RouteProgressEngine.cumulativeDistances(for: coordinates)
+        let parallel = NavigationRoute(distanceMeters: distances.last!, durationSeconds: 100,
+                                       coordinates: coordinates, cumulativeDistances: distances, steps: [])
+        XCTAssertTrue(store.approvedAlerts(near: behind, heading: 0, speedKmh: 40,
+                                           route: parallel, at: active, calendar: calendar).isEmpty)
+    }
 }
