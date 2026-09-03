@@ -95,16 +95,62 @@ final class DrivingRoadsidePresentationTests: XCTestCase {
                     XCTAssertGreaterThan(placement.x, size.width / 2)
                     XCTAssertGreaterThanOrEqual(placement.top, 0, "\(size), \(distances)")
                     XCTAssertLessThanOrEqual(placement.top + placement.height, size.height)
+                    XCTAssertGreaterThanOrEqual(placement.x - placement.width / 2, 0)
                     XCTAssertLessThanOrEqual(placement.x + placement.width / 2, size.width)
                     if index > 0 {
                         let previous = placements[index - 1]
-                        XCTAssertGreaterThanOrEqual(placement.top + 0.001, previous.top + previous.readableHeight + 6)
                         XCTAssertLessThanOrEqual(placement.alert.distanceMeters, previous.alert.distanceMeters)
                         XCTAssertGreaterThanOrEqual(placement.faceSize, previous.faceSize)
                     }
+                    if let previous = placements[..<index].last {
+                        XCTAssertGreaterThanOrEqual(placement.top + 0.001, previous.top + previous.readableHeight + 6)
+                    }
+                    let base = placement.top + placement.height
+                    let depth = (base / size.height - 0.04) / 0.92
+                    let edge = DrivingRibbon.point(depth: depth, side: 1, size: size)
+                    XCTAssertEqual(placement.x, edge.x, accuracy: 0.001)
+                    XCTAssertEqual(base, edge.y, accuracy: 0.001)
                 }
             }
         }
+    }
+
+    func testSignsAtEqualDistanceAllRemainOnRightWithoutDuplication() {
+        for size in [CGSize(width: 357, height: 430), .init(width: 780, height: 180)] {
+            for distance in [0.0, 150, 500, 2_500] {
+                let posts = DrivingRoadsideLayout.placements(alerts: [alert(1, distance: distance), alert(2, distance: distance)], size: size)
+                XCTAssertEqual(Set(posts.map(\.id)), [1, 2])
+                XCTAssertEqual(posts.count, 2)
+                XCTAssertTrue(posts.allSatisfy { $0.x > size.width / 2 })
+                XCTAssertEqual(posts[0].faceSize, posts[1].faceSize, accuracy: 0.001)
+            }
+        }
+    }
+
+    func testSignsNeverMoveToLeftWhenReorderedOrOnePasses() {
+        let initial = [alert(1, distance: 100), alert(2, distance: 200), alert(3, distance: 300)]
+        let reordered = [alert(3, distance: 90), alert(1, distance: 100), alert(2, distance: 110)]
+        let next = [alert(3, distance: 90), alert(4, distance: 200), alert(5, distance: 300)]
+        let size = CGSize(width: 357, height: 430)
+        for input in [initial, reordered, next] {
+            let placements = DrivingRoadsideLayout.placements(alerts: input, size: size)
+            XCTAssertEqual(Set(placements.map(\.id)), Set(input.map(\.id)))
+            XCTAssertTrue(placements.allSatisfy { $0.x > size.width / 2 })
+            XCTAssertTrue(placements.allSatisfy { input.contains($0.alert) })
+        }
+    }
+
+    func testLandmarkCaptionsClearRightSideSigns() throws {
+        let size = CGSize(width: 357, height: 430)
+        let posts = DrivingRoadsideLayout.placements(
+            alerts: [alert(1, distance: 300), alert(2, distance: 330), alert(3, distance: 650)], size: size)
+        let rects = posts.map { CGRect(x: $0.x - $0.width / 2, y: $0.top, width: $0.width, height: $0.readableHeight) }
+        let caption = try XCTUnwrap(DrivingRibbon.captionFrame(preferredY: posts[1].top + 10, width: 160,
+                                                              size: size, excluding: rects))
+        XCTAssertFalse(rects.contains { $0.intersects(caption) })
+        XCTAssertEqual(caption.midX, size.width / 2)
+        XCTAssertNil(DrivingRibbon.captionFrame(preferredY: 150, width: 160, size: size,
+                                               excluding: [.init(origin: .zero, size: size)]))
     }
 
     func testInvalidOrEmptySceneProducesNoPosts() {

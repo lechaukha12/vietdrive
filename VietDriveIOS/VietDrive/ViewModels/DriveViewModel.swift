@@ -48,6 +48,8 @@ final class DriveViewModel: ObservableObject {
     @Published private(set) var isTraceRecording = false
     @Published private(set) var isTraceReplayActive = false
     @Published private(set) var traceReplayProgress = 0.0
+    @Published private(set) var routeDemo: RouteDemoPlayback?
+    @Published private(set) var demoSpeedKmh = 50
     @Published private(set) var mapMatchStatus = "Chưa bắt đầu dẫn đường"
     @Published private(set) var speedLimitDiagnosticText = "Chưa khớp đoạn đường"
     @Published private(set) var voiceDiagnosticText = "Chưa phát prompt"
@@ -64,6 +66,7 @@ final class DriveViewModel: ObservableObject {
     let locationService = LocationService()
 
     private let alertStore = OfflineAlertStore()
+    private var demoAlertStore: OfflineAlertStore?
     private let voice = VoiceAlertService()
     private let navigationBackend: any NavigationBackend
     private let mapDataUpdateService = MapDataUpdateService()
@@ -76,6 +79,7 @@ final class DriveViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var lastDatabaseQuery = Date.distantPast
     private var isDatabaseQueryInFlight = false
+    private var locationSourceGeneration = UUID()
     private var lastViewportCenter: CLLocationCoordinate2D?
     private var lastViewportRadius = 0.0
     private var viewportQueryToken = UUID()
@@ -96,6 +100,10 @@ final class DriveViewModel: ObservableObject {
     private var traceReplay: DriveTraceReplay?
     private var traceReplayTimer: AnyCancellable?
     private var traceReplayElapsed = 0.0
+    private var routeDemoTimer: AnyCancellable?
+    private var routeDemoLastTick = 0.0
+    private var coordinateBeforeDemo: CLLocationCoordinate2D?
+    private var waitingForLiveFixAfterDemo = false
     private var nextSpeedCandidateState: NextSpeedCandidateState?
 
     init(navigationBackend: any NavigationBackend = OpenMapService()) {
@@ -164,7 +172,8 @@ final class DriveViewModel: ObservableObject {
             .sink { [weak self] location in
                 guard let self else { return }
                 self.refreshLocationRoutingAvailability()
-                guard !self.isTraceReplayActive else { return }
+                guard !self.isSimulatedLocationActive else { return }
+                self.waitingForLiveFixAfterDemo = false
                 if self.routePhase == .navigating, let routeID = self.navigationRoute?.id {
                     self.telemetry.rawLocation(
                         location,
@@ -197,7 +206,7 @@ final class DriveViewModel: ObservableObject {
         locationService.$fixQuality
             .removeDuplicates()
             .sink { [weak self] quality in
-                guard let self, self.isNavigating, !self.isTraceReplayActive else { return }
+                guard let self, self.isNavigating, !self.isSimulatedLocationActive else { return }
                 // A weak fix is still a live GPS fix. Only “unavailable” means
                 // delivery actually stopped; announcing loss for 33–65 m
                 // accuracy created false alarms while the phone was locked.
@@ -206,7 +215,7 @@ final class DriveViewModel: ObservableObject {
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .sink { [weak self] _ in
-                guard let self, self.routePhase == .navigating else { return }
+                guard let self, self.routePhase == .navigating, !self.isRouteDemoActive else { return }
                 self.persistNavigationSession(force: true)
                 self.telemetry.event(
                     "application_background",
@@ -217,13 +226,16 @@ final class DriveViewModel: ObservableObject {
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
-                guard let self, self.routePhase == .navigating else { return }
+                guard let self, self.routePhase == .navigating, !self.isRouteDemoActive else { return }
                 self.telemetry.event(
                     "application_foreground",
                     routeID: self.navigationRoute?.id,
                     detail: self.locationService.diagnosticSnapshot
                 )
             }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+            .sink { [weak self] _ in self?.pauseRouteDemo() }
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
             .sink { [weak self] _ in self?.terminateApplicationSession() }
@@ -295,13 +307,15 @@ final class DriveViewModel: ObservableObject {
     var isRoutePreview: Bool { routePhase == .preview }
     var isPlanningRoute: Bool { routePhase == .planning }
     var isGuidanceActive: Bool { isNavigating || isTraceReplayActive }
+    var isRouteDemoActive: Bool { routeDemo != nil }
+    var isSimulatedLocationActive: Bool { isTraceReplayActive || isRouteDemoActive }
     var routeOriginText: String { routeOrigin?.name ?? "Vị trí hiện tại" }
     var selectedRouteTitle: String {
         "\(routeOriginText) → \(destination?.name ?? "Điểm đến")"
     }
     var voiceDescription: String { voice.voiceDescription }
     var locationFixQuality: LocationFixQuality {
-        isTraceReplayActive ? .excellent : locationService.fixQuality
+        isSimulatedLocationActive ? .excellent : waitingForLiveFixAfterDemo ? .unavailable : locationService.fixQuality
     }
     var shouldShowGuidanceMascot: Bool {
         isGuidanceActive
@@ -358,6 +372,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     func start() {
+        guard !isSimulatedLocationActive else { return }
         restoreNavigationSessionIfNeeded()
         // VietDrive's idle dashboard is also a real driving mode: speed limits,
         // cameras and road signs must continue to work without a planned route.
@@ -382,6 +397,7 @@ final class DriveViewModel: ObservableObject {
         from selectedOrigin: PlaceSearchResult?,
         to result: PlaceSearchResult
     ) {
+        if isRouteDemoActive { stopRouteDemo() }
         let liveOrigin = locationService.routingLocation
         guard selectedOrigin != nil || liveOrigin != nil else {
             routeErrorMessage = locationService.authorizationDenied
@@ -443,6 +459,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     func startNavigation() {
+        if isRouteDemoActive { stopRouteDemo() }
         guard let navigationRoute, let destination else { return }
         guard routeOrigin != nil || locationService.routingLocation != nil else {
             routeErrorMessage = locationService.authorizationDenied
@@ -503,6 +520,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     func cancelRoute() {
+        if isRouteDemoActive { stopRouteDemo() }
         if isTraceReplayActive { stopTraceReplay() }
         invalidateReroute()
         finishTraceRecording()
@@ -577,7 +595,7 @@ final class DriveViewModel: ObservableObject {
 
     func updateVoiceEnabled(_ enabled: Bool) {
         voiceEnabled = enabled
-        voice.isEnabled = enabled
+        voice.isEnabled = enabled && !(routeDemo?.isPaused ?? false)
         UserDefaults.standard.set(enabled, forKey: "voiceEnabled")
     }
 
@@ -586,7 +604,7 @@ final class DriveViewModel: ObservableObject {
     }
 
     func startTraceRecording() {
-        guard isNavigating, !isTraceRecording, !isTraceReplayActive else { return }
+        guard isNavigating, !isTraceRecording, !isSimulatedLocationActive else { return }
         traceStore.start(routeTitle: selectedRouteTitle)
         isTraceRecording = true
     }
@@ -602,6 +620,7 @@ final class DriveViewModel: ObservableObject {
         guard let trace = savedTraces.first(where: { $0.id == id }),
               trace.samples.count >= 2,
               navigationRoute != nil else { return }
+        if isRouteDemoActive { stopRouteDemo() }
         invalidateReroute()
         finishTraceRecording()
         traceReplayTimer?.cancel()
@@ -649,6 +668,182 @@ final class DriveViewModel: ObservableObject {
         guard !isTraceReplayActive else { return }
         traceStore.delete(id: id)
         savedTraces = traceStore.traces()
+    }
+
+    /// Bundled fixture: deliberately bypasses every online routing/search provider.
+    @discardableResult
+    func startFixedRouteDemo() -> Bool {
+        do {
+            let route = try FixedDemoRoute.load()
+            guard let start = route.coordinates.first, let end = route.coordinates.last else { return false }
+            if isTraceReplayActive { stopTraceReplay() }
+            routePlanningToken = UUID()
+            invalidateReroute()
+            routeErrorMessage = nil
+            routeOrigin = .init(id: "demo-saigon", name: "Sài Gòn", subtitle: "Tuyến thử offline",
+                                latitude: start.latitude, longitude: start.longitude)
+            destination = .init(id: "demo-phanthiet", name: "Phan Thiết", subtitle: "Tuyến thử offline",
+                                latitude: end.latitude, longitude: end.longitude)
+            navigationRoute = route
+            routeAlternatives = [route]
+            selectedRouteIndex = 0
+            routePhase = .preview
+            return startRouteDemo()
+        } catch {
+            routeErrorMessage = "Không mở được tuyến thử có sẵn: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    func seekRouteDemo(to progress: Double) {
+        guard var playback = routeDemo, progress.isFinite else { return }
+        playback.seek(to: progress)
+        routeDemo = playback
+        voice.stopAll()
+        demoAlertStore = OfflineAlertStore()
+        resetLocationSourcePresentation(coordinate: playback.sample().coordinate, isDemo: true)
+        didArrive = false
+        routeDemoLastTick = ProcessInfo.processInfo.systemUptime
+        publishRouteDemoSample()
+        cameraRevision += 1
+    }
+
+    /// Runs the selected route through the existing GPS/alert pipeline, without recording it.
+    @discardableResult
+    func startRouteDemo() -> Bool {
+        guard !isPlanningRoute, !isTraceReplayActive, let route = navigationRoute,
+              let playback = RouteDemoPlayback(coordinates: route.coordinates, speedKmh: demoSpeedKmh) else {
+            routeErrorMessage = "Hãy chọn một tuyến đường hợp lệ trước khi chạy thử."
+            return false
+        }
+        if !isRouteDemoActive { coordinateBeforeDemo = snapshot.coordinate }
+        routeDemoTimer?.cancel()
+        invalidateReroute()
+        finishTraceRecording()
+        navigationSessionStore.clear()
+        telemetry.finish(event: "route_demo_started")
+        voice.stopAll()
+        voice.isEnabled = voiceEnabled
+        voice.setNavigationActive(true)
+        // A separate matcher keeps synthetic locations out of the live firmware matcher's history.
+        demoAlertStore = OfflineAlertStore()
+        routeDemo = playback
+        PlatformDriveCoordinator.shared.setRouteDemoActive(true)
+        locationService.shutdown()
+        resetLocationSourcePresentation(coordinate: playback.sample().coordinate, isDemo: true)
+        routePhase = .navigating
+        didArrive = false
+        remainingDistanceMeters = route.distanceMeters
+        remainingDurationSeconds = route.durationSeconds
+        followUser = true
+        cameraRevision += 1
+        routeDemoLastTick = ProcessInfo.processInfo.systemUptime
+        publishRouteDemoSample()
+        routeDemoTimer = Timer.publish(every: 0.2, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in self?.tickRouteDemo() }
+        return true
+    }
+
+    func updateDemoSpeed(_ speed: Int) {
+        demoSpeedKmh = max(10, min(120, speed))
+        routeDemo?.setSpeed(demoSpeedKmh)
+        if isRouteDemoActive { publishRouteDemoSample() }
+    }
+
+    func pauseRouteDemo() {
+        guard var playback = routeDemo, !playback.isPaused else { return }
+        playback.pause()
+        routeDemo = playback
+        voice.isEnabled = false
+        snapshot.speedKmh = 0
+        mapMatchStatus = "DEMO · Đã tạm dừng"
+    }
+
+    func resumeRouteDemo() {
+        guard var playback = routeDemo, !playback.isFinished,
+              UIApplication.shared.applicationState == .active else { return }
+        playback.resume()
+        routeDemo = playback
+        routeDemoLastTick = ProcessInfo.processInfo.systemUptime
+        voice.isEnabled = voiceEnabled
+        publishRouteDemoSample()
+        if routeDemoTimer == nil {
+            routeDemoTimer = Timer.publish(every: 0.2, on: .main, in: .common)
+                .autoconnect().sink { [weak self] _ in self?.tickRouteDemo() }
+        }
+    }
+
+    func stopRouteDemo() {
+        guard isRouteDemoActive else { return }
+        routeDemoTimer?.cancel()
+        routeDemoTimer = nil
+        routeDemo = nil
+        demoAlertStore = nil
+        invalidateReroute()
+        voice.stopAll()
+        voice.isEnabled = voiceEnabled
+        let live = locationService.routingLocation
+        waitingForLiveFixAfterDemo = live == nil
+        resetLocationSourcePresentation(coordinate: live?.coordinate ?? coordinateBeforeDemo ?? snapshot.coordinate,
+                                        isDemo: false)
+        coordinateBeforeDemo = nil
+        routePhase = navigationRoute == nil ? .idle : .preview
+        didArrive = false
+        remainingDistanceMeters = navigationRoute?.distanceMeters ?? 0
+        remainingDurationSeconds = navigationRoute?.durationSeconds ?? 0
+        mapMatchStatus = "Đã thoát DEMO · trở về GPS thật"
+        locationService.setNavigationActive(true)
+        locationService.start()
+        voice.setNavigationActive(true)
+        PlatformDriveCoordinator.shared.setRouteDemoActive(false)
+        cameraRevision += 1
+        if let live {
+            process(location: live, speed: locationService.speedKmh, heading: locationService.heading)
+        }
+    }
+
+    private func tickRouteDemo() {
+        guard var playback = routeDemo, !playback.isPaused else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        playback.advance(by: now - routeDemoLastTick)
+        routeDemoLastTick = now
+        routeDemo = playback
+        publishRouteDemoSample()
+        if playback.isFinished { routeDemoTimer?.cancel(); routeDemoTimer = nil }
+    }
+
+    private func publishRouteDemoSample() {
+        guard let playback = routeDemo else { return }
+        let sample = playback.sample()
+        process(location: sample.location, speed: sample.speedKmh, heading: sample.heading, isReplay: true)
+        mapMatchStatus = playback.isFinished ? "DEMO · Đã hoàn tất tuyến"
+            : playback.isPaused ? "DEMO · Đã tạm dừng" : "DEMO · \(demoSpeedKmh) km/h"
+    }
+
+    private func resetLocationSourcePresentation(coordinate: CLLocationCoordinate2D, isDemo: Bool) {
+        locationSourceGeneration = UUID()
+        viewportQueryToken = UUID()
+        isDatabaseQueryInFlight = false
+        lastDatabaseQuery = .distantPast
+        lastViewportCenter = nil
+        alerts = []
+        viewportAlerts = []
+        roads = navigationRoute.map { [$0.overlay] } ?? []
+        matchedRouteDistanceMeters = nil
+        nextSpeedCandidateState = nil
+        offRouteSamples = 0
+        wrongDirectionSamples = 0
+        lastHapticAlertID = nil
+        wasOverSpeed = false
+        sectionSpeedStartTime = nil
+        sectionSpeedLimit = nil
+        sectionStartLocation = nil
+        journeyTask?.cancel()
+        snapshot = DriveSnapshot()
+        snapshot.coordinate = coordinate
+        snapshot.isDemo = isDemo
+        snapshot.province = isDemo ? "Vị trí mô phỏng" : "Chờ GPS thật"
     }
 
     func reportIncorrectAlert(_ alert: DriveAlert, reason: String) {
@@ -702,6 +897,7 @@ final class DriveViewModel: ObservableObject {
         invalidateReroute()
         journeyTask?.cancel()
         traceReplayTimer?.cancel()
+        routeDemoTimer?.cancel()
         finishTraceRecording()
         voice.setNavigationActive(false)
         voice.stopAll()
@@ -806,14 +1002,15 @@ final class DriveViewModel: ObservableObject {
             isDatabaseQueryInFlight = true
             let queryLocation = location
             let primaryRoute = navigationRoute?.overlay
-            alertStore.nearbyContext(
+            let generation = locationSourceGeneration
+            (demoAlertStore ?? alertStore).nearbyContext(
                 location: location,
                 heading: heading,
                 speedKmh: speed,
                 route: navigationRoute,
                 matchedDistanceMeters: matchedRouteDistanceMeters
             ) { [weak self] context in
-                guard let self else { return }
+                guard let self, self.locationSourceGeneration == generation else { return }
                 self.isDatabaseQueryInFlight = false
                 let currentLocation = CLLocation(
                     latitude: self.snapshot.coordinate.latitude,
@@ -875,7 +1072,7 @@ final class DriveViewModel: ObservableObject {
             totalDistance: route.distanceMeters,
             remainingDistance: progress.remainingDistanceMeters
         )
-        if progress.remainingDistanceMeters <= 25 {
+        if progress.remainingDistanceMeters <= 25 && (!isRouteDemoActive || routeDemo?.isFinished == true) {
             invalidateReroute()
             // Keep the route available for the arrival card, but end the live
             // navigation lifecycle so a later background transition cannot
@@ -897,7 +1094,7 @@ final class DriveViewModel: ObservableObject {
             voice.setNavigationActive(true)
             snapshot.roadName = destination?.name ?? "Điểm đến"
             snapshot.province = "Hành trình đã hoàn tất"
-            locationService.setNavigationActive(true)
+            if !isRouteDemoActive { locationService.setNavigationActive(true) }
             navigationSessionStore.clear()
             telemetry.finish(event: "arrived")
             finishTraceRecording()
@@ -935,7 +1132,7 @@ final class DriveViewModel: ObservableObject {
             && !isApproachingTurn
             && (progress.headingDifferenceDegrees ?? 0) > 72
 
-        let hasReliableFix = isTraceReplayActive
+        let hasReliableFix = isSimulatedLocationActive
             || (accuracy <= 42 && abs(location.timestamp.timeIntervalSinceNow) <= 8)
         if !hasReliableFix {
             offRouteSamples = 0
@@ -955,6 +1152,8 @@ final class DriveViewModel: ObservableObject {
             wrongDirectionSamples = 0
         }
 
+        // Demo stays on the selected route; it must not persist a fake trip or call rerouting.
+        guard !isRouteDemoActive else { return }
         telemetry.sample(
             location: location,
             resolvedHeading: heading,
@@ -1059,6 +1258,7 @@ final class DriveViewModel: ObservableObject {
 
     private func persistNavigationSession(force: Bool) {
         guard routePhase == .navigating,
+              !isSimulatedLocationActive,
               !didArrive,
               let destination,
               let navigationRoute else { return }
@@ -1190,7 +1390,9 @@ final class DriveViewModel: ObservableObject {
             if limit > 0 && sectionSpeedStartTime == nil {
                 sectionSpeedStartTime = Date()
                 sectionSpeedLimit = limit
-                sectionStartLocation = locationService.routingLocation
+                sectionStartLocation = isRouteDemoActive
+                    ? CLLocation(latitude: snapshot.coordinate.latitude, longitude: snapshot.coordinate.longitude)
+                    : locationService.routingLocation
             }
         }
 
